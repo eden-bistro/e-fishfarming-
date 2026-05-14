@@ -104,7 +104,7 @@ export function AppSidebar() {
                   return (
                     <SidebarMenuItem key={item.url}>
                       <SidebarMenuButton asChild isActive={active} tooltip={item.title}>
-                        <Link to={item.url}>
+                        <Link to={item.url as never}>
                           <item.icon className="h-4 w-4" />
                           <span>{item.title}</span>
                         </Link>
