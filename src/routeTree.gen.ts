@@ -25,6 +25,8 @@ import { Route as FeedingScheduleRouteImport } from './routes/feeding.schedule'
 import { Route as FeedingManualRouteImport } from './routes/feeding.manual'
 import { Route as FeedingInventoryRouteImport } from './routes/feeding.inventory'
 import { Route as FeedingHistoryRouteImport } from './routes/feeding.history'
+import { Route as AuthRegisterRouteImport } from './routes/auth.register'
+import { Route as AuthLoginRouteImport } from './routes/auth.login'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -106,9 +108,21 @@ const FeedingHistoryRoute = FeedingHistoryRouteImport.update({
   path: '/feeding/history',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRegisterRoute = AuthRegisterRouteImport.update({
+  id: '/auth/register',
+  path: '/auth/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthLoginRoute = AuthLoginRouteImport.update({
+  id: '/auth/login',
+  path: '/auth/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth/login': typeof AuthLoginRoute
+  '/auth/register': typeof AuthRegisterRoute
   '/feeding/history': typeof FeedingHistoryRoute
   '/feeding/inventory': typeof FeedingInventoryRoute
   '/feeding/manual': typeof FeedingManualRoute
@@ -127,6 +141,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth/login': typeof AuthLoginRoute
+  '/auth/register': typeof AuthRegisterRoute
   '/feeding/history': typeof FeedingHistoryRoute
   '/feeding/inventory': typeof FeedingInventoryRoute
   '/feeding/manual': typeof FeedingManualRoute
@@ -146,6 +162,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth/login': typeof AuthLoginRoute
+  '/auth/register': typeof AuthRegisterRoute
   '/feeding/history': typeof FeedingHistoryRoute
   '/feeding/inventory': typeof FeedingInventoryRoute
   '/feeding/manual': typeof FeedingManualRoute
@@ -166,6 +184,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth/login'
+    | '/auth/register'
     | '/feeding/history'
     | '/feeding/inventory'
     | '/feeding/manual'
@@ -184,6 +204,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/auth/login'
+    | '/auth/register'
     | '/feeding/history'
     | '/feeding/inventory'
     | '/feeding/manual'
@@ -202,6 +224,8 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/auth/login'
+    | '/auth/register'
     | '/feeding/history'
     | '/feeding/inventory'
     | '/feeding/manual'
@@ -221,6 +245,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthLoginRoute: typeof AuthLoginRoute
+  AuthRegisterRoute: typeof AuthRegisterRoute
   FeedingHistoryRoute: typeof FeedingHistoryRoute
   FeedingInventoryRoute: typeof FeedingInventoryRoute
   FeedingManualRoute: typeof FeedingManualRoute
@@ -352,11 +378,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FeedingHistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/register': {
+      id: '/auth/register'
+      path: '/auth/register'
+      fullPath: '/auth/register'
+      preLoaderRoute: typeof AuthRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/login': {
+      id: '/auth/login'
+      path: '/auth/login'
+      fullPath: '/auth/login'
+      preLoaderRoute: typeof AuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthLoginRoute: AuthLoginRoute,
+  AuthRegisterRoute: AuthRegisterRoute,
   FeedingHistoryRoute: FeedingHistoryRoute,
   FeedingInventoryRoute: FeedingInventoryRoute,
   FeedingManualRoute: FeedingManualRoute,
