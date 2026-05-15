@@ -10,33 +10,219 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WaterLiveRouteImport } from './routes/water.live'
+import { Route as WaterHistoryRouteImport } from './routes/water.history'
+import { Route as WaterAlertsRouteImport } from './routes/water.alerts'
+import { Route as SettingsUsersRouteImport } from './routes/settings.users'
+import { Route as SettingsFarmRouteImport } from './routes/settings.farm'
+import { Route as SettingsDevicesRouteImport } from './routes/settings.devices'
+import { Route as FinanceReportsRouteImport } from './routes/finance.reports'
+import { Route as FinancePnlRouteImport } from './routes/finance.pnl'
+import { Route as FinanceIncomeRouteImport } from './routes/finance.income'
+import { Route as FinanceExpensesRouteImport } from './routes/finance.expenses'
+import { Route as FeedingScheduleRouteImport } from './routes/feeding.schedule'
+import { Route as FeedingManualRouteImport } from './routes/feeding.manual'
+import { Route as FeedingInventoryRouteImport } from './routes/feeding.inventory'
+import { Route as FeedingHistoryRouteImport } from './routes/feeding.history'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WaterLiveRoute = WaterLiveRouteImport.update({
+  id: '/water/live',
+  path: '/water/live',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WaterHistoryRoute = WaterHistoryRouteImport.update({
+  id: '/water/history',
+  path: '/water/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WaterAlertsRoute = WaterAlertsRouteImport.update({
+  id: '/water/alerts',
+  path: '/water/alerts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsUsersRoute = SettingsUsersRouteImport.update({
+  id: '/settings/users',
+  path: '/settings/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsFarmRoute = SettingsFarmRouteImport.update({
+  id: '/settings/farm',
+  path: '/settings/farm',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsDevicesRoute = SettingsDevicesRouteImport.update({
+  id: '/settings/devices',
+  path: '/settings/devices',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FinanceReportsRoute = FinanceReportsRouteImport.update({
+  id: '/finance/reports',
+  path: '/finance/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FinancePnlRoute = FinancePnlRouteImport.update({
+  id: '/finance/pnl',
+  path: '/finance/pnl',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FinanceIncomeRoute = FinanceIncomeRouteImport.update({
+  id: '/finance/income',
+  path: '/finance/income',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FinanceExpensesRoute = FinanceExpensesRouteImport.update({
+  id: '/finance/expenses',
+  path: '/finance/expenses',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedingScheduleRoute = FeedingScheduleRouteImport.update({
+  id: '/feeding/schedule',
+  path: '/feeding/schedule',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedingManualRoute = FeedingManualRouteImport.update({
+  id: '/feeding/manual',
+  path: '/feeding/manual',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedingInventoryRoute = FeedingInventoryRouteImport.update({
+  id: '/feeding/inventory',
+  path: '/feeding/inventory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedingHistoryRoute = FeedingHistoryRouteImport.update({
+  id: '/feeding/history',
+  path: '/feeding/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/feeding/history': typeof FeedingHistoryRoute
+  '/feeding/inventory': typeof FeedingInventoryRoute
+  '/feeding/manual': typeof FeedingManualRoute
+  '/feeding/schedule': typeof FeedingScheduleRoute
+  '/finance/expenses': typeof FinanceExpensesRoute
+  '/finance/income': typeof FinanceIncomeRoute
+  '/finance/pnl': typeof FinancePnlRoute
+  '/finance/reports': typeof FinanceReportsRoute
+  '/settings/devices': typeof SettingsDevicesRoute
+  '/settings/farm': typeof SettingsFarmRoute
+  '/settings/users': typeof SettingsUsersRoute
+  '/water/alerts': typeof WaterAlertsRoute
+  '/water/history': typeof WaterHistoryRoute
+  '/water/live': typeof WaterLiveRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/feeding/history': typeof FeedingHistoryRoute
+  '/feeding/inventory': typeof FeedingInventoryRoute
+  '/feeding/manual': typeof FeedingManualRoute
+  '/feeding/schedule': typeof FeedingScheduleRoute
+  '/finance/expenses': typeof FinanceExpensesRoute
+  '/finance/income': typeof FinanceIncomeRoute
+  '/finance/pnl': typeof FinancePnlRoute
+  '/finance/reports': typeof FinanceReportsRoute
+  '/settings/devices': typeof SettingsDevicesRoute
+  '/settings/farm': typeof SettingsFarmRoute
+  '/settings/users': typeof SettingsUsersRoute
+  '/water/alerts': typeof WaterAlertsRoute
+  '/water/history': typeof WaterHistoryRoute
+  '/water/live': typeof WaterLiveRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/feeding/history': typeof FeedingHistoryRoute
+  '/feeding/inventory': typeof FeedingInventoryRoute
+  '/feeding/manual': typeof FeedingManualRoute
+  '/feeding/schedule': typeof FeedingScheduleRoute
+  '/finance/expenses': typeof FinanceExpensesRoute
+  '/finance/income': typeof FinanceIncomeRoute
+  '/finance/pnl': typeof FinancePnlRoute
+  '/finance/reports': typeof FinanceReportsRoute
+  '/settings/devices': typeof SettingsDevicesRoute
+  '/settings/farm': typeof SettingsFarmRoute
+  '/settings/users': typeof SettingsUsersRoute
+  '/water/alerts': typeof WaterAlertsRoute
+  '/water/history': typeof WaterHistoryRoute
+  '/water/live': typeof WaterLiveRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/feeding/history'
+    | '/feeding/inventory'
+    | '/feeding/manual'
+    | '/feeding/schedule'
+    | '/finance/expenses'
+    | '/finance/income'
+    | '/finance/pnl'
+    | '/finance/reports'
+    | '/settings/devices'
+    | '/settings/farm'
+    | '/settings/users'
+    | '/water/alerts'
+    | '/water/history'
+    | '/water/live'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/feeding/history'
+    | '/feeding/inventory'
+    | '/feeding/manual'
+    | '/feeding/schedule'
+    | '/finance/expenses'
+    | '/finance/income'
+    | '/finance/pnl'
+    | '/finance/reports'
+    | '/settings/devices'
+    | '/settings/farm'
+    | '/settings/users'
+    | '/water/alerts'
+    | '/water/history'
+    | '/water/live'
+  id:
+    | '__root__'
+    | '/'
+    | '/feeding/history'
+    | '/feeding/inventory'
+    | '/feeding/manual'
+    | '/feeding/schedule'
+    | '/finance/expenses'
+    | '/finance/income'
+    | '/finance/pnl'
+    | '/finance/reports'
+    | '/settings/devices'
+    | '/settings/farm'
+    | '/settings/users'
+    | '/water/alerts'
+    | '/water/history'
+    | '/water/live'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  FeedingHistoryRoute: typeof FeedingHistoryRoute
+  FeedingInventoryRoute: typeof FeedingInventoryRoute
+  FeedingManualRoute: typeof FeedingManualRoute
+  FeedingScheduleRoute: typeof FeedingScheduleRoute
+  FinanceExpensesRoute: typeof FinanceExpensesRoute
+  FinanceIncomeRoute: typeof FinanceIncomeRoute
+  FinancePnlRoute: typeof FinancePnlRoute
+  FinanceReportsRoute: typeof FinanceReportsRoute
+  SettingsDevicesRoute: typeof SettingsDevicesRoute
+  SettingsFarmRoute: typeof SettingsFarmRoute
+  SettingsUsersRoute: typeof SettingsUsersRoute
+  WaterAlertsRoute: typeof WaterAlertsRoute
+  WaterHistoryRoute: typeof WaterHistoryRoute
+  WaterLiveRoute: typeof WaterLiveRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +234,123 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/water/live': {
+      id: '/water/live'
+      path: '/water/live'
+      fullPath: '/water/live'
+      preLoaderRoute: typeof WaterLiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/water/history': {
+      id: '/water/history'
+      path: '/water/history'
+      fullPath: '/water/history'
+      preLoaderRoute: typeof WaterHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/water/alerts': {
+      id: '/water/alerts'
+      path: '/water/alerts'
+      fullPath: '/water/alerts'
+      preLoaderRoute: typeof WaterAlertsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/users': {
+      id: '/settings/users'
+      path: '/settings/users'
+      fullPath: '/settings/users'
+      preLoaderRoute: typeof SettingsUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/farm': {
+      id: '/settings/farm'
+      path: '/settings/farm'
+      fullPath: '/settings/farm'
+      preLoaderRoute: typeof SettingsFarmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/devices': {
+      id: '/settings/devices'
+      path: '/settings/devices'
+      fullPath: '/settings/devices'
+      preLoaderRoute: typeof SettingsDevicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/finance/reports': {
+      id: '/finance/reports'
+      path: '/finance/reports'
+      fullPath: '/finance/reports'
+      preLoaderRoute: typeof FinanceReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/finance/pnl': {
+      id: '/finance/pnl'
+      path: '/finance/pnl'
+      fullPath: '/finance/pnl'
+      preLoaderRoute: typeof FinancePnlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/finance/income': {
+      id: '/finance/income'
+      path: '/finance/income'
+      fullPath: '/finance/income'
+      preLoaderRoute: typeof FinanceIncomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/finance/expenses': {
+      id: '/finance/expenses'
+      path: '/finance/expenses'
+      fullPath: '/finance/expenses'
+      preLoaderRoute: typeof FinanceExpensesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feeding/schedule': {
+      id: '/feeding/schedule'
+      path: '/feeding/schedule'
+      fullPath: '/feeding/schedule'
+      preLoaderRoute: typeof FeedingScheduleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feeding/manual': {
+      id: '/feeding/manual'
+      path: '/feeding/manual'
+      fullPath: '/feeding/manual'
+      preLoaderRoute: typeof FeedingManualRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feeding/inventory': {
+      id: '/feeding/inventory'
+      path: '/feeding/inventory'
+      fullPath: '/feeding/inventory'
+      preLoaderRoute: typeof FeedingInventoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feeding/history': {
+      id: '/feeding/history'
+      path: '/feeding/history'
+      fullPath: '/feeding/history'
+      preLoaderRoute: typeof FeedingHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  FeedingHistoryRoute: FeedingHistoryRoute,
+  FeedingInventoryRoute: FeedingInventoryRoute,
+  FeedingManualRoute: FeedingManualRoute,
+  FeedingScheduleRoute: FeedingScheduleRoute,
+  FinanceExpensesRoute: FinanceExpensesRoute,
+  FinanceIncomeRoute: FinanceIncomeRoute,
+  FinancePnlRoute: FinancePnlRoute,
+  FinanceReportsRoute: FinanceReportsRoute,
+  SettingsDevicesRoute: SettingsDevicesRoute,
+  SettingsFarmRoute: SettingsFarmRoute,
+  SettingsUsersRoute: SettingsUsersRoute,
+  WaterAlertsRoute: WaterAlertsRoute,
+  WaterHistoryRoute: WaterHistoryRoute,
+  WaterLiveRoute: WaterLiveRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

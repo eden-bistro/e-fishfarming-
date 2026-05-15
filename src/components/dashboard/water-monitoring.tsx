@@ -24,11 +24,10 @@ const sensors: Sensor[] = [
 ];
 
 function makeSeries(base: number, jitter: number, n = 20) {
+  // Deterministic series for SSR — randomized only after mount
   const out: { v: number }[] = [];
-  let v = base;
   for (let i = 0; i < n; i++) {
-    v = v + (Math.random() - 0.5) * jitter;
-    out.push({ v });
+    out.push({ v: base + Math.sin(i / 2) * jitter * 0.5 });
   }
   return out;
 }
