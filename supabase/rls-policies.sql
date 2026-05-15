@@ -1,8 +1,8 @@
 -- Enable RLS
-alter table if exists finance_income enable row level security;
-alter table if exists finance_expenses enable row level security;
-alter table if exists feeding_events enable row level security;
-alter table if exists water_readings enable row level security;
+alter table if exists public.finance_income enable row level security;
+alter table if exists public.finance_expenses enable row level security;
+alter table if exists public.feeding_events enable row level security;
+alter table if exists public.water_readings enable row level security;
 
 -- Multi-tenant scope: each authenticated user only accesses their farm.
 -- Requires JWT claim: app_metadata.farm_id
