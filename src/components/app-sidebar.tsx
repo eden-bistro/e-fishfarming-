@@ -1,81 +1,75 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  LayoutDashboard,
-  Fish,
-  CalendarClock,
-  Hand,
-  History,
-  Package,
-  Droplets,
-  Activity,
-  LineChart,
-  BellRing,
-  Wallet,
-  TrendingUp,
-  TrendingDown,
-  PieChart,
-  FileBarChart,
-  Settings,
-  Users,
+  ChevronDown,
   Cpu,
+  Droplets,
+  Fish,
+  LayoutDashboard,
+  LineChart,
   LogOut,
+  Settings,
+  Wallet,
 } from "lucide-react";
+import { useState } from "react";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-const groups = [
+const navItems = [
+  { title: "Dashboard", url: "/", icon: LayoutDashboard },
   {
-    label: null,
-    items: [{ title: "Dashboard", url: "/", icon: LayoutDashboard }],
-  },
-  {
-    label: "Feeding System",
-    items: [
-      { title: "Feeding Schedule", url: "/feeding/schedule", icon: CalendarClock },
-      { title: "Manual Feeding", url: "/feeding/manual", icon: Hand },
-      { title: "Feeding History", url: "/feeding/history", icon: History },
-      { title: "Feed Inventory", url: "/feeding/inventory", icon: Package },
+    title: "Feeding System",
+    icon: Fish,
+    children: [
+      { title: "Feeding Schedule", url: "/feeding/schedule" },
+      { title: "Manual Feeding", url: "/feeding/manual" },
+      { title: "Feeding History", url: "/feeding/history" },
+      { title: "Feed Inventory", url: "/feeding/inventory" },
     ],
   },
   {
-    label: "Water Quality",
-    items: [
-      { title: "Live Monitoring", url: "/water/live", icon: Activity },
-      { title: "Water History", url: "/water/history", icon: LineChart },
-      { title: "Alerts", url: "/water/alerts", icon: BellRing },
+    title: "Water Quality",
+    icon: Droplets,
+    children: [
+      { title: "Live Monitoring", url: "/water/live" },
+      { title: "Water History", url: "/water/history" },
+      { title: "Alerts", url: "/water/alerts" },
     ],
   },
   {
-    label: "Financial",
-    items: [
-      { title: "Income", url: "/finance/income", icon: TrendingUp },
-      { title: "Expenses", url: "/finance/expenses", icon: TrendingDown },
-      { title: "Profit & Loss", url: "/finance/pnl", icon: PieChart },
-      { title: "Reports", url: "/finance/reports", icon: FileBarChart },
+    title: "Financial",
+    icon: Wallet,
+    children: [
+      { title: "Income", url: "/finance/income" },
+      { title: "Expenses", url: "/finance/expenses" },
+      { title: "Profit & Loss", url: "/finance/pnl" },
     ],
   },
   {
-    label: "Settings",
-    items: [
-      { title: "Farm Settings", url: "/settings/farm", icon: Settings },
-      { title: "Users & Roles", url: "/settings/users", icon: Users },
-      { title: "Devices", url: "/settings/devices", icon: Cpu },
+    title: "Settings",
+    icon: Settings,
+    children: [
+      { title: "Farm Settings", url: "/settings/farm" },
+      { title: "Users & Roles", url: "/settings/users-and-roles" },
+      { title: "Devices", url: "/settings/devices" },
     ],
   },
 ] as const;
 
 export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    "Feeding System": path.startsWith("/feeding"),
+    "Water Quality": path.startsWith("/water"),
+    Financial: path.startsWith("/finance"),
+    Settings: path.startsWith("/settings"),
+  });
 
   return (
     <Sidebar collapsible="icon">
@@ -86,36 +80,58 @@ export function AppSidebar() {
           </div>
           <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
             <span className="text-base font-semibold tracking-tight">AquaSmart</span>
-            <span className="text-[11px] text-sidebar-foreground/60">
-              Smart Fish Farm
-            </span>
+            <span className="text-[11px] text-sidebar-foreground/60">Smart Fish Farm</span>
           </div>
         </div>
       </SidebarHeader>
 
       <SidebarContent>
-        {groups.map((g, i) => (
-          <SidebarGroup key={i}>
-            {g.label && <SidebarGroupLabel>{g.label}</SidebarGroupLabel>}
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {g.items.map((item) => {
-                  const active = path === item.url;
-                  return (
-                    <SidebarMenuItem key={item.url}>
-                      <SidebarMenuButton asChild isActive={active} tooltip={item.title}>
-                        <Link to={item.url as never}>
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+        <SidebarMenu>
+          {navItems.map((item) => {
+            if (!("children" in item)) {
+              return (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild isActive={path === item.url} tooltip={item.title}>
+                    <Link to={item.url as never}>
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            }
+
+            const isOpen = Boolean(openSections[item.title]);
+            return (
+              <div key={item.title} className="mb-1">
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    tooltip={item.title}
+                    onClick={() => setOpenSections((prev) => ({ ...prev, [item.title]: !prev[item.title] }))}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.title}</span>
+                    <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                {isOpen && (
+                  <div className="ml-7 mt-1 space-y-1 group-data-[collapsible=icon]:hidden">
+                    {item.children.map((child) => (
+                      <SidebarMenuItem key={child.url}>
+                        <SidebarMenuButton asChild isActive={path === child.url} tooltip={child.title}>
+                          <Link to={child.url as never}>
+                            <LineChart className="h-3.5 w-3.5 opacity-60" />
+                            <span>{child.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </SidebarMenu>
       </SidebarContent>
 
       <SidebarFooter>
