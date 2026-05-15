@@ -5,6 +5,7 @@ create table if not exists feeding_events (
   mode text not null,
   amount_kg numeric not null,
   status text not null,
+  farm_id text not null,
   created_at timestamptz not null default now()
 );
 
@@ -19,6 +20,7 @@ create table if not exists water_readings (
   ammonia numeric,
   nitrite numeric,
   raw_payload jsonb,
+  farm_id text not null,
   created_at timestamptz not null default now()
 );
 
@@ -29,6 +31,7 @@ create table if not exists finance_income (
   quantity_kg numeric not null,
   price_per_kg numeric not null,
   total numeric not null,
+  farm_id text not null,
   created_at timestamptz not null default now()
 );
 
@@ -38,6 +41,7 @@ create table if not exists finance_expenses (
   category text not null,
   description text not null,
   amount numeric not null,
+  farm_id text not null,
   created_at timestamptz not null default now()
 );
 
