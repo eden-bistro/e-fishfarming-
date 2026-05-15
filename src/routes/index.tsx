@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { getCurrentUserRecord } from "@/lib/auth";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { KpiCards } from "@/components/dashboard/kpi-cards";
 import { WaterMonitoring } from "@/components/dashboard/water-monitoring";
@@ -22,6 +23,23 @@ export const Route = createFileRoute("/")({
 });
 
 function Dashboard() {
+  const currentUser = getCurrentUserRecord();
+  const hasFarm = Boolean(currentUser?.farm?.name?.trim());
+
+  if (!hasFarm) {
+    return (
+      <DashboardLayout title="Welcome" subtitle="Set up your farm to start your personalized dashboard.">
+        <div className="rounded-lg border bg-card p-6">
+          <h2 className="text-lg font-semibold">No farm configured yet</h2>
+          <p className="mt-2 text-sm text-muted-foreground">Each user sees data for their own farm. Add your farm profile first.</p>
+          <div className="mt-4">
+            <Link to="/settings/farm" className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">Set up my farm</Link>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <KpiCards />
