@@ -1,6 +1,8 @@
-const firebaseBaseUrl = import.meta.env.VITE_FIREBASE_DATABASE_URL as string | undefined;
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+const env = import.meta.env as Record<string, string | undefined>;
+
+const firebaseBaseUrl = env.VITE_FIREBASE_DATABASE_URL ?? env.FIREBASE_DATABASE_URL;
+const supabaseUrl = env.VITE_SUPABASE_URL ?? env.SUPABASE_URL;
+const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY ?? env.SUPABASE_ANON_KEY;
 
 export type WaterReading = {
   timestamp: string;
