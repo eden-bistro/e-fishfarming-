@@ -3,31 +3,54 @@ import { DashboardLayout } from "@/components/dashboard-layout";
 import { ExpenseChart } from "@/components/dashboard/expense-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { addExpense, deleteExpense, listExpenses, updateExpense, type ExpenseRow } from "@/lib/platform-clients";
 
 export const Route = createFileRoute("/finance/expenses")({
   head: () => ({ meta: [{ title: "Expenses — AquaSmart" }] }),
   component: Page,
 });
 
-const exp = [
-  { d: "May 14", cat: "Feed", desc: "Tilapia starter 200kg", amt: 19000 },
-  { d: "May 12", cat: "Labor", desc: "Pond cleaning crew", amt: 4500 },
-  { d: "May 10", cat: "Electricity", desc: "Aerators monthly", amt: 8200 },
-  { d: "May 08", cat: "Fingerlings", desc: "5,000 pcs Pond C", amt: 25000 },
-];
-
 function Page() {
+  const [rows, setRows] = useState<ExpenseRow[]>([]);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [form, setForm] = useState<ExpenseRow>({ date: "", category: "", description: "", amount: 0 });
+
+  async function load() { setRows(await listExpenses()); }
+  useEffect(() => { void load(); }, []);
+
+  async function save() {
+    if (editId) await updateExpense(editId, form);
+    else await addExpense(form);
+    setEditId(null);
+    setForm({ date: "", category: "", description: "", amount: 0 });
+    await load();
+  }
+
   return (
-    <DashboardLayout title="Expenses" subtitle="Operating costs by category.">
+    <DashboardLayout title="Expenses" subtitle="Operating costs with full CRUD actions.">
+      <Card>
+        <CardHeader><CardTitle className="text-base">Add / Edit Expense</CardTitle></CardHeader>
+        <CardContent className="grid gap-2 md:grid-cols-5">
+          <Input type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} />
+          <Input placeholder="Category" value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} />
+          <Input placeholder="Description" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
+          <Input type="number" placeholder="Amount" value={form.amount} onChange={(e) => setForm((f) => ({ ...f, amount: Number(e.target.value) }))} />
+          <Button onClick={() => void save()}>{editId ? "Update" : "Add"}</Button>
+        </CardContent>
+      </Card>
+
       <ExpenseChart />
       <Card>
-        <CardHeader><CardTitle className="text-base">Recent Expenses</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">Expense Records</CardTitle></CardHeader>
         <CardContent>
           <Table>
-            <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Category</TableHead><TableHead>Description</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Category</TableHead><TableHead>Description</TableHead><TableHead className="text-right">Amount</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader>
             <TableBody>
-              {exp.map((e, i) => (
-                <TableRow key={i}><TableCell>{e.d}</TableCell><TableCell>{e.cat}</TableCell><TableCell>{e.desc}</TableCell><TableCell className="text-right font-medium">KSh {e.amt.toLocaleString()}</TableCell></TableRow>
+              {rows.map((e) => (
+                <TableRow key={`${e.id}-${e.date}`}><TableCell>{e.date}</TableCell><TableCell>{e.category}</TableCell><TableCell>{e.description}</TableCell><TableCell className="text-right font-medium">KSh {Number(e.amount).toLocaleString()}</TableCell><TableCell className="space-x-2"><Button size="sm" variant="outline" onClick={() => { setEditId(e.id ?? null); setForm(e); }}>Edit</Button><Button size="sm" variant="destructive" onClick={() => e.id && void deleteExpense(e.id).then(load)}>Delete</Button></TableCell></TableRow>
               ))}
             </TableBody>
           </Table>
