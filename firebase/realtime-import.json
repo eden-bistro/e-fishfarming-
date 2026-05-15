@@ -1,0 +1,30 @@
+{
+  "farms": {
+    "default": {
+      "ponds": {
+        "pond-a": {
+          "water": {
+            "latest": {
+              "timestamp": "2026-05-15T09:00:00.000Z",
+              "pondId": "pond-a",
+              "temperature": 27.4,
+              "ph": 7.2,
+              "dissolvedOxygen": 6.1,
+              "turbidity": 12.5,
+              "ammonia": 0.02,
+              "nitrite": 0.01
+            },
+            "history": {}
+          },
+          "feeding": {
+            "events": {}
+          }
+        }
+      },
+      "finance": {
+        "income": {},
+        "expenses": {}
+      }
+    }
+  }
+}
