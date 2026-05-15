@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as WaterLiveRouteImport } from './routes/water.live'
 import { Route as WaterHistoryRouteImport } from './routes/water.history'
 import { Route as WaterAlertsRouteImport } from './routes/water.alerts'
+import { Route as SettingsUsersAndRolesRouteImport } from './routes/settings.users-and-roles'
 import { Route as SettingsUsersRouteImport } from './routes/settings.users'
 import { Route as SettingsFarmRouteImport } from './routes/settings.farm'
 import { Route as SettingsDevicesRouteImport } from './routes/settings.devices'
@@ -43,6 +44,11 @@ const WaterHistoryRoute = WaterHistoryRouteImport.update({
 const WaterAlertsRoute = WaterAlertsRouteImport.update({
   id: '/water/alerts',
   path: '/water/alerts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsUsersAndRolesRoute = SettingsUsersAndRolesRouteImport.update({
+  id: '/settings/users-and-roles',
+  path: '/settings/users-and-roles',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsUsersRoute = SettingsUsersRouteImport.update({
@@ -114,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/settings/devices': typeof SettingsDevicesRoute
   '/settings/farm': typeof SettingsFarmRoute
   '/settings/users': typeof SettingsUsersRoute
+  '/settings/users-and-roles': typeof SettingsUsersAndRolesRoute
   '/water/alerts': typeof WaterAlertsRoute
   '/water/history': typeof WaterHistoryRoute
   '/water/live': typeof WaterLiveRoute
@@ -131,6 +138,7 @@ export interface FileRoutesByTo {
   '/settings/devices': typeof SettingsDevicesRoute
   '/settings/farm': typeof SettingsFarmRoute
   '/settings/users': typeof SettingsUsersRoute
+  '/settings/users-and-roles': typeof SettingsUsersAndRolesRoute
   '/water/alerts': typeof WaterAlertsRoute
   '/water/history': typeof WaterHistoryRoute
   '/water/live': typeof WaterLiveRoute
@@ -149,6 +157,7 @@ export interface FileRoutesById {
   '/settings/devices': typeof SettingsDevicesRoute
   '/settings/farm': typeof SettingsFarmRoute
   '/settings/users': typeof SettingsUsersRoute
+  '/settings/users-and-roles': typeof SettingsUsersAndRolesRoute
   '/water/alerts': typeof WaterAlertsRoute
   '/water/history': typeof WaterHistoryRoute
   '/water/live': typeof WaterLiveRoute
@@ -168,6 +177,7 @@ export interface FileRouteTypes {
     | '/settings/devices'
     | '/settings/farm'
     | '/settings/users'
+    | '/settings/users-and-roles'
     | '/water/alerts'
     | '/water/history'
     | '/water/live'
@@ -185,6 +195,7 @@ export interface FileRouteTypes {
     | '/settings/devices'
     | '/settings/farm'
     | '/settings/users'
+    | '/settings/users-and-roles'
     | '/water/alerts'
     | '/water/history'
     | '/water/live'
@@ -202,6 +213,7 @@ export interface FileRouteTypes {
     | '/settings/devices'
     | '/settings/farm'
     | '/settings/users'
+    | '/settings/users-and-roles'
     | '/water/alerts'
     | '/water/history'
     | '/water/live'
@@ -220,6 +232,7 @@ export interface RootRouteChildren {
   SettingsDevicesRoute: typeof SettingsDevicesRoute
   SettingsFarmRoute: typeof SettingsFarmRoute
   SettingsUsersRoute: typeof SettingsUsersRoute
+  SettingsUsersAndRolesRoute: typeof SettingsUsersAndRolesRoute
   WaterAlertsRoute: typeof WaterAlertsRoute
   WaterHistoryRoute: typeof WaterHistoryRoute
   WaterLiveRoute: typeof WaterLiveRoute
@@ -253,6 +266,13 @@ declare module '@tanstack/react-router' {
       path: '/water/alerts'
       fullPath: '/water/alerts'
       preLoaderRoute: typeof WaterAlertsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/users-and-roles': {
+      id: '/settings/users-and-roles'
+      path: '/settings/users-and-roles'
+      fullPath: '/settings/users-and-roles'
+      preLoaderRoute: typeof SettingsUsersAndRolesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/users': {
@@ -348,6 +368,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsDevicesRoute: SettingsDevicesRoute,
   SettingsFarmRoute: SettingsFarmRoute,
   SettingsUsersRoute: SettingsUsersRoute,
+  SettingsUsersAndRolesRoute: SettingsUsersAndRolesRoute,
   WaterAlertsRoute: WaterAlertsRoute,
   WaterHistoryRoute: WaterHistoryRoute,
   WaterLiveRoute: WaterLiveRoute,
@@ -355,3 +376,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

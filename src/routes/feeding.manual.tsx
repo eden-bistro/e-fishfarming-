@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Hand, Play } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { pushManualFeedingEvent } from "@/lib/platform-clients";
 
 export const Route = createFileRoute("/feeding/manual")({
   head: () => ({ meta: [{ title: "Manual Feeding — AquaSmart" }] }),
@@ -37,7 +38,17 @@ function Page() {
               <div className="flex justify-between"><Label>Amount</Label><span className="text-sm font-mono">{amount[0].toFixed(1)} kg</span></div>
               <Slider value={amount} onValueChange={setAmount} min={0.5} max={10} step={0.1} />
             </div>
-            <Button className="w-full gap-2" onClick={() => toast.success(`Dispensed ${amount[0].toFixed(1)}kg`)}>
+            <Button
+              className="w-full gap-2"
+              onClick={async () => {
+                try {
+                  await pushManualFeedingEvent(amount[0]);
+                  toast.success(`Dispensed ${amount[0].toFixed(1)}kg`);
+                } catch (error) {
+                  toast.error(error instanceof Error ? error.message : "Feeding failed");
+                }
+              }}
+            >
               <Play className="h-4 w-4" /> Start Feeding Now
             </Button>
           </CardContent>

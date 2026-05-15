@@ -1,0 +1,41 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    "farms": {
+      "$farmId": {
+        "ponds": {
+          "$pondId": {
+            "water": {
+              "latest": {
+                ".write": "auth != null && auth.token.device == true",
+                ".validate": "newData.hasChildren(['timestamp','pondId','temperature','ph','dissolvedOxygen','turbidity','ammonia','nitrite'])"
+              },
+              "history": {
+                "$readingId": {
+                  ".write": "auth != null && auth.token.device == true"
+                }
+              }
+            },
+            "feeding": {
+              "events": {
+                "$eventId": {
+                  ".write": "auth != null && (auth.token.device == true || auth.token.admin == true)"
+                }
+              }
+            }
+          }
+        },
+        "finance": {
+          "income": {
+            ".read": "auth != null",
+            ".write": "auth != null && auth.token.admin == true"
+          },
+          "expenses": {
+            ".read": "auth != null",
+            ".write": "auth != null && auth.token.admin == true"
+          }
+        }
+      }
+    }
+  }
+}
