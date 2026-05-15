@@ -9,6 +9,46 @@ type ServerEntry = {
 
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
+
+function getEnvRecord(env: unknown): Record<string, string | undefined> {
+  if (!env || typeof env !== "object") return {};
+  return env as Record<string, string | undefined>;
+}
+
+function firstDefined(values: Array<string | undefined>): string | undefined {
+  return values.find((value) => typeof value === "string" && value.length > 0);
+}
+
+function envHealthResponse(env: unknown): Response {
+  const envRecord = getEnvRecord(env);
+  const required = {
+    SUPABASE_URL: firstDefined([envRecord.VITE_SUPABASE_URL, envRecord.SUPABASE_URL]),
+    SUPABASE_ANON_KEY: firstDefined([envRecord.VITE_SUPABASE_ANON_KEY, envRecord.SUPABASE_ANON_KEY]),
+    FIREBASE_DATABASE_URL: firstDefined([envRecord.VITE_FIREBASE_DATABASE_URL, envRecord.FIREBASE_DATABASE_URL]),
+  };
+
+  const missing = Object.entries(required)
+    .filter(([, value]) => !value)
+    .map(([key]) => key);
+
+  return new Response(
+    JSON.stringify(
+      {
+        ok: missing.length === 0,
+        missing,
+        checkedAt: new Date().toISOString(),
+      },
+      null,
+      2,
+    ),
+    {
+      status: missing.length === 0 ? 200 : 500,
+      headers: { "content-type": "application/json; charset=utf-8" },
+    },
+  );
+}
+
+
 async function getServerEntry(): Promise<ServerEntry> {
   if (!serverEntryPromise) {
     serverEntryPromise = import("@tanstack/react-start/server-entry").then(
@@ -68,6 +108,11 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    const url = new URL(request.url);
+    if (url.pathname === "/api/health/env") {
+      return envHealthResponse(env);
+    }
+
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);

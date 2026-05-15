@@ -1,4 +1,6 @@
 import { Bell, Calendar, ChevronDown, Settings } from "lucide-react";
+import { getSessionUser, logoutUser } from "@/lib/auth";
+import { useNavigate } from "@tanstack/react-router";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +14,8 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export function TopNavbar() {
+  const navigate = useNavigate();
+  const session = getSessionUser();
   const today = new Date().toLocaleDateString("en-KE", {
     month: "short",
     day: "numeric",
@@ -23,7 +27,7 @@ export function TopNavbar() {
       <SidebarTrigger className="md:-ml-1" />
       <div className="flex flex-col">
         <h1 className="text-lg font-semibold leading-tight">Dashboard</h1>
-        <p className="text-xs text-muted-foreground">Welcome back, John Doe</p>
+        <p className="text-xs text-muted-foreground">Welcome back, {session?.name ?? "User"}</p>
       </div>
 
       <div className="ml-auto flex items-center gap-2">
@@ -46,13 +50,13 @@ export function TopNavbar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="hidden md:inline-flex gap-2">
-              Green Valley Farm
+              My Farm
               <ChevronDown className="h-3.5 w-3.5 opacity-60" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Switch farm</DropdownMenuLabel>
-            <DropdownMenuItem>Green Valley Farm</DropdownMenuItem>
+            <DropdownMenuItem>My Farm</DropdownMenuItem>
             <DropdownMenuItem>Lake Victoria Pond A</DropdownMenuItem>
             <DropdownMenuItem>Kisumu Hatchery</DropdownMenuItem>
           </DropdownMenuContent>
@@ -73,12 +77,12 @@ export function TopNavbar() {
             <button className="flex items-center gap-2 rounded-md p-1 pl-1 pr-2 hover:bg-accent">
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-brand text-brand-foreground text-xs">
-                  JD
+                  {(session?.name ?? "U").split(" ").map((s) => s[0]).join("").slice(0,2)}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden text-left md:block">
-                <div className="text-sm font-medium leading-tight">John Doe</div>
-                <div className="text-[11px] text-muted-foreground">Farm Owner</div>
+                <div className="text-sm font-medium leading-tight">{session?.name ?? "User"}</div>
+                <div className="text-[11px] text-muted-foreground">{session?.email ?? ""}</div>
               </div>
               <ChevronDown className="hidden h-4 w-4 text-muted-foreground md:block" />
             </button>
@@ -89,7 +93,7 @@ export function TopNavbar() {
             <DropdownMenuItem>Profile</DropdownMenuItem>
             <DropdownMenuItem>Settings</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Log out</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { logoutUser(); navigate({ to: "/auth/login" }); }}>Log out</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
