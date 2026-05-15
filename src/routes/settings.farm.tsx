@@ -16,12 +16,12 @@ function Page() {
       <Card>
         <CardHeader><CardTitle className="text-base">Farm Profile</CardTitle></CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2"><Label>Farm Name</Label><Input defaultValue="Green Valley Farm" /></div>
-          <div className="space-y-2"><Label>Location</Label><Input defaultValue="Lake Victoria, Kisumu" /></div>
-          <div className="space-y-2"><Label>Owner</Label><Input defaultValue="John Doe" /></div>
-          <div className="space-y-2"><Label>Currency</Label><Input defaultValue="KSh (Kenyan Shilling)" /></div>
-          <div className="space-y-2"><Label>Total Ponds</Label><Input type="number" defaultValue={3} /></div>
-          <div className="space-y-2"><Label>Total Stock (kg)</Label><Input type="number" defaultValue={1850} /></div>
+          <div className="space-y-2"><Label>Farm Name</Label><Input placeholder="Enter farm name" /></div>
+          <div className="space-y-2"><Label>Location</Label><Input placeholder="Enter location" /></div>
+          <div className="space-y-2"><Label>Owner</Label><Input placeholder="Owner full name" /></div>
+          <div className="space-y-2"><Label>Currency</Label><Input placeholder="Currency" /></div>
+          <div className="space-y-2"><Label>Total Ponds</Label><Input type="number"  /></div>
+          <div className="space-y-2"><Label>Total Stock (kg)</Label><Input type="number"  /></div>
         </CardContent>
       </Card>
       <div><Button>Save Changes</Button></div>
