@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import { getLatestWaterReading, type WaterReading } from "@/lib/platform-clients";
 
 export const Route = createFileRoute("/water/live")({
@@ -16,14 +15,8 @@ function Page() {
   useEffect(() => {
     let mounted = true;
     const load = async () => {
-      try {
-        const data = await getLatestWaterReading();
-        if (mounted) setReading(data);
-      } catch (error) {
-        if (mounted) {
-          toast.error(error instanceof Error ? error.message : "Failed to load water data");
-        }
-      }
+      const data = await getLatestWaterReading();
+      if (mounted && data) setReading(data);
     };
     void load();
     const timer = setInterval(() => void load(), 5000);

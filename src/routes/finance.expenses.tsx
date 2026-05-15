@@ -4,7 +4,6 @@ import { ExpenseChart } from "@/components/dashboard/expense-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { addExpense, deleteExpense, listExpenses, updateExpense, type ExpenseRow } from "@/lib/platform-clients";
@@ -19,26 +18,15 @@ function Page() {
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState<ExpenseRow>({ date: "", category: "", description: "", amount: 0 });
 
-  async function load() {
-    try {
-      setRows(await listExpenses());
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to load expenses");
-    }
-  }
+  async function load() { setRows(await listExpenses()); }
   useEffect(() => { void load(); }, []);
 
   async function save() {
-    try {
-      if (editId) await updateExpense(editId, form);
-      else await addExpense(form);
-      setEditId(null);
-      setForm({ date: "", category: "", description: "", amount: 0 });
-      await load();
-      toast.success(editId ? "Expense updated" : "Expense added");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to save expense");
-    }
+    if (editId) await updateExpense(editId, form);
+    else await addExpense(form);
+    setEditId(null);
+    setForm({ date: "", category: "", description: "", amount: 0 });
+    await load();
   }
 
   return (
@@ -62,16 +50,7 @@ function Page() {
             <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Category</TableHead><TableHead>Description</TableHead><TableHead className="text-right">Amount</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader>
             <TableBody>
               {rows.map((e) => (
-                <TableRow key={`${e.id}-${e.date}`}><TableCell>{e.date}</TableCell><TableCell>{e.category}</TableCell><TableCell>{e.description}</TableCell><TableCell className="text-right font-medium">KSh {Number(e.amount).toLocaleString()}</TableCell><TableCell className="space-x-2"><Button size="sm" variant="outline" onClick={() => { setEditId(e.id ?? null); setForm(e); }}>Edit</Button><Button size="sm" variant="destructive" onClick={async () => {
-                    if (!e.id) return;
-                    try {
-                      await deleteExpense(e.id);
-                      await load();
-                      toast.success("Expense deleted");
-                    } catch (error) {
-                      toast.error(error instanceof Error ? error.message : "Failed to delete expense");
-                    }
-                  }}>Delete</Button></TableCell></TableRow>
+                <TableRow key={`${e.id}-${e.date}`}><TableCell>{e.date}</TableCell><TableCell>{e.category}</TableCell><TableCell>{e.description}</TableCell><TableCell className="text-right font-medium">KSh {Number(e.amount).toLocaleString()}</TableCell><TableCell className="space-x-2"><Button size="sm" variant="outline" onClick={() => { setEditId(e.id ?? null); setForm(e); }}>Edit</Button><Button size="sm" variant="destructive" onClick={() => e.id && void deleteExpense(e.id).then(load)}>Delete</Button></TableCell></TableRow>
               ))}
             </TableBody>
           </Table>

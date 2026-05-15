@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { addIncome, deleteIncome, listIncome, updateIncome, type IncomeRow } from "@/lib/platform-clients";
@@ -20,28 +19,19 @@ function Page() {
   const [form, setForm] = useState<IncomeRow>({ date: "", buyer: "", quantity_kg: 0, price_per_kg: 0, total: 0 });
 
   async function load() {
-    try {
-      setRows(await listIncome());
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to load income");
-    }
+    setRows(await listIncome());
   }
   useEffect(() => { void load(); }, []);
 
   const total = useMemo(() => rows.reduce((s, r) => s + Number(r.total || 0), 0), [rows]);
 
   async function save() {
-    try {
-      const payload = { ...form, total: Number(form.quantity_kg) * Number(form.price_per_kg) };
-      if (editId) await updateIncome(editId, payload);
-      else await addIncome(payload);
-      setEditId(null);
-      setForm({ date: "", buyer: "", quantity_kg: 0, price_per_kg: 0, total: 0 });
-      await load();
-      toast.success(editId ? "Income updated" : "Income added");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to save income");
-    }
+    const payload = { ...form, total: Number(form.quantity_kg) * Number(form.price_per_kg) };
+    if (editId) await updateIncome(editId, payload);
+    else await addIncome(payload);
+    setEditId(null);
+    setForm({ date: "", buyer: "", quantity_kg: 0, price_per_kg: 0, total: 0 });
+    await load();
   }
 
   return (
@@ -70,16 +60,7 @@ function Page() {
               {rows.map((r) => (
                 <TableRow key={`${r.id}-${r.date}`}>
                   <TableCell>{r.date}</TableCell><TableCell>{r.buyer}</TableCell><TableCell>{r.quantity_kg} kg</TableCell><TableCell>KSh {r.price_per_kg}</TableCell><TableCell className="text-right font-medium">KSh {Number(r.total).toLocaleString()}</TableCell>
-                  <TableCell className="space-x-2"><Button size="sm" variant="outline" onClick={() => { setEditId(r.id ?? null); setForm(r); }}>Edit</Button><Button size="sm" variant="destructive" onClick={async () => {
-                    if (!r.id) return;
-                    try {
-                      await deleteIncome(r.id);
-                      await load();
-                      toast.success("Income deleted");
-                    } catch (error) {
-                      toast.error(error instanceof Error ? error.message : "Failed to delete income");
-                    }
-                  }}>Delete</Button></TableCell>
+                  <TableCell className="space-x-2"><Button size="sm" variant="outline" onClick={() => { setEditId(r.id ?? null); setForm(r); }}>Edit</Button><Button size="sm" variant="destructive" onClick={() => r.id && void deleteIncome(r.id).then(load)}>Delete</Button></TableCell>
                 </TableRow>
               ))}
             </TableBody>

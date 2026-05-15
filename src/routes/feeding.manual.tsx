@@ -41,12 +41,8 @@ function Page() {
             <Button
               className="w-full gap-2"
               onClick={async () => {
-                try {
-                  await pushManualFeedingEvent(amount[0]);
-                  toast.success(`Dispensed ${amount[0].toFixed(1)}kg`);
-                } catch (error) {
-                  toast.error(error instanceof Error ? error.message : "Feeding failed");
-                }
+                await pushManualFeedingEvent(amount[0]);
+                toast.success(`Dispensed ${amount[0].toFixed(1)}kg`);
               }}
             >
               <Play className="h-4 w-4" /> Start Feeding Now
