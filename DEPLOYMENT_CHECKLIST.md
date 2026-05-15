@@ -36,14 +36,3 @@ Use:
 - `GET /api/health/env` for environment sanity check.
 
 A healthy response returns `ok: true` with no missing required vars.
-
-
-## 6) Auth provisioning hardening (required)
-1. Ensure every non-admin user has `app_metadata.farm_id` before first app access.
-2. Provision this during signup/admin-created users via Admin API / Edge Function / backend sync.
-3. Run `supabase/tenant-provisioning-and-backfill.sql` for audit/backfill tasks.
-4. Keep `farm_id = default` only as bootstrap safety; migrate to real farm IDs before production go-live.
-
-## 7) Access control behavior
-- RLS now rejects non-admin users that do not have a JWT `app_metadata.farm_id` claim.
-- Admin access is controlled by JWT `app_metadata.admin = true`.
