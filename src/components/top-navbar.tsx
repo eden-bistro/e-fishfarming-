@@ -1,5 +1,5 @@
-import { Bell, Calendar, ChevronDown } from "lucide-react";
-import { getCurrentUserRecord, getSessionUser, logoutUser } from "@/lib/auth";
+import { Bell, Calendar, ChevronDown, Settings } from "lucide-react";
+import { getSessionUser, logoutUser } from "@/lib/auth";
 import { useNavigate } from "@tanstack/react-router";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 export function TopNavbar() {
   const navigate = useNavigate();
   const session = getSessionUser();
-  const userRecord = getCurrentUserRecord();
-  const farmName = userRecord?.farm?.name?.trim() || "Set up farm";
   const today = new Date().toLocaleDateString("en-KE", {
     month: "short",
     day: "numeric",
@@ -52,13 +50,15 @@ export function TopNavbar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="hidden md:inline-flex gap-2">
-              {farmName}
+              My Farm
               <ChevronDown className="h-3.5 w-3.5 opacity-60" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Your farm</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => navigate({ to: "/settings/farm" })}>{farmName}</DropdownMenuItem>
+            <DropdownMenuLabel>Switch farm</DropdownMenuLabel>
+            <DropdownMenuItem>My Farm</DropdownMenuItem>
+            <DropdownMenuItem>Lake Victoria Pond A</DropdownMenuItem>
+            <DropdownMenuItem>Kisumu Hatchery</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -77,6 +77,9 @@ export function TopNavbar() {
             <DropdownMenuItem onClick={() => navigate({ to: "/settings/farm" })}>Complete your farm profile to activate your dashboard.</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <Button variant="ghost" size="icon" onClick={() => navigate({ to: "/settings/farm" })}>
+          <Settings className="h-5 w-5" />
+        </Button>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
