@@ -32,6 +32,21 @@ export type ExpenseRow = {
   amount: number;
 };
 
+
+export type FeedingEventRow = {
+  id?: number;
+  timestamp: string;
+  pond_id: string;
+  mode: string;
+  amount_kg: number;
+  status: string;
+};
+
+export async function listFeedingEvents(): Promise<FeedingEventRow[]> {
+  const rows = await supabaseRequest("feeding_events?select=*&order=timestamp.desc&limit=50", { method: "GET" });
+  return (rows as FeedingEventRow[] | null) ?? [];
+}
+
 async function supabaseRequest(path: string, init: RequestInit) {
   if (!supabaseUrl || !supabaseAnonKey) return null;
   const response = await fetch(`${supabaseUrl}/rest/v1/${path}`, {
