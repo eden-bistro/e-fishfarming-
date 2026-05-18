@@ -99,8 +99,8 @@ export function TopNavbar() {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>My account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Profile</DropdownMenuItem>
-            <DropdownMenuItem>Settings</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate({ to: "/settings/profile" })}>Profile</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate({ to: "/settings/preferences" })}>Settings</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => { logoutUser(); navigate({ to: "/auth/login" }); }}>Log out</DropdownMenuItem>
           </DropdownMenuContent>

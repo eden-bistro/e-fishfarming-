@@ -15,6 +15,8 @@ import { Route as WaterHistoryRouteImport } from './routes/water.history'
 import { Route as WaterAlertsRouteImport } from './routes/water.alerts'
 import { Route as SettingsUsersAndRolesRouteImport } from './routes/settings.users-and-roles'
 import { Route as SettingsUsersRouteImport } from './routes/settings.users'
+import { Route as SettingsProfileRouteImport } from './routes/settings.profile'
+import { Route as SettingsPreferencesRouteImport } from './routes/settings.preferences'
 import { Route as SettingsFarmRouteImport } from './routes/settings.farm'
 import { Route as SettingsDevicesRouteImport } from './routes/settings.devices'
 import { Route as FinanceReportsRouteImport } from './routes/finance.reports'
@@ -56,6 +58,16 @@ const SettingsUsersAndRolesRoute = SettingsUsersAndRolesRouteImport.update({
 const SettingsUsersRoute = SettingsUsersRouteImport.update({
   id: '/settings/users',
   path: '/settings/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsProfileRoute = SettingsProfileRouteImport.update({
+  id: '/settings/profile',
+  path: '/settings/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsPreferencesRoute = SettingsPreferencesRouteImport.update({
+  id: '/settings/preferences',
+  path: '/settings/preferences',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsFarmRoute = SettingsFarmRouteImport.update({
@@ -133,6 +145,8 @@ export interface FileRoutesByFullPath {
   '/finance/reports': typeof FinanceReportsRoute
   '/settings/devices': typeof SettingsDevicesRoute
   '/settings/farm': typeof SettingsFarmRoute
+  '/settings/preferences': typeof SettingsPreferencesRoute
+  '/settings/profile': typeof SettingsProfileRoute
   '/settings/users': typeof SettingsUsersRoute
   '/settings/users-and-roles': typeof SettingsUsersAndRolesRoute
   '/water/alerts': typeof WaterAlertsRoute
@@ -153,6 +167,8 @@ export interface FileRoutesByTo {
   '/finance/reports': typeof FinanceReportsRoute
   '/settings/devices': typeof SettingsDevicesRoute
   '/settings/farm': typeof SettingsFarmRoute
+  '/settings/preferences': typeof SettingsPreferencesRoute
+  '/settings/profile': typeof SettingsProfileRoute
   '/settings/users': typeof SettingsUsersRoute
   '/settings/users-and-roles': typeof SettingsUsersAndRolesRoute
   '/water/alerts': typeof WaterAlertsRoute
@@ -174,6 +190,8 @@ export interface FileRoutesById {
   '/finance/reports': typeof FinanceReportsRoute
   '/settings/devices': typeof SettingsDevicesRoute
   '/settings/farm': typeof SettingsFarmRoute
+  '/settings/preferences': typeof SettingsPreferencesRoute
+  '/settings/profile': typeof SettingsProfileRoute
   '/settings/users': typeof SettingsUsersRoute
   '/settings/users-and-roles': typeof SettingsUsersAndRolesRoute
   '/water/alerts': typeof WaterAlertsRoute
@@ -196,6 +214,8 @@ export interface FileRouteTypes {
     | '/finance/reports'
     | '/settings/devices'
     | '/settings/farm'
+    | '/settings/preferences'
+    | '/settings/profile'
     | '/settings/users'
     | '/settings/users-and-roles'
     | '/water/alerts'
@@ -216,6 +236,8 @@ export interface FileRouteTypes {
     | '/finance/reports'
     | '/settings/devices'
     | '/settings/farm'
+    | '/settings/preferences'
+    | '/settings/profile'
     | '/settings/users'
     | '/settings/users-and-roles'
     | '/water/alerts'
@@ -236,6 +258,8 @@ export interface FileRouteTypes {
     | '/finance/reports'
     | '/settings/devices'
     | '/settings/farm'
+    | '/settings/preferences'
+    | '/settings/profile'
     | '/settings/users'
     | '/settings/users-and-roles'
     | '/water/alerts'
@@ -257,6 +281,8 @@ export interface RootRouteChildren {
   FinanceReportsRoute: typeof FinanceReportsRoute
   SettingsDevicesRoute: typeof SettingsDevicesRoute
   SettingsFarmRoute: typeof SettingsFarmRoute
+  SettingsPreferencesRoute: typeof SettingsPreferencesRoute
+  SettingsProfileRoute: typeof SettingsProfileRoute
   SettingsUsersRoute: typeof SettingsUsersRoute
   SettingsUsersAndRolesRoute: typeof SettingsUsersAndRolesRoute
   WaterAlertsRoute: typeof WaterAlertsRoute
@@ -306,6 +332,20 @@ declare module '@tanstack/react-router' {
       path: '/settings/users'
       fullPath: '/settings/users'
       preLoaderRoute: typeof SettingsUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/profile': {
+      id: '/settings/profile'
+      path: '/settings/profile'
+      fullPath: '/settings/profile'
+      preLoaderRoute: typeof SettingsProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/preferences': {
+      id: '/settings/preferences'
+      path: '/settings/preferences'
+      fullPath: '/settings/preferences'
+      preLoaderRoute: typeof SettingsPreferencesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/farm': {
@@ -409,6 +449,8 @@ const rootRouteChildren: RootRouteChildren = {
   FinanceReportsRoute: FinanceReportsRoute,
   SettingsDevicesRoute: SettingsDevicesRoute,
   SettingsFarmRoute: SettingsFarmRoute,
+  SettingsPreferencesRoute: SettingsPreferencesRoute,
+  SettingsProfileRoute: SettingsProfileRoute,
   SettingsUsersRoute: SettingsUsersRoute,
   SettingsUsersAndRolesRoute: SettingsUsersAndRolesRoute,
   WaterAlertsRoute: WaterAlertsRoute,
