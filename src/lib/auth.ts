@@ -1,8 +1,18 @@
+export type FarmProfile = {
+  name: string;
+  location: string;
+  owner: string;
+  currency: string;
+  totalPonds: number | null;
+  totalStockKg: number | null;
+};
+
 export type AuthUser = {
   id: string;
   name: string;
   email: string;
   password: string;
+  farm?: FarmProfile;
 };
 
 const USERS_KEY = "aquasmart_users";
@@ -66,4 +76,23 @@ export function getSessionUser(): { id: string; name: string; email: string } | 
   } catch {
     return null;
   }
+}
+
+export function getCurrentUserRecord(): AuthUser | null {
+  const session = getSessionUser();
+  if (!session) return null;
+  return listUsers().find((u) => u.id === session.id) ?? null;
+}
+
+export function saveCurrentUserFarm(farm: FarmProfile): { ok: true } | { ok: false; message: string } {
+  const current = getCurrentUserRecord();
+  if (!current) return { ok: false, message: "No authenticated user." };
+
+  const users = listUsers();
+  const ix = users.findIndex((u) => u.id === current.id);
+  if (ix < 0) return { ok: false, message: "Current user not found." };
+
+  users[ix] = { ...users[ix], farm };
+  saveUsers(users);
+  return { ok: true };
 }

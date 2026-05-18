@@ -1,8 +1,8 @@
-import { getCurrentUserRecord } from "@/lib/auth";
+import { getSessionUser } from "@/lib/auth";
 import { CheckCircle2, Wifi, Clock, MapPin, CloudSun } from "lucide-react";
 
 export function StatusBar() {
-  const farmName = getCurrentUserRecord()?.farm?.name || "No farm";
+  const farmName = getSessionUser()?.name || "No farm";
   const time = new Date().toLocaleTimeString("en-KE", {
     hour: "2-digit",
     minute: "2-digit",
