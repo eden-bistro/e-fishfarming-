@@ -12,12 +12,38 @@ const suggestions = [
   "How to reduce ammonia naturally?",
 ];
 
+function aiReply(question: string): string {
+  const q = question.toLowerCase();
+
+  if (q.includes("dissolved oxygen") || q.includes("oxygen") || q.includes("do low")) {
+    return "Low dissolved oxygen usually comes from overfeeding, algae die-off, or high night-time respiration. Immediate steps: increase aeration, pause/reduce feeding for 12–24h, siphon sludge, and check early-morning DO trend. Target >5 mg/L for tilapia ponds.";
+  }
+
+  if (q.includes("ammonia")) {
+    return "To reduce ammonia: stop overfeeding, remove settled waste, improve biofiltration/aeration, and do partial water exchange. Keep pH stable, because higher pH increases toxic NH3 fraction. Track TAN daily until it returns to safe range.";
+  }
+
+  if (q.includes("feeding") || q.includes("tilapia")) {
+    return "For tilapia, split feed into 3–5 sessions during warm daylight hours when oxygen is stronger. Start with biomass-based ration, then adjust by appetite, FCR trend, water temperature, and DO. Avoid heavy feeding when DO is low or fish are stressed.";
+  }
+
+  if (q.includes("pale gills") || q.includes("gills") || q.includes("sick") || q.includes("disease")) {
+    return "Pale gills can indicate anemia, parasite load, or chronic stress/poor water quality. Isolate affected fish, test ammonia/nitrite/DO immediately, inspect for external parasites, and reduce stressors. If mortality rises, consult a fish health vet for targeted diagnosis and treatment.";
+  }
+
+  if (q.includes("profit") || q.includes("expense") || q.includes("finance") || q.includes("pnl")) {
+    return "For stronger farm profitability, track feed cost per kg gain, survival rate, growth cycle days, and sale price by batch. Most gains come from feed efficiency improvements, survival optimization, and reducing emergency water-quality events.";
+  }
+
+  return "Understood. I can help with water quality, feeding optimization, fish health triage, and farm finance decisions. Share your current readings (DO, pH, temperature, ammonia, nitrite) and I’ll suggest a step-by-step action plan.";
+}
+
 export function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([
     {
       role: "ai",
-      text: "Hi John 👋 I'm your AquaSmart assistant. Ask me about water quality, feeding, fish health, or finances.",
+      text: "AquaSmart AI ready. Ask about water quality, feeding plans, fish health, or farm profitability.",
     },
   ]);
   const [input, setInput] = useState("");
@@ -33,14 +59,8 @@ export function ChatWidget() {
     setMessages((m) => [...m, { role: "user", text: t }]);
     setInput("");
     setTimeout(() => {
-      setMessages((m) => [
-        ...m,
-        {
-          role: "ai",
-          text: "Connect Lovable AI to enable real-time recommendations. I'll analyze your sensor data and suggest actions.",
-        },
-      ]);
-    }, 600);
+      setMessages((m) => [...m, { role: "ai", text: aiReply(t) }]);
+    }, 250);
   };
 
   return (
@@ -61,7 +81,7 @@ export function ChatWidget() {
             </div>
             <div className="flex-1">
               <p className="text-sm font-semibold">AquaSmart AI</p>
-              <p className="text-[11px] opacity-90">Smart farming assistant</p>
+              <p className="text-[11px] opacity-90">Operational assistant</p>
             </div>
           </div>
 
@@ -112,7 +132,7 @@ export function ChatWidget() {
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask the AI assistant…"
+                placeholder="Ask AquaSmart AI…"
                 className="h-9"
               />
               <Button size="icon" type="submit" className="h-9 w-9 bg-brand hover:bg-brand/90">

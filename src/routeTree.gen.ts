@@ -15,6 +15,8 @@ import { Route as WaterHistoryRouteImport } from './routes/water.history'
 import { Route as WaterAlertsRouteImport } from './routes/water.alerts'
 import { Route as SettingsUsersAndRolesRouteImport } from './routes/settings.users-and-roles'
 import { Route as SettingsUsersRouteImport } from './routes/settings.users'
+import { Route as SettingsProfileRouteImport } from './routes/settings.profile'
+import { Route as SettingsPreferencesRouteImport } from './routes/settings.preferences'
 import { Route as SettingsFarmRouteImport } from './routes/settings.farm'
 import { Route as SettingsDevicesRouteImport } from './routes/settings.devices'
 import { Route as FinanceReportsRouteImport } from './routes/finance.reports'
@@ -25,6 +27,8 @@ import { Route as FeedingScheduleRouteImport } from './routes/feeding.schedule'
 import { Route as FeedingManualRouteImport } from './routes/feeding.manual'
 import { Route as FeedingInventoryRouteImport } from './routes/feeding.inventory'
 import { Route as FeedingHistoryRouteImport } from './routes/feeding.history'
+import { Route as AuthRegisterRouteImport } from './routes/auth.register'
+import { Route as AuthLoginRouteImport } from './routes/auth.login'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -54,6 +58,16 @@ const SettingsUsersAndRolesRoute = SettingsUsersAndRolesRouteImport.update({
 const SettingsUsersRoute = SettingsUsersRouteImport.update({
   id: '/settings/users',
   path: '/settings/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsProfileRoute = SettingsProfileRouteImport.update({
+  id: '/settings/profile',
+  path: '/settings/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsPreferencesRoute = SettingsPreferencesRouteImport.update({
+  id: '/settings/preferences',
+  path: '/settings/preferences',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsFarmRoute = SettingsFarmRouteImport.update({
@@ -106,9 +120,21 @@ const FeedingHistoryRoute = FeedingHistoryRouteImport.update({
   path: '/feeding/history',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRegisterRoute = AuthRegisterRouteImport.update({
+  id: '/auth/register',
+  path: '/auth/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthLoginRoute = AuthLoginRouteImport.update({
+  id: '/auth/login',
+  path: '/auth/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth/login': typeof AuthLoginRoute
+  '/auth/register': typeof AuthRegisterRoute
   '/feeding/history': typeof FeedingHistoryRoute
   '/feeding/inventory': typeof FeedingInventoryRoute
   '/feeding/manual': typeof FeedingManualRoute
@@ -119,6 +145,8 @@ export interface FileRoutesByFullPath {
   '/finance/reports': typeof FinanceReportsRoute
   '/settings/devices': typeof SettingsDevicesRoute
   '/settings/farm': typeof SettingsFarmRoute
+  '/settings/preferences': typeof SettingsPreferencesRoute
+  '/settings/profile': typeof SettingsProfileRoute
   '/settings/users': typeof SettingsUsersRoute
   '/settings/users-and-roles': typeof SettingsUsersAndRolesRoute
   '/water/alerts': typeof WaterAlertsRoute
@@ -127,6 +155,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth/login': typeof AuthLoginRoute
+  '/auth/register': typeof AuthRegisterRoute
   '/feeding/history': typeof FeedingHistoryRoute
   '/feeding/inventory': typeof FeedingInventoryRoute
   '/feeding/manual': typeof FeedingManualRoute
@@ -137,6 +167,8 @@ export interface FileRoutesByTo {
   '/finance/reports': typeof FinanceReportsRoute
   '/settings/devices': typeof SettingsDevicesRoute
   '/settings/farm': typeof SettingsFarmRoute
+  '/settings/preferences': typeof SettingsPreferencesRoute
+  '/settings/profile': typeof SettingsProfileRoute
   '/settings/users': typeof SettingsUsersRoute
   '/settings/users-and-roles': typeof SettingsUsersAndRolesRoute
   '/water/alerts': typeof WaterAlertsRoute
@@ -146,6 +178,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth/login': typeof AuthLoginRoute
+  '/auth/register': typeof AuthRegisterRoute
   '/feeding/history': typeof FeedingHistoryRoute
   '/feeding/inventory': typeof FeedingInventoryRoute
   '/feeding/manual': typeof FeedingManualRoute
@@ -156,6 +190,8 @@ export interface FileRoutesById {
   '/finance/reports': typeof FinanceReportsRoute
   '/settings/devices': typeof SettingsDevicesRoute
   '/settings/farm': typeof SettingsFarmRoute
+  '/settings/preferences': typeof SettingsPreferencesRoute
+  '/settings/profile': typeof SettingsProfileRoute
   '/settings/users': typeof SettingsUsersRoute
   '/settings/users-and-roles': typeof SettingsUsersAndRolesRoute
   '/water/alerts': typeof WaterAlertsRoute
@@ -166,6 +202,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth/login'
+    | '/auth/register'
     | '/feeding/history'
     | '/feeding/inventory'
     | '/feeding/manual'
@@ -176,6 +214,8 @@ export interface FileRouteTypes {
     | '/finance/reports'
     | '/settings/devices'
     | '/settings/farm'
+    | '/settings/preferences'
+    | '/settings/profile'
     | '/settings/users'
     | '/settings/users-and-roles'
     | '/water/alerts'
@@ -184,6 +224,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/auth/login'
+    | '/auth/register'
     | '/feeding/history'
     | '/feeding/inventory'
     | '/feeding/manual'
@@ -194,6 +236,8 @@ export interface FileRouteTypes {
     | '/finance/reports'
     | '/settings/devices'
     | '/settings/farm'
+    | '/settings/preferences'
+    | '/settings/profile'
     | '/settings/users'
     | '/settings/users-and-roles'
     | '/water/alerts'
@@ -202,6 +246,8 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/auth/login'
+    | '/auth/register'
     | '/feeding/history'
     | '/feeding/inventory'
     | '/feeding/manual'
@@ -212,6 +258,8 @@ export interface FileRouteTypes {
     | '/finance/reports'
     | '/settings/devices'
     | '/settings/farm'
+    | '/settings/preferences'
+    | '/settings/profile'
     | '/settings/users'
     | '/settings/users-and-roles'
     | '/water/alerts'
@@ -221,6 +269,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthLoginRoute: typeof AuthLoginRoute
+  AuthRegisterRoute: typeof AuthRegisterRoute
   FeedingHistoryRoute: typeof FeedingHistoryRoute
   FeedingInventoryRoute: typeof FeedingInventoryRoute
   FeedingManualRoute: typeof FeedingManualRoute
@@ -231,6 +281,8 @@ export interface RootRouteChildren {
   FinanceReportsRoute: typeof FinanceReportsRoute
   SettingsDevicesRoute: typeof SettingsDevicesRoute
   SettingsFarmRoute: typeof SettingsFarmRoute
+  SettingsPreferencesRoute: typeof SettingsPreferencesRoute
+  SettingsProfileRoute: typeof SettingsProfileRoute
   SettingsUsersRoute: typeof SettingsUsersRoute
   SettingsUsersAndRolesRoute: typeof SettingsUsersAndRolesRoute
   WaterAlertsRoute: typeof WaterAlertsRoute
@@ -280,6 +332,20 @@ declare module '@tanstack/react-router' {
       path: '/settings/users'
       fullPath: '/settings/users'
       preLoaderRoute: typeof SettingsUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/profile': {
+      id: '/settings/profile'
+      path: '/settings/profile'
+      fullPath: '/settings/profile'
+      preLoaderRoute: typeof SettingsProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/preferences': {
+      id: '/settings/preferences'
+      path: '/settings/preferences'
+      fullPath: '/settings/preferences'
+      preLoaderRoute: typeof SettingsPreferencesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/farm': {
@@ -352,11 +418,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FeedingHistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/register': {
+      id: '/auth/register'
+      path: '/auth/register'
+      fullPath: '/auth/register'
+      preLoaderRoute: typeof AuthRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/login': {
+      id: '/auth/login'
+      path: '/auth/login'
+      fullPath: '/auth/login'
+      preLoaderRoute: typeof AuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthLoginRoute: AuthLoginRoute,
+  AuthRegisterRoute: AuthRegisterRoute,
   FeedingHistoryRoute: FeedingHistoryRoute,
   FeedingInventoryRoute: FeedingInventoryRoute,
   FeedingManualRoute: FeedingManualRoute,
@@ -367,6 +449,8 @@ const rootRouteChildren: RootRouteChildren = {
   FinanceReportsRoute: FinanceReportsRoute,
   SettingsDevicesRoute: SettingsDevicesRoute,
   SettingsFarmRoute: SettingsFarmRoute,
+  SettingsPreferencesRoute: SettingsPreferencesRoute,
+  SettingsProfileRoute: SettingsProfileRoute,
   SettingsUsersRoute: SettingsUsersRoute,
   SettingsUsersAndRolesRoute: SettingsUsersAndRolesRoute,
   WaterAlertsRoute: WaterAlertsRoute,
