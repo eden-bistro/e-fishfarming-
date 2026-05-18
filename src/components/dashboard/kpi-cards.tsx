@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { getLatestWaterReading, listExpenses, listFeedingEvents, listIncome } from "@/lib/platform-clients";
 import { Droplets, UtensilsCrossed, Wallet, Timer, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "@tanstack/react-router";
@@ -60,10 +61,42 @@ function KpiCard({
 
 export function KpiCards() {
   const [count, setCount] = useState(8130); // seconds
+  const [waterStatus, setWaterStatus] = useState("No data");
+  const [todayFeedKg, setTodayFeedKg] = useState(0);
+  const [todayProfit, setTodayProfit] = useState(0);
   useEffect(() => {
     const t = setInterval(() => setCount((c) => (c <= 0 ? 14400 : c - 1)), 1000);
     return () => clearInterval(t);
   }, []);
+
+  useEffect(() => {
+    async function load() {
+      const [water, events, income, expenses] = await Promise.all([
+        getLatestWaterReading(),
+        listFeedingEvents(),
+        listIncome(),
+        listExpenses(),
+      ]);
+
+      if (water) {
+        const good = water.dissolvedOxygen >= 5 && water.ph >= 6.5 && water.ph <= 8.5 && water.ammonia <= 0.05;
+        setWaterStatus(good ? "Good" : "Attention");
+      }
+
+      const today = new Date().toISOString().slice(0, 10);
+      const todayEvents = events.filter((e) => e.timestamp.slice(0, 10) === today);
+      setTodayFeedKg(todayEvents.reduce((sum, e) => sum + Number(e.amount_kg || 0), 0));
+
+      const todayIncome = income.filter((r) => r.date === today).reduce((sum, r) => sum + Number(r.total || 0), 0);
+      const todayExpenses = expenses.filter((r) => r.date === today).reduce((sum, r) => sum + Number(r.amount || 0), 0);
+      setTodayProfit(todayIncome - todayExpenses);
+    }
+
+    load();
+  }, []);
+
+  const waterColor = useMemo(() => (waterStatus === "Good" ? "text-success" : "text-warning"), [waterStatus]);
+
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -72,8 +105,8 @@ export function KpiCards() {
         iconBg="bg-info/15"
         iconColor="text-info"
         label="Water Quality"
-        value={<span className="text-success">Good</span>}
-        sub="All parameters normal"
+        value={<span className={waterColor}>{waterStatus}</span>}
+        sub="From latest sensor reading"
         link={{ href: "/water/live", text: "View Details" }}
       />
       <KpiCard
@@ -92,10 +125,10 @@ export function KpiCards() {
         label="Today's Feed"
         value={
           <>
-            12.5 <span className="text-base font-medium text-muted-foreground">kg</span>
+            {todayFeedKg.toFixed(1)} <span className="text-base font-medium text-muted-foreground">kg</span>
           </>
         }
-        sub="3 feedings completed"
+        sub="From logged feeding events"
         link={{ href: "/feeding/history", text: "Feed History" }}
       />
       <KpiCard
@@ -103,8 +136,8 @@ export function KpiCards() {
         iconBg="bg-warning/15"
         iconColor="text-warning"
         label="Today's Profit"
-        value={<>KSh 12,050</>}
-        sub={<span className="text-success">+15.6% vs yesterday</span>}
+        value={<>KSh {todayProfit.toLocaleString()}</>}
+        sub="Today income minus expenses"
         link={{ href: "/finance/pnl", text: "View Financials" }}
       />
     </div>

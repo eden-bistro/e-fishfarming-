@@ -18,12 +18,7 @@ type UserRow = {
   role: Role;
 };
 
-const initialUsers: UserRow[] = [
-  { id: 1, name: "John Doe", email: "john@aquasmart.ke", role: "Owner" },
-  { id: 2, name: "Mary Achieng", email: "mary@aquasmart.ke", role: "Manager" },
-  { id: 3, name: "Peter Otieno", email: "peter@aquasmart.ke", role: "Operator" },
-  { id: 4, name: "Grace Wanjiru", email: "grace@aquasmart.ke", role: "Accountant" },
-];
+const initialUsers: UserRow[] = [];
 
 const roles: Role[] = ["Owner", "Manager", "Operator", "Accountant"];
 

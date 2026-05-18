@@ -1,6 +1,8 @@
+import { getCurrentUserRecord } from "@/lib/auth";
 import { CheckCircle2, Wifi, Clock, MapPin, CloudSun } from "lucide-react";
 
 export function StatusBar() {
+  const farmName = getCurrentUserRecord()?.farm?.name || "No farm";
   const time = new Date().toLocaleTimeString("en-KE", {
     hour: "2-digit",
     minute: "2-digit",
@@ -23,7 +25,7 @@ export function StatusBar() {
         </span>
         <span className="inline-flex items-center gap-1.5">
           <MapPin className="h-4 w-4 text-brand" />
-          Farm: <span className="font-medium text-foreground">Lake Victoria — Pond A</span>
+          Farm: <span className="font-medium text-foreground">{farmName}</span>
         </span>
         <span className="ml-auto inline-flex items-center gap-1.5">
           <CloudSun className="h-4 w-4 text-warning" />

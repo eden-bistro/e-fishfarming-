@@ -1,16 +1,9 @@
+import { useEffect, useMemo, useState } from "react";
+import { listExpenses, listIncome } from "@/lib/platform-clients";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Area, AreaChart, ResponsiveContainer } from "recharts";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 
-const incomeSeries = Array.from({ length: 12 }, (_, i) => ({
-  v: 30 + Math.sin(i / 1.5) * 8 + i * 1.2 + Math.random() * 4,
-}));
-const expenseSeries = Array.from({ length: 12 }, (_, i) => ({
-  v: 20 + Math.cos(i / 2) * 5 + i * 0.6 + Math.random() * 3,
-}));
-const profitSeries = Array.from({ length: 12 }, (_, i) => ({
-  v: 10 + Math.sin(i / 1.2) * 4 + i * 0.9 + Math.random() * 3,
-}));
 
 function StatBlock({
   label,
@@ -62,7 +55,28 @@ function StatBlock({
   );
 }
 
+
 export function FinanceSection() {
+  const [incomeSeries, setIncomeSeries] = useState<{ v: number }[]>([]);
+  const [expenseSeries, setExpenseSeries] = useState<{ v: number }[]>([]);
+
+  useEffect(() => {
+    async function load() {
+      const [incomeRows, expenseRows] = await Promise.all([listIncome(), listExpenses()]);
+      const month = new Date().toISOString().slice(0, 7);
+      const incomeMonth = incomeRows.filter((r) => r.date.startsWith(month));
+      const expenseMonth = expenseRows.filter((r) => r.date.startsWith(month));
+      setIncomeSeries(incomeMonth.map((r) => ({ v: Number(r.total || 0) })).slice(0, 12).reverse());
+      setExpenseSeries(expenseMonth.map((r) => ({ v: Number(r.amount || 0) })).slice(0, 12).reverse());
+    }
+    load();
+  }, []);
+
+  const totalIncome = useMemo(() => incomeSeries.reduce((s, p) => s + p.v, 0), [incomeSeries]);
+  const totalExpenses = useMemo(() => expenseSeries.reduce((s, p) => s + p.v, 0), [expenseSeries]);
+  const totalProfit = totalIncome - totalExpenses;
+  const profitSeries = useMemo(() => incomeSeries.map((p, i) => ({ v: p.v - (expenseSeries[i]?.v ?? 0) })), [incomeSeries, expenseSeries]);
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -71,33 +85,9 @@ export function FinanceSection() {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <StatBlock
-            id="g-income"
-            label="Total Income"
-            value="KSh 425,000"
-            delta="+18.5%"
-            positive
-            series={incomeSeries}
-            color="var(--success)"
-          />
-          <StatBlock
-            id="g-exp"
-            label="Total Expenses"
-            value="KSh 235,000"
-            delta="+8.3%"
-            positive={false}
-            series={expenseSeries}
-            color="var(--destructive)"
-          />
-          <StatBlock
-            id="g-profit"
-            label="Net Profit"
-            value="KSh 190,000"
-            delta="+26.8%"
-            positive
-            series={profitSeries}
-            color="var(--brand)"
-          />
+          <StatBlock id="g-income" label="Total Income" value={`KSh ${totalIncome.toLocaleString()}`} delta="Live" positive series={incomeSeries} color="var(--success)" />
+          <StatBlock id="g-exp" label="Total Expenses" value={`KSh ${totalExpenses.toLocaleString()}`} delta="Live" positive={false} series={expenseSeries} color="var(--destructive)" />
+          <StatBlock id="g-profit" label="Net Profit" value={`KSh ${totalProfit.toLocaleString()}`} delta="Live" positive={totalProfit >= 0} series={profitSeries} color="var(--brand)" />
         </div>
       </CardContent>
     </Card>
