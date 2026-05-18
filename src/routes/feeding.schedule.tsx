@@ -1,65 +1,72 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Plus, Brain, Clock, Fish } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { useMemo, useState } from "react";
+
+type FeedScheduleRow = {
+  id: string;
+  time: string;
+  amountKg: number;
+  pond: string;
+};
 
 export const Route = createFileRoute("/feeding/schedule")({
   head: () => ({ meta: [{ title: "Feeding Schedule — AquaSmart" }] }),
   component: Page,
 });
 
-const schedules = [
-  { time: "08:00", label: "Morning Feed", kg: 4.0, pond: "Pond A", auto: true },
-  { time: "12:00", label: "Afternoon Feed", kg: 4.0, pond: "Pond A", auto: true },
-  { time: "15:00", label: "Evening Feed", kg: 4.5, pond: "Pond B", auto: true },
-  { time: "18:00", label: "Night Feed", kg: 4.0, pond: "Pond B", auto: false },
-];
-
 function Page() {
+  const [rows, setRows] = useState<FeedScheduleRow[]>([]);
+  const [form, setForm] = useState({ time: "", amountKg: "", pond: "" });
+
+  const totalKg = useMemo(() => rows.reduce((sum, r) => sum + r.amountKg, 0), [rows]);
+
+  function addSchedule() {
+    const amount = Number(form.amountKg);
+    if (!form.time || !form.pond.trim() || Number.isNaN(amount) || amount <= 0) return;
+
+    setRows((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        time: form.time,
+        pond: form.pond.trim(),
+        amountKg: amount,
+      },
+    ]);
+    setForm({ time: "", amountKg: "", pond: "" });
+  }
+
   return (
-    <DashboardLayout
-      title="Feeding Schedule"
-      subtitle="Automated feeding plan adjusted to water conditions and fish biomass."
-      actions={
-        <Button size="sm" className="gap-1">
-          <Plus className="h-4 w-4" /> New Schedule
-        </Button>
-      }
-    >
-      <Card className="border-brand/30 bg-brand/5">
-        <CardContent className="flex items-start gap-3 p-4">
-          <Brain className="mt-0.5 h-5 w-5 text-brand" />
-          <div className="text-sm">
-            <p className="font-medium">AI Recommendation</p>
-            <p className="text-muted-foreground">
-              Dissolved oxygen is optimal. Recommended feed rate today: <b>16.5 kg</b> across 4 sessions.
-            </p>
-          </div>
+    <DashboardLayout title="Feeding Schedule" subtitle="Create and manage scheduled feeding sessions.">
+      <Card>
+        <CardHeader><CardTitle className="text-base">Add Schedule</CardTitle></CardHeader>
+        <CardContent className="grid gap-3 md:grid-cols-4">
+          <div className="space-y-1"><Label>Time</Label><Input type="time" value={form.time} onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))} /></div>
+          <div className="space-y-1"><Label>Pond</Label><Input value={form.pond} placeholder="Pond A" onChange={(e) => setForm((f) => ({ ...f, pond: e.target.value }))} /></div>
+          <div className="space-y-1"><Label>Amount (kg)</Label><Input type="number" value={form.amountKg} placeholder="2.5" onChange={(e) => setForm((f) => ({ ...f, amountKg: e.target.value }))} /></div>
+          <div className="flex items-end"><Button className="w-full" onClick={addSchedule}>Add</Button></div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Today's Plan</CardTitle></CardHeader>
-        <CardContent className="divide-y">
-          {schedules.map((s) => (
-            <div key={s.time} className="flex flex-wrap items-center gap-3 py-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand/15 text-brand">
-                <Clock className="h-5 w-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">{s.label}</p>
-                <p className="text-xs text-muted-foreground">{s.time} · {s.pond}</p>
-              </div>
-              <Badge variant="secondary"><Fish className="mr-1 h-3 w-3" />{s.kg.toFixed(1)} kg</Badge>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-muted-foreground">Auto</span>
-                <Switch defaultChecked={s.auto} />
-              </div>
-            </div>
-          ))}
+        <CardHeader><CardTitle className="text-base">Today's Plan ({totalKg.toFixed(1)} kg)</CardTitle></CardHeader>
+        <CardContent>
+          {rows.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No feeding schedule data available.</p>
+          ) : (
+            <ul className="space-y-2">
+              {rows.map((r) => (
+                <li key={r.id} className="flex items-center justify-between rounded-md border p-3 text-sm">
+                  <span>{r.time} · {r.pond}</span>
+                  <span className="font-medium">{r.amountKg.toFixed(1)} kg</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </CardContent>
       </Card>
     </DashboardLayout>
