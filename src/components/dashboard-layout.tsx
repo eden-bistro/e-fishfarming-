@@ -22,14 +22,6 @@ export function DashboardLayout({
   const session = getSessionUser();
   const navigate = useNavigate();
 
-  function goBack() {
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-    navigate({ to: "/" });
-  }
-
   if (!session) {
     return (
       <div className="flex min-h-screen items-center justify-center p-6">
@@ -52,7 +44,7 @@ export function DashboardLayout({
         <TopNavbar />
         <main className="flex flex-col gap-4 p-4 md:gap-6 md:p-6">
           <div>
-            <Button variant="outline" size="sm" onClick={goBack} className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate({ to: ".", search: true, params: true, hash: true, replace: false }) || window.history.back()} className="gap-2">
               <ArrowLeft className="h-4 w-4" /> Back
             </Button>
           </div>
