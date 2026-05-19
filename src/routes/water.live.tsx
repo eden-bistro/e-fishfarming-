@@ -33,8 +33,10 @@ function Page() {
           ["Temperature", `${reading?.temperature ?? "--"} °C`],
           ["pH", `${reading?.ph ?? "--"}`],
           ["Dissolved Oxygen", `${reading?.dissolvedOxygen ?? "--"} mg/L`],
-                    ["Ammonia", `${reading?.ammonia ?? "--"} mg/L`],
-                  ].map(([label, value]) => (
+          ["Turbidity", `${reading?.turbidity ?? "--"} NTU`],
+          ["Ammonia", `${reading?.ammonia ?? "--"} mg/L`],
+          ["Nitrite", `${reading?.nitrite ?? "--"} mg/L`],
+        ].map(([label, value]) => (
           <Card key={label}>
             <CardHeader>
               <CardTitle className="text-base">{label}</CardTitle>
