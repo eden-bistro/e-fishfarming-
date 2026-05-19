@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { addExpense, deleteExpense, listExpenses, updateExpense, type ExpenseRow } from "@/lib/platform-clients";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/finance/expenses")({
   head: () => ({ meta: [{ title: "Expenses — AquaSmart" }] }),
@@ -18,15 +19,33 @@ function Page() {
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState<ExpenseRow>({ date: "", category: "", description: "", amount: 0 });
 
-  async function load() { setRows(await listExpenses()); }
+  async function load() {
+    try {
+      setRows(await listExpenses());
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to load expense records.");
+    }
+  }
   useEffect(() => { void load(); }, []);
 
   async function save() {
-    if (editId) await updateExpense(editId, form);
-    else await addExpense(form);
-    setEditId(null);
-    setForm({ date: "", category: "", description: "", amount: 0 });
-    await load();
+    const amount = Number(form.amount);
+    if (!form.date || !form.category.trim() || !form.description.trim() || amount <= 0) {
+      toast.error("Please provide date, category, description and amount greater than zero.");
+      return;
+    }
+
+    const payload = { ...form, category: form.category.trim(), description: form.description.trim(), amount };
+    try {
+      if (editId) await updateExpense(editId, payload);
+      else await addExpense(payload);
+      toast.success(editId ? "Expense updated." : "Expense added.");
+      setEditId(null);
+      setForm({ date: "", category: "", description: "", amount: 0 });
+      await load();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to save expense record.");
+    }
   }
 
   return (
