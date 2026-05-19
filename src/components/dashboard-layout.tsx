@@ -4,7 +4,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { TopNavbar } from "@/components/top-navbar";
 import { ChatWidget } from "@/components/ai/chat-widget";
 import { getSessionUser } from "@/lib/auth";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
@@ -20,6 +20,7 @@ export function DashboardLayout({
   children: ReactNode;
 }) {
   const session = getSessionUser();
+  const navigate = useNavigate();
 
   if (!session) {
     return (
@@ -43,7 +44,7 @@ export function DashboardLayout({
         <TopNavbar />
         <main className="flex flex-col gap-4 p-4 md:gap-6 md:p-6">
           <div>
-            <Button variant="outline" size="sm" onClick={() => window.history.back()} className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate({ to: ".", search: true, params: true, hash: true, replace: false }) || window.history.back()} className="gap-2">
               <ArrowLeft className="h-4 w-4" /> Back
             </Button>
           </div>
