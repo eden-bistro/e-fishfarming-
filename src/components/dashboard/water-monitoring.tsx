@@ -18,10 +18,8 @@ const sensors: Sensor[] = [
   { key: "temp", label: "Temperature", unit: "°C", color: "var(--info)", base: 27.4, jitter: 0.4, decimals: 1, status: "ok" },
   { key: "ph", label: "pH Level", unit: "", color: "var(--success)", base: 7.2, jitter: 0.15, decimals: 2, status: "ok" },
   { key: "do", label: "Dissolved Oxygen", unit: "mg/L", color: "oklch(0.65 0.2 300)", base: 6.1, jitter: 0.4, decimals: 1, status: "ok" },
-  { key: "turb", label: "Turbidity", unit: "NTU", color: "var(--warning)", base: 12.5, jitter: 1.5, decimals: 1, status: "ok" },
-  { key: "amm", label: "Ammonia", unit: "mg/L", color: "var(--success)", base: 0.02, jitter: 0.01, decimals: 2, status: "ok" },
-  { key: "nit", label: "Nitrite", unit: "mg/L", color: "var(--info)", base: 0.01, jitter: 0.005, decimals: 2, status: "ok" },
-];
+    { key: "amm", label: "Ammonia", unit: "mg/L", color: "var(--success)", base: 0.02, jitter: 0.01, decimals: 2, status: "ok" },
+  ];
 
 function makeSeries(base: number, jitter: number, n = 20) {
   // Deterministic series for SSR — randomized only after mount

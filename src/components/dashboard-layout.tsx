@@ -4,7 +4,9 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { TopNavbar } from "@/components/top-navbar";
 import { ChatWidget } from "@/components/ai/chat-widget";
 import { getSessionUser } from "@/lib/auth";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 export function DashboardLayout({
   title,
@@ -18,6 +20,15 @@ export function DashboardLayout({
   children: ReactNode;
 }) {
   const session = getSessionUser();
+  const navigate = useNavigate();
+
+  function goBack() {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+    navigate({ to: "/" });
+  }
 
   if (!session) {
     return (
@@ -40,6 +51,11 @@ export function DashboardLayout({
       <SidebarInset>
         <TopNavbar />
         <main className="flex flex-col gap-4 p-4 md:gap-6 md:p-6">
+          <div>
+            <Button variant="outline" size="sm" onClick={goBack} className="gap-2">
+              <ArrowLeft className="h-4 w-4" /> Back
+            </Button>
+          </div>
           {(title || actions) && (
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
