@@ -57,9 +57,7 @@ export function TopNavbar() {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Switch farm</DropdownMenuLabel>
             <DropdownMenuItem>My Farm</DropdownMenuItem>
-            <DropdownMenuItem>Lake Victoria Pond A</DropdownMenuItem>
-            <DropdownMenuItem>Kisumu Hatchery</DropdownMenuItem>
-          </DropdownMenuContent>
+                      </DropdownMenuContent>
         </DropdownMenu>
 
         <DropdownMenu>
