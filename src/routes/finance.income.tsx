@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { addIncome, deleteIncome, listIncome, updateIncome, type IncomeRow } from "@/lib/platform-clients";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/finance/income")({
   head: () => ({ meta: [{ title: "Income — AquaSmart" }] }),
@@ -19,19 +20,35 @@ function Page() {
   const [form, setForm] = useState<IncomeRow>({ date: "", buyer: "", quantity_kg: 0, price_per_kg: 0, total: 0 });
 
   async function load() {
-    setRows(await listIncome());
+    try {
+      setRows(await listIncome());
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to load income records.");
+    }
   }
   useEffect(() => { void load(); }, []);
 
   const total = useMemo(() => rows.reduce((s, r) => s + Number(r.total || 0), 0), [rows]);
 
   async function save() {
-    const payload = { ...form, total: Number(form.quantity_kg) * Number(form.price_per_kg) };
-    if (editId) await updateIncome(editId, payload);
-    else await addIncome(payload);
-    setEditId(null);
-    setForm({ date: "", buyer: "", quantity_kg: 0, price_per_kg: 0, total: 0 });
-    await load();
+    const qty = Number(form.quantity_kg);
+    const price = Number(form.price_per_kg);
+    if (!form.date || !form.buyer.trim() || qty <= 0 || price <= 0) {
+      toast.error("Please provide date, buyer, quantity and price greater than zero.");
+      return;
+    }
+
+    const payload = { ...form, buyer: form.buyer.trim(), total: qty * price };
+    try {
+      if (editId) await updateIncome(editId, payload);
+      else await addIncome(payload);
+      toast.success(editId ? "Income updated." : "Income added.");
+      setEditId(null);
+      setForm({ date: "", buyer: "", quantity_kg: 0, price_per_kg: 0, total: 0 });
+      await load();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to save income record.");
+    }
   }
 
   return (
