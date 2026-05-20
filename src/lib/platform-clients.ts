@@ -42,6 +42,16 @@ export type FeedingEventRow = {
   status: string;
 };
 
+export type WaterAlert = {
+  id: string;
+  type: "low_do" | "high_ammonia" | "high_temperature" | "ph_out_of_range" | "device_offline";
+  severity: "critical" | "warning" | "info";
+  message: string;
+  pond_id: string;
+  created_at: string;
+  source: "firebase" | "derived";
+};
+
 export async function listFeedingEvents(): Promise<FeedingEventRow[]> {
   const rows = await supabaseRequest("feeding_events?select=*&order=timestamp.desc&limit=50", { method: "GET" });
   return (rows as FeedingEventRow[] | null) ?? [];
@@ -68,6 +78,72 @@ export async function getLatestWaterReading(): Promise<WaterReading | null> {
   const response = await fetch(`${firebaseBaseUrl}/farms/default/ponds/pond-a/water/latest.json`);
   if (!response.ok) return null;
   return (await response.json()) as WaterReading | null;
+}
+
+export async function listWaterAlerts(limit = 20): Promise<WaterAlert[]> {
+  if (!firebaseBaseUrl) return [];
+
+  const response = await fetch(`${firebaseBaseUrl}/farms/default/ponds/pond-a/alerts.json?orderBy="$key"&limitToLast=${limit}`);
+
+  if (response.ok) {
+    const raw = (await response.json()) as Record<string, Omit<WaterAlert, "id" | "source">> | null;
+    if (raw && typeof raw === "object") {
+      return Object.entries(raw)
+        .map(([id, value]) => ({ id, ...value, source: "firebase" as const }))
+        .sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+    }
+  }
+
+  const latest = await getLatestWaterReading();
+  if (!latest) return [];
+
+  const derived: WaterAlert[] = [];
+  if (latest.dissolvedOxygen < 5) {
+    derived.push({
+      id: `derived-do-${latest.timestamp}`,
+      type: "low_do",
+      severity: latest.dissolvedOxygen < 4 ? "critical" : "warning",
+      message: `Low dissolved oxygen detected (${latest.dissolvedOxygen} mg/L).`,
+      pond_id: latest.pondId,
+      created_at: latest.timestamp,
+      source: "derived",
+    });
+  }
+  if (latest.ammonia > 0.05) {
+    derived.push({
+      id: `derived-amm-${latest.timestamp}`,
+      type: "high_ammonia",
+      severity: latest.ammonia > 0.1 ? "critical" : "warning",
+      message: `Ammonia above threshold (${latest.ammonia} mg/L).`,
+      pond_id: latest.pondId,
+      created_at: latest.timestamp,
+      source: "derived",
+    });
+  }
+  if (latest.temperature > 31) {
+    derived.push({
+      id: `derived-temp-${latest.timestamp}`,
+      type: "high_temperature",
+      severity: latest.temperature > 33 ? "critical" : "warning",
+      message: `Water temperature is high (${latest.temperature} °C).`,
+      pond_id: latest.pondId,
+      created_at: latest.timestamp,
+      source: "derived",
+    });
+  }
+  if (latest.ph < 6.5 || latest.ph > 8.5) {
+    derived.push({
+      id: `derived-ph-${latest.timestamp}`,
+      type: "ph_out_of_range",
+      severity: "warning",
+      message: `pH out of safe range (${latest.ph}).`,
+      pond_id: latest.pondId,
+      created_at: latest.timestamp,
+      source: "derived",
+    });
+  }
+
+  return derived;
 }
 
 export async function pushManualFeedingEvent(amountKg: number): Promise<void> {
