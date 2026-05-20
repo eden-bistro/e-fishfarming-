@@ -1,68 +1,70 @@
-import { getSessionUser } from "@/lib/auth";
-import { addProductionEvent } from "@/services/modules/production.service";
+import { getActiveFarmId } from "@/lib/tenant";
 
-export type FingerlingBatchStatus = "growing" | "ready_for_transfer" | "transferred" | "sold";
+export type Brooder = {
+  id: string;
+  name: string;
+  species: string;
+  status: "active" | "paused";
+  createdAt: string;
+};
 
 export type FingerlingBatch = {
   id: string;
-  code: string;
-  species: string;
+  brooderId: string;
   quantity: number;
-  producedAt: string;
-  status: FingerlingBatchStatus;
+  productionDate: string;
+  growthStatus: "early" | "mid" | "ready_for_transfer";
   transferredToCage?: string;
 };
 
-const KEY = "aquasmart_hatchery_batches";
+const BROODERS_KEY = "aquasmart_brooders";
+const FINGERLINGS_KEY = "aquasmart_fingerlings";
 
-function storageKey() {
-  const user = getSessionUser();
-  return `${KEY}:${user?.tenantId ?? "demo"}`;
+function isBrowser() {
+  return typeof window !== "undefined";
 }
 
-export function listFingerlingBatches() {
-  if (typeof window === "undefined") return [] as FingerlingBatch[];
-  const raw = window.localStorage.getItem(storageKey());
+function farmKey(prefix: string) {
+  return `${prefix}:${getActiveFarmId()}`;
+}
+
+function readJson<T>(key: string): T[] {
+  if (!isBrowser()) return [];
+  const raw = window.localStorage.getItem(key);
   if (!raw) return [];
   try {
-    return JSON.parse(raw) as FingerlingBatch[];
+    return JSON.parse(raw) as T[];
   } catch {
     return [];
   }
 }
 
-function writeBatches(rows: FingerlingBatch[]) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(storageKey(), JSON.stringify(rows));
+function writeJson<T>(key: string, rows: T[]) {
+  if (!isBrowser()) return;
+  window.localStorage.setItem(key, JSON.stringify(rows));
 }
 
-export function createFingerlingBatch(input: Omit<FingerlingBatch, "id" | "status" | "transferredToCage">) {
-  const batch: FingerlingBatch = { ...input, id: crypto.randomUUID(), status: "growing" };
-  writeBatches([batch, ...listFingerlingBatches()]);
-  return batch;
+export function listBrooders() {
+  return readJson<Brooder>(farmKey(BROODERS_KEY));
 }
 
-export function markBatchReadyForTransfer(batchId: string) {
-  const updated = listFingerlingBatches().map((b) => (b.id === batchId ? { ...b, status: "ready_for_transfer" as const } : b));
-  writeBatches(updated);
+export function createBrooder(input: Omit<Brooder, "id" | "createdAt">) {
+  const rows = listBrooders();
+  writeJson(farmKey(BROODERS_KEY), [{ ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString() }, ...rows]);
 }
 
-export function transferFingerlingsToCage(batchId: string, cageId: string) {
-  const batches = listFingerlingBatches();
-  const target = batches.find((b) => b.id === batchId);
-  if (!target || target.status !== "ready_for_transfer") return null;
+export function listFingerlingBatches() {
+  return readJson<FingerlingBatch>(farmKey(FINGERLINGS_KEY));
+}
 
-  const updated = batches.map((b) =>
-    b.id === batchId ? { ...b, status: "transferred" as const, transferredToCage: cageId } : b,
+export function createFingerlingBatch(input: Omit<FingerlingBatch, "id">) {
+  const rows = listFingerlingBatches();
+  writeJson(farmKey(FINGERLINGS_KEY), [{ ...input, id: crypto.randomUUID() }, ...rows]);
+}
+
+export function markFingerlingBatchTransferred(batchId: string, cageName: string) {
+  const rows = listFingerlingBatches().map((row) =>
+    row.id === batchId ? { ...row, transferredToCage: cageName, growthStatus: "ready_for_transfer" } : row,
   );
-  writeBatches(updated);
-
-  addProductionEvent({
-    cageId,
-    type: "stocking",
-    fishCount: target.quantity,
-    weightKg: undefined,
-  });
-
-  return { ...target, status: "transferred" as const, transferredToCage: cageId };
+  writeJson(farmKey(FINGERLINGS_KEY), rows);
 }
