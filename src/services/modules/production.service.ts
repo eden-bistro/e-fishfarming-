@@ -31,12 +31,9 @@ export function listProductionEvents() {
 }
 
 export function addProductionEvent(event: Omit<ProductionEvent, "id" | "createdAt">) {
-  if (typeof window === "undefined") return null;
   const events = listProductionEvents();
   const next: ProductionEvent = { ...event, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
   window.localStorage.setItem(storageKey(), JSON.stringify([next, ...events]));
   return next;
 }
 
-// Backward-compatible alias used by older hatchery implementations
-export const createProductionEvent = addProductionEvent;
