@@ -52,6 +52,7 @@ function RouteComponent() {
 
       {canWrite && <Card><CardHeader><CardTitle className="text-base">Add inventory item</CardTitle></CardHeader><CardContent className="grid gap-3 md:grid-cols-5">
         <div><Label>Name</Label><Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} /></div>
+        <div><Label>Category</Label><select className="h-10 w-full rounded-md border border-input px-3" value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value as InventoryCategory }))}><option value="feed">feed</option><option value="medicine">medicine</option><option value="equipment">equipment</option><option value="fuel">fuel</option><option value="consumable">consumable</option></select></div>
         <div><Label>Category</Label><select className="h-10 w-full rounded-md border border-input px-3" value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value as InventoryCategory }))}><option value="feed">feed</option><option value="medicine">medicine</option><option value="equipment">equipment</option><option value="consumable">consumable</option></select></div>
         <div><Label>Unit</Label><Input value={form.unit} onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))} /></div>
         <div><Label>Qty</Label><Input value={form.quantity} onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))} /></div>
