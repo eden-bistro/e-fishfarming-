@@ -8,9 +8,7 @@ import { useMemo, useState } from "react";
 import { createBrooder, createFingerlingBatch, listBrooders, listFingerlingBatches, markFingerlingBatchTransferred } from "@/services/modules/hatchery.service";
 import { createProductionEvent } from "@/services/modules/production.service";
 
-export const Route = createFileRoute("/hatchery/")({
-  component: RouteComponent,
-});
+export const Route = createFileRoute("/hatchery/")({ component: RouteComponent });
 
 function RouteComponent() {
   const [brooders, setBrooders] = useState(listBrooders());
