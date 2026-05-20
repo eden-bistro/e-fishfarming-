@@ -1,3 +1,4 @@
+import { pondPath } from "@/firebase/paths";
 const env = import.meta.env as Record<string, string | undefined>;
 
 const firebaseBaseUrl = env.VITE_FIREBASE_DATABASE_URL ?? env.FIREBASE_DATABASE_URL;
@@ -75,7 +76,7 @@ async function supabaseRequest(path: string, init: RequestInit) {
 
 export async function getLatestWaterReading(): Promise<WaterReading | null> {
   if (!firebaseBaseUrl) return null;
-  const response = await fetch(`${firebaseBaseUrl}/farms/default/ponds/pond-a/water/latest.json`);
+  const response = await fetch(`${firebaseBaseUrl}/${pondPath("water", "latest")}.json`);
   if (!response.ok) return null;
   return (await response.json()) as WaterReading | null;
 }
@@ -156,7 +157,7 @@ export async function pushManualFeedingEvent(amountKg: number): Promise<void> {
     status: "completed",
   };
 
-  await fetch(`${firebaseBaseUrl}/farms/default/ponds/pond-a/feeding/events.json`, {
+  await fetch(`${firebaseBaseUrl}/${pondPath("feeding", "events")}.json`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(payload),
