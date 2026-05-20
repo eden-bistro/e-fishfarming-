@@ -9,6 +9,8 @@ import { Hand, Play } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { pushManualFeedingEvent } from "@/lib/platform-clients";
+import { consumeFeedInventory } from "@/services/modules/inventory.service";
+import { addProductionEvent } from "@/services/modules/production.service";
 
 export const Route = createFileRoute("/feeding/manual")({
   head: () => ({ meta: [{ title: "Manual Feeding — AquaSmart" }] }),
@@ -42,7 +44,9 @@ function Page() {
               className="w-full gap-2"
               onClick={async () => {
                 await pushManualFeedingEvent(amount[0]);
-                toast.success(`Dispensed ${amount[0].toFixed(1)}kg`);
+                consumeFeedInventory(amount[0], "Manual feed");
+                addProductionEvent({ cageId: "Pond A", type: "feeding", feedKg: amount[0] });
+                toast.success(`Dispensed ${amount[0].toFixed(1)}kg and deducted from inventory`);
               }}
             >
               <Play className="h-4 w-4" /> Start Feeding Now
