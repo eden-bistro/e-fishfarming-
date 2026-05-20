@@ -34,7 +34,6 @@ export type ExpenseRow = {
   amount: number;
 };
 
-
 export type FeedingEventRow = {
   id?: number;
   timestamp: string;
@@ -55,7 +54,9 @@ export type WaterAlert = {
 };
 
 export async function listFeedingEvents(): Promise<FeedingEventRow[]> {
-  const rows = await supabaseRequest("feeding_events?select=*&order=timestamp.desc&limit=50", { method: "GET" });
+  const rows = await supabaseRequest("feeding_events?select=*&order=timestamp.desc&limit=50", {
+    method: "GET",
+  });
   return (rows as FeedingEventRow[] | null) ?? [];
 }
 
@@ -85,7 +86,9 @@ export async function getLatestWaterReading(): Promise<WaterReading | null> {
 export async function listWaterAlerts(limit = 20): Promise<WaterAlert[]> {
   if (!firebaseBaseUrl) return [];
 
-  const response = await fetch(`${firebaseBaseUrl}/${pondPath("alerts")}.json?orderBy="$key"&limitToLast=${limit}`);
+  const response = await fetch(
+    `${firebaseBaseUrl}/${pondPath("alerts")}.json?orderBy="$key"&limitToLast=${limit}`,
+  );
 
   if (response.ok) {
     const raw = (await response.json()) as Record<string, Omit<WaterAlert, "id" | "source">> | null;
@@ -184,25 +187,49 @@ export async function listIncome(): Promise<IncomeRow[]> {
   return (rows as IncomeRow[] | null) ?? [];
 }
 export async function addIncome(row: IncomeRow): Promise<void> {
-  await supabaseRequest("finance_income", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify([row]) });
+  await supabaseRequest("finance_income", {
+    method: "POST",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify([row]),
+  });
 }
 export async function updateIncome(id: number, row: IncomeRow): Promise<void> {
-  await supabaseRequest(`finance_income?id=eq.${id}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify(row) });
+  await supabaseRequest(`finance_income?id=eq.${id}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify(row),
+  });
 }
 export async function deleteIncome(id: number): Promise<void> {
-  await supabaseRequest(`finance_income?id=eq.${id}`, { method: "DELETE", headers: { Prefer: "return=minimal" } });
+  await supabaseRequest(`finance_income?id=eq.${id}`, {
+    method: "DELETE",
+    headers: { Prefer: "return=minimal" },
+  });
 }
 
 export async function listExpenses(): Promise<ExpenseRow[]> {
-  const rows = await supabaseRequest("finance_expenses?select=*&order=date.desc", { method: "GET" });
+  const rows = await supabaseRequest("finance_expenses?select=*&order=date.desc", {
+    method: "GET",
+  });
   return (rows as ExpenseRow[] | null) ?? [];
 }
 export async function addExpense(row: ExpenseRow): Promise<void> {
-  await supabaseRequest("finance_expenses", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify([row]) });
+  await supabaseRequest("finance_expenses", {
+    method: "POST",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify([row]),
+  });
 }
 export async function updateExpense(id: number, row: ExpenseRow): Promise<void> {
-  await supabaseRequest(`finance_expenses?id=eq.${id}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify(row) });
+  await supabaseRequest(`finance_expenses?id=eq.${id}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify(row),
+  });
 }
 export async function deleteExpense(id: number): Promise<void> {
-  await supabaseRequest(`finance_expenses?id=eq.${id}`, { method: "DELETE", headers: { Prefer: "return=minimal" } });
+  await supabaseRequest(`finance_expenses?id=eq.${id}`, {
+    method: "DELETE",
+    headers: { Prefer: "return=minimal" },
+  });
 }

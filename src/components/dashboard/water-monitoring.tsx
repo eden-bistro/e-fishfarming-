@@ -15,11 +15,47 @@ type Sensor = {
 };
 
 const sensors: Sensor[] = [
-  { key: "temp", label: "Temperature", unit: "°C", color: "var(--info)", base: 27.4, jitter: 0.4, decimals: 1, status: "ok" },
-  { key: "ph", label: "pH Level", unit: "", color: "var(--success)", base: 7.2, jitter: 0.15, decimals: 2, status: "ok" },
-  { key: "do", label: "Dissolved Oxygen", unit: "mg/L", color: "oklch(0.65 0.2 300)", base: 6.1, jitter: 0.4, decimals: 1, status: "ok" },
-    { key: "amm", label: "Ammonia", unit: "mg/L", color: "var(--success)", base: 0.02, jitter: 0.01, decimals: 2, status: "ok" },
-  ];
+  {
+    key: "temp",
+    label: "Temperature",
+    unit: "°C",
+    color: "var(--info)",
+    base: 27.4,
+    jitter: 0.4,
+    decimals: 1,
+    status: "ok",
+  },
+  {
+    key: "ph",
+    label: "pH Level",
+    unit: "",
+    color: "var(--success)",
+    base: 7.2,
+    jitter: 0.15,
+    decimals: 2,
+    status: "ok",
+  },
+  {
+    key: "do",
+    label: "Dissolved Oxygen",
+    unit: "mg/L",
+    color: "oklch(0.65 0.2 300)",
+    base: 6.1,
+    jitter: 0.4,
+    decimals: 1,
+    status: "ok",
+  },
+  {
+    key: "amm",
+    label: "Ammonia",
+    unit: "mg/L",
+    color: "var(--success)",
+    base: 0.02,
+    jitter: 0.01,
+    decimals: 2,
+    status: "ok",
+  },
+];
 
 function makeSeries(base: number, jitter: number, n = 20) {
   // Deterministic series for SSR — randomized only after mount
@@ -54,7 +90,9 @@ function SensorCard({ s }: { s: Sensor }) {
           <p className="text-xs text-muted-foreground">{s.label}</p>
           <p className="mt-1 text-2xl font-semibold tracking-tight">
             {value.toFixed(s.decimals)}
-            {s.unit && <span className="ml-1 text-sm font-normal text-muted-foreground">{s.unit}</span>}
+            {s.unit && (
+              <span className="ml-1 text-sm font-normal text-muted-foreground">{s.unit}</span>
+            )}
           </p>
         </div>
       </div>
@@ -105,7 +143,10 @@ export function WaterMonitoring() {
           <span className="inline-flex items-center gap-1.5 text-success">
             <CheckCircle2 className="h-4 w-4" /> All parameters within safe limits
           </span>
-          <a className="inline-flex items-center gap-1 font-medium text-brand hover:underline" href="#">
+          <a
+            className="inline-flex items-center gap-1 font-medium text-brand hover:underline"
+            href="#"
+          >
             View All Parameters <ArrowRight className="h-3 w-3" />
           </a>
         </div>

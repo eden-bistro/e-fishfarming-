@@ -11,7 +11,9 @@ function Page() {
   return (
     <DashboardLayout title="Devices" subtitle="IoT hardware connected to your farm.">
       <Card>
-        <CardHeader><CardTitle className="text-base">Connected Devices</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">Connected Devices</CardTitle>
+        </CardHeader>
         <CardContent className="text-sm text-muted-foreground">No devices registered.</CardContent>
       </Card>
     </DashboardLayout>

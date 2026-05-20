@@ -55,21 +55,29 @@ export function listStockMovements() {
   return readStore().movements;
 }
 
-export function upsertInventoryItem(item: Omit<InventoryItem, "id" | "createdAt"> & { id?: string }) {
+export function upsertInventoryItem(
+  item: Omit<InventoryItem, "id" | "createdAt"> & { id?: string },
+) {
   const store = readStore();
   const next: InventoryItem = {
     ...item,
     id: item.id ?? crypto.randomUUID(),
     createdAt: new Date().toISOString(),
   };
-  const items = item.id ? store.items.map((i) => (i.id === item.id ? { ...i, ...next } : i)) : [...store.items, next];
+  const items = item.id
+    ? store.items.map((i) => (i.id === item.id ? { ...i, ...next } : i))
+    : [...store.items, next];
   writeStore({ ...store, items });
   return next;
 }
 
 export function recordStockMovement(input: Omit<StockMovement, "id" | "createdAt">) {
   const store = readStore();
-  const movement: StockMovement = { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+  const movement: StockMovement = {
+    ...input,
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
+  };
   const items = store.items.map((i) => {
     if (i.id !== input.itemId) return i;
     const delta = input.type === "usage" ? -Math.abs(input.quantity) : input.quantity;

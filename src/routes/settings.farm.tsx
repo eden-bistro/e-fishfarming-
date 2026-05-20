@@ -47,35 +47,64 @@ function Page() {
   return (
     <DashboardLayout title="Farm Settings" subtitle="General farm details and preferences.">
       <Card>
-        <CardHeader><CardTitle className="text-base">Farm Profile</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">Farm Profile</CardTitle>
+        </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label>Farm Name</Label>
-            <Input value={form.name} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} placeholder="Enter farm name" />
+            <Input
+              value={form.name}
+              onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+              placeholder="Enter farm name"
+            />
           </div>
           <div className="space-y-2">
             <Label>Location</Label>
-            <Input value={form.location} onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))} placeholder="Enter location" />
+            <Input
+              value={form.location}
+              onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))}
+              placeholder="Enter location"
+            />
           </div>
           <div className="space-y-2">
             <Label>Owner</Label>
-            <Input value={form.owner} onChange={(e) => setForm((prev) => ({ ...prev, owner: e.target.value }))} placeholder="Owner full name" />
+            <Input
+              value={form.owner}
+              onChange={(e) => setForm((prev) => ({ ...prev, owner: e.target.value }))}
+              placeholder="Owner full name"
+            />
           </div>
           <div className="space-y-2">
             <Label>Currency</Label>
-            <Input value={form.currency} onChange={(e) => setForm((prev) => ({ ...prev, currency: e.target.value }))} placeholder="Currency" />
+            <Input
+              value={form.currency}
+              onChange={(e) => setForm((prev) => ({ ...prev, currency: e.target.value }))}
+              placeholder="Currency"
+            />
           </div>
           <div className="space-y-2">
             <Label>Total Ponds</Label>
-            <Input value={form.totalPonds} onChange={(e) => setForm((prev) => ({ ...prev, totalPonds: e.target.value }))} type="number" />
+            <Input
+              value={form.totalPonds}
+              onChange={(e) => setForm((prev) => ({ ...prev, totalPonds: e.target.value }))}
+              type="number"
+            />
           </div>
           <div className="space-y-2">
             <Label>Total Stock (kg)</Label>
-            <Input value={form.totalStockKg} onChange={(e) => setForm((prev) => ({ ...prev, totalStockKg: e.target.value }))} type="number" />
+            <Input
+              value={form.totalStockKg}
+              onChange={(e) => setForm((prev) => ({ ...prev, totalStockKg: e.target.value }))}
+              type="number"
+            />
           </div>
         </CardContent>
       </Card>
-      <div className="space-y-2"><Button onClick={saveFarm}>Save Changes</Button>{message && <p className="text-sm text-muted-foreground">{message}</p>}</div>
+      <div className="space-y-2">
+        <Button onClick={saveFarm}>Save Changes</Button>
+        {message && <p className="text-sm text-muted-foreground">{message}</p>}
+      </div>
     </DashboardLayout>
   );
 }

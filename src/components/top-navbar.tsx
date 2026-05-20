@@ -57,7 +57,7 @@ export function TopNavbar() {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Switch farm</DropdownMenuLabel>
             <DropdownMenuItem>My Farm</DropdownMenuItem>
-                      </DropdownMenuContent>
+          </DropdownMenuContent>
         </DropdownMenu>
 
         <DropdownMenu>
@@ -72,7 +72,9 @@ export function TopNavbar() {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Notifications</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate({ to: "/settings/farm" })}>Complete your farm profile to activate your dashboard.</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate({ to: "/settings/farm" })}>
+              Complete your farm profile to activate your dashboard.
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
         <Button variant="ghost" size="icon" onClick={() => navigate({ to: "/settings/farm" })}>
@@ -84,7 +86,11 @@ export function TopNavbar() {
             <button className="flex items-center gap-2 rounded-md p-1 pl-1 pr-2 hover:bg-accent">
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-brand text-brand-foreground text-xs">
-                  {(session?.name ?? "U").split(" ").map((s) => s[0]).join("").slice(0,2)}
+                  {(session?.name ?? "U")
+                    .split(" ")
+                    .map((s) => s[0])
+                    .join("")
+                    .slice(0, 2)}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden text-left md:block">
@@ -97,10 +103,21 @@ export function TopNavbar() {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>My account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate({ to: "/settings/profile" })}>Profile</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate({ to: "/settings/preferences" })}>Settings</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate({ to: "/settings/profile" })}>
+              Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate({ to: "/settings/preferences" })}>
+              Settings
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => { logoutUser(); navigate({ to: "/auth/login" }); }}>Log out</DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                logoutUser();
+                navigate({ to: "/auth/login" });
+              }}
+            >
+              Log out
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

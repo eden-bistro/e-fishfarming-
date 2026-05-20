@@ -1,6 +1,10 @@
 import { Link } from "@tanstack/react-router";
 
-export function AccessDenied({ message = "You don't have permission to access this module." }: { message?: string }) {
+export function AccessDenied({
+  message = "You don't have permission to access this module.",
+}: {
+  message?: string;
+}) {
   return (
     <div className="rounded-lg border bg-card p-8 text-center">
       <h2 className="text-xl font-semibold">Access denied</h2>
