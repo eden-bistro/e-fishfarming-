@@ -1,6 +1,6 @@
 import { getSessionUser } from "@/lib/auth";
 
-export type InventoryCategory = "feed" | "medicine" | "equipment" | "fuel" | "consumable";
+export type InventoryCategory = "feed" | "medicine" | "equipment" | "consumable";
 export type StockMovementType = "purchase" | "usage" | "adjustment";
 
 export type InventoryItem = {

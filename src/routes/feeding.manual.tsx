@@ -46,7 +46,7 @@ function Page() {
               onClick={async () => {
                 await pushManualFeedingEvent(amount[0]);
                 consumeFeedInventory(amount[0], "Manual feed");
-                addProductionEvent({ cageId: pond, type: "feeding", feedKg: amount[0] });
+                addProductionEvent({ cageId: "Pond A", type: "feeding", feedKg: amount[0] });
                 toast.success(`Dispensed ${amount[0].toFixed(1)}kg and deducted from inventory`);
               }}
             >
