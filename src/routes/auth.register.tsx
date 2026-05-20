@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { registerUser } from "@/lib/auth";
+import { getMissingSupabaseConfigKeys } from "@/supabase/client";
 
 export const Route = createFileRoute("/auth/register")({ component: Page });
 
@@ -14,8 +15,18 @@ function Page() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const missingConfig = getMissingSupabaseConfigKeys();
+  const configError =
+    missingConfig.length > 0
+      ? `Missing config: ${missingConfig.join(", ")}. Set these in your Cloudflare env vars, then redeploy.`
+      : "";
 
   async function submit() {
+    if (configError) {
+      setError(configError);
+      return;
+    }
+
     const result = await registerUser(name, email, password);
     if (!result.ok) {
       setError(result.message);

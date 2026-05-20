@@ -34,8 +34,13 @@ Optional but recommended:
 ## 4) Cloudflare deployment
 
 1. Confirm `wrangler.jsonc` is valid for your account/project.
-2. Configure secrets/vars in Cloudflare dashboard or wrangler.
-3. Build and deploy.
+2. Configure env vars in Cloudflare dashboard:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+   - `VITE_FIREBASE_DATABASE_URL`
+3. Click path (Pages): `Workers & Pages` -> your Pages project -> `Settings` -> `Environment variables` -> add variables in both Preview and Production -> redeploy.
+4. Click path (Workers): `Workers & Pages` -> your Worker -> `Settings` -> `Variables` -> add environment variables -> deploy new version.
+5. Build and deploy.
 
 ## 5) Health checks
 
