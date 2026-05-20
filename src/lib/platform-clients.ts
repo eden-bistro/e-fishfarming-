@@ -84,7 +84,7 @@ export async function getLatestWaterReading(): Promise<WaterReading | null> {
 export async function listWaterAlerts(limit = 20): Promise<WaterAlert[]> {
   if (!firebaseBaseUrl) return [];
 
-  const response = await fetch(`${firebaseBaseUrl}/${pondPath("alerts")}.json?orderBy="$key"&limitToLast=${limit}`);
+  const response = await fetch(`${firebaseBaseUrl}/farms/default/ponds/pond-a/alerts.json?orderBy="$key"&limitToLast=${limit}`);
 
   if (response.ok) {
     const raw = (await response.json()) as Record<string, Omit<WaterAlert, "id" | "source">> | null;
