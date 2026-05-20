@@ -16,7 +16,11 @@ type Preferences = {
 };
 
 function Page() {
-  const [prefs, setPrefs] = useState<Preferences>({ dark: false, largeText: false, securityAlerts: true });
+  const [prefs, setPrefs] = useState<Preferences>({
+    dark: false,
+    largeText: false,
+    securityAlerts: true,
+  });
 
   useEffect(() => {
     const raw = localStorage.getItem(PREFS_KEY);
@@ -42,11 +46,31 @@ function Page() {
   return (
     <DashboardLayout title="User Settings" subtitle="View, display and security preferences.">
       <Card>
-        <CardHeader><CardTitle className="text-base">Preferences</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">Preferences</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between"><Label>Dark mode</Label><Switch checked={prefs.dark} onCheckedChange={(v) => setPrefs((p) => ({ ...p, dark: v }))} /></div>
-          <div className="flex items-center justify-between"><Label>Large text</Label><Switch checked={prefs.largeText} onCheckedChange={(v) => setPrefs((p) => ({ ...p, largeText: v }))} /></div>
-          <div className="flex items-center justify-between"><Label>Security alerts</Label><Switch checked={prefs.securityAlerts} onCheckedChange={(v) => setPrefs((p) => ({ ...p, securityAlerts: v }))} /></div>
+          <div className="flex items-center justify-between">
+            <Label>Dark mode</Label>
+            <Switch
+              checked={prefs.dark}
+              onCheckedChange={(v) => setPrefs((p) => ({ ...p, dark: v }))}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label>Large text</Label>
+            <Switch
+              checked={prefs.largeText}
+              onCheckedChange={(v) => setPrefs((p) => ({ ...p, largeText: v }))}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label>Security alerts</Label>
+            <Switch
+              checked={prefs.securityAlerts}
+              onCheckedChange={(v) => setPrefs((p) => ({ ...p, securityAlerts: v }))}
+            />
+          </div>
         </CardContent>
       </Card>
     </DashboardLayout>

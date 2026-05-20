@@ -9,8 +9,8 @@ function RouteComponent() {
     <div className="space-y-2">
       <h1 className="text-2xl font-semibold tracking-tight">AI Insights</h1>
       <p className="text-sm text-muted-foreground">
-        Phase 2 foundation: enterprise module shell is ready. Next step is wiring CRUD screens, analytics widgets,
-        and role-based access controls.
+        Phase 2 foundation: enterprise module shell is ready. Next step is wiring CRUD screens,
+        analytics widgets, and role-based access controls.
       </p>
     </div>
   );

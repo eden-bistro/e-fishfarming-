@@ -50,7 +50,10 @@ export function listBrooders() {
 
 export function createBrooder(input: Omit<Brooder, "id" | "createdAt">) {
   const rows = listBrooders();
-  writeJson(farmKey(BROODERS_KEY), [{ ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString() }, ...rows]);
+  writeJson(farmKey(BROODERS_KEY), [
+    { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString() },
+    ...rows,
+  ]);
 }
 
 export function listFingerlingBatches() {
@@ -64,7 +67,9 @@ export function createFingerlingBatch(input: Omit<FingerlingBatch, "id">) {
 
 export function markFingerlingBatchTransferred(batchId: string, cageName: string) {
   const rows = listFingerlingBatches().map((row) =>
-    row.id === batchId ? { ...row, transferredToCage: cageName, growthStatus: "ready_for_transfer" } : row,
+    row.id === batchId
+      ? { ...row, transferredToCage: cageName, growthStatus: "ready_for_transfer" }
+      : row,
   );
   writeJson(farmKey(FINGERLINGS_KEY), rows);
 }

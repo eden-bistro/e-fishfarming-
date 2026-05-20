@@ -26,14 +26,33 @@ function Page() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-md">
-        <CardHeader><CardTitle>Sign in</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Sign in</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2"><Label>Email</Label><Input value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-          <div className="space-y-2"><Label>Password</Label><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} /></div>
+          <div className="space-y-2">
+            <Label>Email</Label>
+            <Input value={email} onChange={(e) => setEmail(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Password</Label>
+            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button className="w-full" onClick={() => void submit()}>Log in</Button>
-          <p className="text-sm text-muted-foreground"><Link to="/auth/forgot-password" className="text-primary underline">Forgot password?</Link></p>
-          <p className="text-sm text-muted-foreground">No account? <Link to="/auth/register" className="text-primary underline">Register</Link></p>
+          <Button className="w-full" onClick={() => void submit()}>
+            Log in
+          </Button>
+          <p className="text-sm text-muted-foreground">
+            <Link to="/auth/forgot-password" className="text-primary underline">
+              Forgot password?
+            </Link>
+          </p>
+          <p className="text-sm text-muted-foreground">
+            No account?{" "}
+            <Link to="/auth/register" className="text-primary underline">
+              Register
+            </Link>
+          </p>
         </CardContent>
       </Card>
     </div>
