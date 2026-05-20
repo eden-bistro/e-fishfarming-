@@ -54,9 +54,7 @@ function Page() {
             <Label>Password</Label>
             <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
-          {(configError || error) && (
-            <p className="text-sm text-destructive">{configError || error}</p>
-          )}
+          {error && <p className="text-sm text-destructive">{error}</p>}
           <Button className="w-full" onClick={() => void submit()}>
             Register
           </Button>
