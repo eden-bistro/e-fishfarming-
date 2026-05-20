@@ -23,6 +23,13 @@ import {
 
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Cage Management", url: "/cages", icon: Cpu },
+  { title: "Live Monitoring", url: "/monitoring/live", icon: Droplets },
+  { title: "Hatchery", url: "/hatchery", icon: Fish },
+  { title: "Production", url: "/production", icon: Fish },
+  { title: "Inventory", url: "/inventory", icon: Wallet },
+  { title: "Reports", url: "/reports", icon: LineChart },
+  { title: "AI Insights", url: "/ai/insights", icon: Cpu },
   {
     title: "Feeding System",
     icon: Fish,

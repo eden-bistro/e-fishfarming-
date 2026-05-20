@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import { APP_ROLES, getCurrentUserRole, setCurrentUserRole, userHasRole, type AppRole } from "@/contexts/rbac";
+import { AccessDenied } from "@/components/access-denied";
 
-type Role = "Owner" | "Manager" | "Operator" | "Accountant";
+type Role = "Super Admin" | "Farmer" | "Worker" | "Accountant";
 
 type UserRow = {
   id: number;
@@ -20,7 +22,7 @@ type UserRow = {
 
 const initialUsers: UserRow[] = [];
 
-const roles: Role[] = ["Owner", "Manager", "Operator", "Accountant"];
+const roles: Role[] = ["Super Admin", "Farmer", "Worker", "Accountant"];
 
 export const Route = createFileRoute("/settings/users-and-roles")({
   head: () => ({ meta: [{ title: "Users & Roles — AquaSmart" }] }),
@@ -30,7 +32,10 @@ export const Route = createFileRoute("/settings/users-and-roles")({
 function Page() {
   const [users, setUsers] = useState<UserRow[]>(initialUsers);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [form, setForm] = useState({ name: "", email: "", role: "Operator" as Role });
+  const [form, setForm] = useState({ name: "", email: "", role: "Worker" as Role });
+  const [myRole, setMyRole] = useState<AppRole>(getCurrentUserRole());
+
+  const canManageUsers = userHasRole(["super_admin"]);
 
   const isEditing = editingId !== null;
 
@@ -40,7 +45,7 @@ function Page() {
 
   function resetForm() {
     setEditingId(null);
-    setForm({ name: "", email: "", role: "Operator" });
+    setForm({ name: "", email: "", role: "Worker" });
   }
 
   function startEdit(user: UserRow) {
@@ -73,6 +78,31 @@ function Page() {
 
   return (
     <DashboardLayout title="Users & Roles" subtitle="Manage team members, roles, and access permissions.">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">My Role (Demo RBAC Control)</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center gap-3">
+          <select
+            value={myRole}
+            onChange={(e) => {
+              const next = e.target.value as AppRole;
+              setMyRole(next);
+              setCurrentUserRole(next);
+            }}
+            className="h-10 w-56 rounded-md border border-input bg-background px-3 text-sm"
+          >
+            {APP_ROLES.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-muted-foreground">Set this to super_admin to access this page in this phase.</p>
+        </CardContent>
+      </Card>
+      {canManageUsers ? (
+        <>
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Role Overview</CardTitle>
@@ -155,6 +185,10 @@ function Page() {
           ))}
         </CardContent>
       </Card>
+      </>
+      ) : (
+        <AccessDenied message="Only Super Admin can access user CRUD and role assignment." />
+      )}
     </DashboardLayout>
   );
 }

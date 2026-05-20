@@ -10,6 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ReportsIndexRouteImport } from './routes/reports.index'
+import { Route as ProductionIndexRouteImport } from './routes/production.index'
+import { Route as InventoryIndexRouteImport } from './routes/inventory.index'
+import { Route as HatcheryIndexRouteImport } from './routes/hatchery.index'
+import { Route as CagesIndexRouteImport } from './routes/cages.index'
 import { Route as WaterLiveRouteImport } from './routes/water.live'
 import { Route as WaterHistoryRouteImport } from './routes/water.history'
 import { Route as WaterAlertsRouteImport } from './routes/water.alerts'
@@ -19,6 +24,7 @@ import { Route as SettingsProfileRouteImport } from './routes/settings.profile'
 import { Route as SettingsPreferencesRouteImport } from './routes/settings.preferences'
 import { Route as SettingsFarmRouteImport } from './routes/settings.farm'
 import { Route as SettingsDevicesRouteImport } from './routes/settings.devices'
+import { Route as MonitoringLiveRouteImport } from './routes/monitoring.live'
 import { Route as FinanceReportsRouteImport } from './routes/finance.reports'
 import { Route as FinancePnlRouteImport } from './routes/finance.pnl'
 import { Route as FinanceIncomeRouteImport } from './routes/finance.income'
@@ -30,10 +36,36 @@ import { Route as FeedingHistoryRouteImport } from './routes/feeding.history'
 import { Route as AuthRegisterRouteImport } from './routes/auth.register'
 import { Route as AuthLoginRouteImport } from './routes/auth.login'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth.forgot-password'
+import { Route as AiInsightsRouteImport } from './routes/ai.insights'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsIndexRoute = ReportsIndexRouteImport.update({
+  id: '/reports/',
+  path: '/reports/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProductionIndexRoute = ProductionIndexRouteImport.update({
+  id: '/production/',
+  path: '/production/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InventoryIndexRoute = InventoryIndexRouteImport.update({
+  id: '/inventory/',
+  path: '/inventory/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HatcheryIndexRoute = HatcheryIndexRouteImport.update({
+  id: '/hatchery/',
+  path: '/hatchery/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CagesIndexRoute = CagesIndexRouteImport.update({
+  id: '/cages/',
+  path: '/cages/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WaterLiveRoute = WaterLiveRouteImport.update({
@@ -79,6 +111,11 @@ const SettingsFarmRoute = SettingsFarmRouteImport.update({
 const SettingsDevicesRoute = SettingsDevicesRouteImport.update({
   id: '/settings/devices',
   path: '/settings/devices',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MonitoringLiveRoute = MonitoringLiveRouteImport.update({
+  id: '/monitoring/live',
+  path: '/monitoring/live',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FinanceReportsRoute = FinanceReportsRouteImport.update({
@@ -136,9 +173,15 @@ const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
   path: '/auth/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AiInsightsRoute = AiInsightsRouteImport.update({
+  id: '/ai/insights',
+  path: '/ai/insights',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ai/insights': typeof AiInsightsRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
@@ -150,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/finance/income': typeof FinanceIncomeRoute
   '/finance/pnl': typeof FinancePnlRoute
   '/finance/reports': typeof FinanceReportsRoute
+  '/monitoring/live': typeof MonitoringLiveRoute
   '/settings/devices': typeof SettingsDevicesRoute
   '/settings/farm': typeof SettingsFarmRoute
   '/settings/preferences': typeof SettingsPreferencesRoute
@@ -159,9 +203,15 @@ export interface FileRoutesByFullPath {
   '/water/alerts': typeof WaterAlertsRoute
   '/water/history': typeof WaterHistoryRoute
   '/water/live': typeof WaterLiveRoute
+  '/cages/': typeof CagesIndexRoute
+  '/hatchery/': typeof HatcheryIndexRoute
+  '/inventory/': typeof InventoryIndexRoute
+  '/production/': typeof ProductionIndexRoute
+  '/reports/': typeof ReportsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ai/insights': typeof AiInsightsRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
@@ -173,6 +223,7 @@ export interface FileRoutesByTo {
   '/finance/income': typeof FinanceIncomeRoute
   '/finance/pnl': typeof FinancePnlRoute
   '/finance/reports': typeof FinanceReportsRoute
+  '/monitoring/live': typeof MonitoringLiveRoute
   '/settings/devices': typeof SettingsDevicesRoute
   '/settings/farm': typeof SettingsFarmRoute
   '/settings/preferences': typeof SettingsPreferencesRoute
@@ -182,10 +233,16 @@ export interface FileRoutesByTo {
   '/water/alerts': typeof WaterAlertsRoute
   '/water/history': typeof WaterHistoryRoute
   '/water/live': typeof WaterLiveRoute
+  '/cages': typeof CagesIndexRoute
+  '/hatchery': typeof HatcheryIndexRoute
+  '/inventory': typeof InventoryIndexRoute
+  '/production': typeof ProductionIndexRoute
+  '/reports': typeof ReportsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ai/insights': typeof AiInsightsRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
@@ -197,6 +254,7 @@ export interface FileRoutesById {
   '/finance/income': typeof FinanceIncomeRoute
   '/finance/pnl': typeof FinancePnlRoute
   '/finance/reports': typeof FinanceReportsRoute
+  '/monitoring/live': typeof MonitoringLiveRoute
   '/settings/devices': typeof SettingsDevicesRoute
   '/settings/farm': typeof SettingsFarmRoute
   '/settings/preferences': typeof SettingsPreferencesRoute
@@ -206,11 +264,17 @@ export interface FileRoutesById {
   '/water/alerts': typeof WaterAlertsRoute
   '/water/history': typeof WaterHistoryRoute
   '/water/live': typeof WaterLiveRoute
+  '/cages/': typeof CagesIndexRoute
+  '/hatchery/': typeof HatcheryIndexRoute
+  '/inventory/': typeof InventoryIndexRoute
+  '/production/': typeof ProductionIndexRoute
+  '/reports/': typeof ReportsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/ai/insights'
     | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/register'
@@ -222,6 +286,7 @@ export interface FileRouteTypes {
     | '/finance/income'
     | '/finance/pnl'
     | '/finance/reports'
+    | '/monitoring/live'
     | '/settings/devices'
     | '/settings/farm'
     | '/settings/preferences'
@@ -231,9 +296,15 @@ export interface FileRouteTypes {
     | '/water/alerts'
     | '/water/history'
     | '/water/live'
+    | '/cages/'
+    | '/hatchery/'
+    | '/inventory/'
+    | '/production/'
+    | '/reports/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/ai/insights'
     | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/register'
@@ -245,6 +316,7 @@ export interface FileRouteTypes {
     | '/finance/income'
     | '/finance/pnl'
     | '/finance/reports'
+    | '/monitoring/live'
     | '/settings/devices'
     | '/settings/farm'
     | '/settings/preferences'
@@ -254,9 +326,15 @@ export interface FileRouteTypes {
     | '/water/alerts'
     | '/water/history'
     | '/water/live'
+    | '/cages'
+    | '/hatchery'
+    | '/inventory'
+    | '/production'
+    | '/reports'
   id:
     | '__root__'
     | '/'
+    | '/ai/insights'
     | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/register'
@@ -268,6 +346,7 @@ export interface FileRouteTypes {
     | '/finance/income'
     | '/finance/pnl'
     | '/finance/reports'
+    | '/monitoring/live'
     | '/settings/devices'
     | '/settings/farm'
     | '/settings/preferences'
@@ -277,10 +356,16 @@ export interface FileRouteTypes {
     | '/water/alerts'
     | '/water/history'
     | '/water/live'
+    | '/cages/'
+    | '/hatchery/'
+    | '/inventory/'
+    | '/production/'
+    | '/reports/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AiInsightsRoute: typeof AiInsightsRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
@@ -292,6 +377,7 @@ export interface RootRouteChildren {
   FinanceIncomeRoute: typeof FinanceIncomeRoute
   FinancePnlRoute: typeof FinancePnlRoute
   FinanceReportsRoute: typeof FinanceReportsRoute
+  MonitoringLiveRoute: typeof MonitoringLiveRoute
   SettingsDevicesRoute: typeof SettingsDevicesRoute
   SettingsFarmRoute: typeof SettingsFarmRoute
   SettingsPreferencesRoute: typeof SettingsPreferencesRoute
@@ -301,6 +387,11 @@ export interface RootRouteChildren {
   WaterAlertsRoute: typeof WaterAlertsRoute
   WaterHistoryRoute: typeof WaterHistoryRoute
   WaterLiveRoute: typeof WaterLiveRoute
+  CagesIndexRoute: typeof CagesIndexRoute
+  HatcheryIndexRoute: typeof HatcheryIndexRoute
+  InventoryIndexRoute: typeof InventoryIndexRoute
+  ProductionIndexRoute: typeof ProductionIndexRoute
+  ReportsIndexRoute: typeof ReportsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -310,6 +401,41 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports/': {
+      id: '/reports/'
+      path: '/reports'
+      fullPath: '/reports/'
+      preLoaderRoute: typeof ReportsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/production/': {
+      id: '/production/'
+      path: '/production'
+      fullPath: '/production/'
+      preLoaderRoute: typeof ProductionIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inventory/': {
+      id: '/inventory/'
+      path: '/inventory'
+      fullPath: '/inventory/'
+      preLoaderRoute: typeof InventoryIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hatchery/': {
+      id: '/hatchery/'
+      path: '/hatchery'
+      fullPath: '/hatchery/'
+      preLoaderRoute: typeof HatcheryIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cages/': {
+      id: '/cages/'
+      path: '/cages'
+      fullPath: '/cages/'
+      preLoaderRoute: typeof CagesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/water/live': {
@@ -373,6 +499,13 @@ declare module '@tanstack/react-router' {
       path: '/settings/devices'
       fullPath: '/settings/devices'
       preLoaderRoute: typeof SettingsDevicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/monitoring/live': {
+      id: '/monitoring/live'
+      path: '/monitoring/live'
+      fullPath: '/monitoring/live'
+      preLoaderRoute: typeof MonitoringLiveRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/finance/reports': {
@@ -452,11 +585,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ai/insights': {
+      id: '/ai/insights'
+      path: '/ai/insights'
+      fullPath: '/ai/insights'
+      preLoaderRoute: typeof AiInsightsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AiInsightsRoute: AiInsightsRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
@@ -468,6 +609,7 @@ const rootRouteChildren: RootRouteChildren = {
   FinanceIncomeRoute: FinanceIncomeRoute,
   FinancePnlRoute: FinancePnlRoute,
   FinanceReportsRoute: FinanceReportsRoute,
+  MonitoringLiveRoute: MonitoringLiveRoute,
   SettingsDevicesRoute: SettingsDevicesRoute,
   SettingsFarmRoute: SettingsFarmRoute,
   SettingsPreferencesRoute: SettingsPreferencesRoute,
@@ -477,6 +619,11 @@ const rootRouteChildren: RootRouteChildren = {
   WaterAlertsRoute: WaterAlertsRoute,
   WaterHistoryRoute: WaterHistoryRoute,
   WaterLiveRoute: WaterLiveRoute,
+  CagesIndexRoute: CagesIndexRoute,
+  HatcheryIndexRoute: HatcheryIndexRoute,
+  InventoryIndexRoute: InventoryIndexRoute,
+  ProductionIndexRoute: ProductionIndexRoute,
+  ReportsIndexRoute: ReportsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
