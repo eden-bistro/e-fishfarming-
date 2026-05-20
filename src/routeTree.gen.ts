@@ -24,6 +24,7 @@ import { Route as SettingsProfileRouteImport } from './routes/settings.profile'
 import { Route as SettingsPreferencesRouteImport } from './routes/settings.preferences'
 import { Route as SettingsFarmRouteImport } from './routes/settings.farm'
 import { Route as SettingsDevicesRouteImport } from './routes/settings.devices'
+import { Route as MonitoringLiveRouteImport } from './routes/monitoring.live'
 import { Route as FinanceReportsRouteImport } from './routes/finance.reports'
 import { Route as FinancePnlRouteImport } from './routes/finance.pnl'
 import { Route as FinanceIncomeRouteImport } from './routes/finance.income'
@@ -112,6 +113,11 @@ const SettingsDevicesRoute = SettingsDevicesRouteImport.update({
   path: '/settings/devices',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MonitoringLiveRoute = MonitoringLiveRouteImport.update({
+  id: '/monitoring/live',
+  path: '/monitoring/live',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FinanceReportsRoute = FinanceReportsRouteImport.update({
   id: '/finance/reports',
   path: '/finance/reports',
@@ -187,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/finance/income': typeof FinanceIncomeRoute
   '/finance/pnl': typeof FinancePnlRoute
   '/finance/reports': typeof FinanceReportsRoute
+  '/monitoring/live': typeof MonitoringLiveRoute
   '/settings/devices': typeof SettingsDevicesRoute
   '/settings/farm': typeof SettingsFarmRoute
   '/settings/preferences': typeof SettingsPreferencesRoute
@@ -216,6 +223,7 @@ export interface FileRoutesByTo {
   '/finance/income': typeof FinanceIncomeRoute
   '/finance/pnl': typeof FinancePnlRoute
   '/finance/reports': typeof FinanceReportsRoute
+  '/monitoring/live': typeof MonitoringLiveRoute
   '/settings/devices': typeof SettingsDevicesRoute
   '/settings/farm': typeof SettingsFarmRoute
   '/settings/preferences': typeof SettingsPreferencesRoute
@@ -246,6 +254,7 @@ export interface FileRoutesById {
   '/finance/income': typeof FinanceIncomeRoute
   '/finance/pnl': typeof FinancePnlRoute
   '/finance/reports': typeof FinanceReportsRoute
+  '/monitoring/live': typeof MonitoringLiveRoute
   '/settings/devices': typeof SettingsDevicesRoute
   '/settings/farm': typeof SettingsFarmRoute
   '/settings/preferences': typeof SettingsPreferencesRoute
@@ -277,6 +286,7 @@ export interface FileRouteTypes {
     | '/finance/income'
     | '/finance/pnl'
     | '/finance/reports'
+    | '/monitoring/live'
     | '/settings/devices'
     | '/settings/farm'
     | '/settings/preferences'
@@ -306,6 +316,7 @@ export interface FileRouteTypes {
     | '/finance/income'
     | '/finance/pnl'
     | '/finance/reports'
+    | '/monitoring/live'
     | '/settings/devices'
     | '/settings/farm'
     | '/settings/preferences'
@@ -335,6 +346,7 @@ export interface FileRouteTypes {
     | '/finance/income'
     | '/finance/pnl'
     | '/finance/reports'
+    | '/monitoring/live'
     | '/settings/devices'
     | '/settings/farm'
     | '/settings/preferences'
@@ -365,6 +377,7 @@ export interface RootRouteChildren {
   FinanceIncomeRoute: typeof FinanceIncomeRoute
   FinancePnlRoute: typeof FinancePnlRoute
   FinanceReportsRoute: typeof FinanceReportsRoute
+  MonitoringLiveRoute: typeof MonitoringLiveRoute
   SettingsDevicesRoute: typeof SettingsDevicesRoute
   SettingsFarmRoute: typeof SettingsFarmRoute
   SettingsPreferencesRoute: typeof SettingsPreferencesRoute
@@ -488,6 +501,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsDevicesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/monitoring/live': {
+      id: '/monitoring/live'
+      path: '/monitoring/live'
+      fullPath: '/monitoring/live'
+      preLoaderRoute: typeof MonitoringLiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/finance/reports': {
       id: '/finance/reports'
       path: '/finance/reports'
@@ -589,6 +609,7 @@ const rootRouteChildren: RootRouteChildren = {
   FinanceIncomeRoute: FinanceIncomeRoute,
   FinancePnlRoute: FinancePnlRoute,
   FinanceReportsRoute: FinanceReportsRoute,
+  MonitoringLiveRoute: MonitoringLiveRoute,
   SettingsDevicesRoute: SettingsDevicesRoute,
   SettingsFarmRoute: SettingsFarmRoute,
   SettingsPreferencesRoute: SettingsPreferencesRoute,
