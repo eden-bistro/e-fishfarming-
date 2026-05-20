@@ -14,8 +14,8 @@ function Page() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  function submit() {
-    const result = loginUser(email, password);
+  async function submit() {
+    const result = await loginUser(email, password);
     if (!result.ok) {
       setError(result.message);
       return;
@@ -31,7 +31,8 @@ function Page() {
           <div className="space-y-2"><Label>Email</Label><Input value={email} onChange={(e) => setEmail(e.target.value)} /></div>
           <div className="space-y-2"><Label>Password</Label><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} /></div>
           {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button className="w-full" onClick={submit}>Log in</Button>
+          <Button className="w-full" onClick={() => void submit()}>Log in</Button>
+          <p className="text-sm text-muted-foreground"><Link to="/auth/forgot-password" className="text-primary underline">Forgot password?</Link></p>
           <p className="text-sm text-muted-foreground">No account? <Link to="/auth/register" className="text-primary underline">Register</Link></p>
         </CardContent>
       </Card>
