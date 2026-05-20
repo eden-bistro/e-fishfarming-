@@ -1,28 +1,27 @@
-import { getActiveFarmId } from "@/lib/tenant";
+import { getSessionUser } from "@/lib/auth";
+
+export type ProductionEventType = "stocking" | "mortality" | "harvest" | "sale" | "feeding";
 
 export type ProductionEvent = {
   id: string;
-  cageName: string;
-  eventType: "stocking" | "mortality" | "harvest" | "sale";
-  quantity: number;
-  weightKg: number;
-  date: string;
-  notes?: string;
+  cageId: string;
+  type: ProductionEventType;
+  fishCount?: number;
+  weightKg?: number;
+  feedKg?: number;
+  createdAt: string;
 };
 
-const PRODUCTION_KEY = "aquasmart_production_events";
+const KEY = "aquasmart_production_events";
 
-function isBrowser() {
-  return typeof window !== "undefined";
+function storageKey() {
+  const user = getSessionUser();
+  return `${KEY}:${user?.tenantId ?? "demo"}`;
 }
 
-function keyForFarm() {
-  return `${PRODUCTION_KEY}:${getActiveFarmId()}`;
-}
-
-export function listProductionEvents(): ProductionEvent[] {
-  if (!isBrowser()) return [];
-  const raw = window.localStorage.getItem(keyForFarm());
+export function listProductionEvents() {
+  if (typeof window === "undefined") return [] as ProductionEvent[];
+  const raw = window.localStorage.getItem(storageKey());
   if (!raw) return [];
   try {
     return JSON.parse(raw) as ProductionEvent[];
@@ -31,11 +30,10 @@ export function listProductionEvents(): ProductionEvent[] {
   }
 }
 
-function saveEvents(rows: ProductionEvent[]) {
-  if (!isBrowser()) return;
-  window.localStorage.setItem(keyForFarm(), JSON.stringify(rows));
+export function addProductionEvent(event: Omit<ProductionEvent, "id" | "createdAt">) {
+  const events = listProductionEvents();
+  const next: ProductionEvent = { ...event, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+  window.localStorage.setItem(storageKey(), JSON.stringify([next, ...events]));
+  return next;
 }
 
-export function createProductionEvent(input: Omit<ProductionEvent, "id">) {
-  saveEvents([{ ...input, id: crypto.randomUUID() }, ...listProductionEvents()]);
-}

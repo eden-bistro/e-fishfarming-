@@ -8,27 +8,6 @@ export const Route = createFileRoute("/feeding/schedule")({
 });
 
 function Page() {
-  const [rows, setRows] = useState<FeedScheduleRow[]>([]);
-  const [form, setForm] = useState({ time: "", amountKg: "", pond: "" });
-
-  const totalKg = useMemo(() => rows.reduce((sum, r) => sum + r.amountKg, 0), [rows]);
-
-  function addSchedule() {
-    const amount = Number(form.amountKg);
-    if (!form.time || !form.pond.trim() || Number.isNaN(amount) || amount <= 0) return;
-
-    setRows((prev) => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        time: form.time,
-        pond: form.pond.trim(),
-        amountKg: amount,
-      },
-    ]);
-    setForm({ time: "", amountKg: "", pond: "" });
-  }
-
   return (
     <DashboardLayout title="Feeding Schedule" subtitle="No scheduled feed sessions yet.">
       <Card>
