@@ -27,7 +27,12 @@ function aiReply(question: string): string {
     return "For tilapia, split feed into 3–5 sessions during warm daylight hours when oxygen is stronger. Start with biomass-based ration, then adjust by appetite, FCR trend, water temperature, and DO. Avoid heavy feeding when DO is low or fish are stressed.";
   }
 
-  if (q.includes("pale gills") || q.includes("gills") || q.includes("sick") || q.includes("disease")) {
+  if (
+    q.includes("pale gills") ||
+    q.includes("gills") ||
+    q.includes("sick") ||
+    q.includes("disease")
+  ) {
     return "Pale gills can indicate anemia, parasite load, or chronic stress/poor water quality. Isolate affected fish, test ammonia/nitrite/DO immediately, inspect for external parasites, and reduce stressors. If mortality rises, consult a fish health vet for targeted diagnosis and treatment.";
   }
 

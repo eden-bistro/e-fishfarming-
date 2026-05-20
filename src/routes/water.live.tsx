@@ -27,14 +27,17 @@ function Page() {
   }, []);
 
   return (
-    <DashboardLayout title="Live Water Monitoring" subtitle="Real-time ESP32 sensor stream from Firebase Realtime Database.">
+    <DashboardLayout
+      title="Live Water Monitoring"
+      subtitle="Real-time ESP32 sensor stream from Firebase Realtime Database."
+    >
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {[
           ["Temperature", `${reading?.temperature ?? "--"} °C`],
           ["pH", `${reading?.ph ?? "--"}`],
           ["Dissolved Oxygen", `${reading?.dissolvedOxygen ?? "--"} mg/L`],
-                    ["Ammonia", `${reading?.ammonia ?? "--"} mg/L`],
-                  ].map(([label, value]) => (
+          ["Ammonia", `${reading?.ammonia ?? "--"} mg/L`],
+        ].map(([label, value]) => (
           <Card key={label}>
             <CardHeader>
               <CardTitle className="text-base">{label}</CardTitle>

@@ -38,13 +38,11 @@ function RouteComponent() {
   const brooders = useMemo(() => listBrooders(), [refresh]);
   const batches = useMemo(() => listFingerlingBatches(), [refresh]);
 
-  const readyCount = batches.filter(
-    (b) => b.status === "ready_for_transfer"
-  ).length;
+  const readyCount = batches.filter((b) => b.status === "ready_for_transfer").length;
 
   const totalFingerlings = useMemo(
     () => batches.reduce((acc, row) => acc + row.quantity, 0),
-    [batches]
+    [batches],
   );
 
   return (
@@ -57,18 +55,14 @@ function RouteComponent() {
           <CardHeader>
             <CardTitle className="text-sm">Brooders</CardTitle>
           </CardHeader>
-          <CardContent className="text-2xl font-semibold">
-            {brooders.length}
-          </CardContent>
+          <CardContent className="text-2xl font-semibold">{brooders.length}</CardContent>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle className="text-sm">Fingerling Batches</CardTitle>
           </CardHeader>
-          <CardContent className="text-2xl font-semibold">
-            {batches.length}
-          </CardContent>
+          <CardContent className="text-2xl font-semibold">{batches.length}</CardContent>
         </Card>
 
         <Card>
@@ -91,9 +85,7 @@ function RouteComponent() {
             <Label>Name</Label>
             <Input
               value={brooderForm.name}
-              onChange={(e) =>
-                setBrooderForm((f) => ({ ...f, name: e.target.value }))
-              }
+              onChange={(e) => setBrooderForm((f) => ({ ...f, name: e.target.value }))}
             />
           </div>
 
@@ -101,9 +93,7 @@ function RouteComponent() {
             <Label>Species</Label>
             <Input
               value={brooderForm.species}
-              onChange={(e) =>
-                setBrooderForm((f) => ({ ...f, species: e.target.value }))
-              }
+              onChange={(e) => setBrooderForm((f) => ({ ...f, species: e.target.value }))}
             />
           </div>
 
@@ -146,9 +136,7 @@ function RouteComponent() {
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           {batches.length === 0 ? (
-            <p className="text-muted-foreground">
-              No fingerling batches yet.
-            </p>
+            <p className="text-muted-foreground">No fingerling batches yet.</p>
           ) : (
             batches.map((b) => (
               <div key={b.id} className="rounded border p-3">
@@ -157,9 +145,7 @@ function RouteComponent() {
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Produced: {b.producedAt} · Status: {b.status}
-                  {b.transferredToCage
-                    ? ` · Transferred to ${b.transferredToCage}`
-                    : ""}
+                  {b.transferredToCage ? ` · Transferred to ${b.transferredToCage}` : ""}
                 </p>
 
                 <div className="mt-2 flex flex-wrap gap-2">

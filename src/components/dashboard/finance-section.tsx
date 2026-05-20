@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Area, AreaChart, ResponsiveContainer } from "recharts";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 
-
 function StatBlock({
   label,
   value,
@@ -47,14 +46,20 @@ function StatBlock({
                 <stop offset="100%" stopColor={color} stopOpacity={0} />
               </linearGradient>
             </defs>
-            <Area type="monotone" dataKey="v" stroke={color} strokeWidth={2} fill={`url(#${id})`} isAnimationActive={false} />
+            <Area
+              type="monotone"
+              dataKey="v"
+              stroke={color}
+              strokeWidth={2}
+              fill={`url(#${id})`}
+              isAnimationActive={false}
+            />
           </AreaChart>
         </ResponsiveContainer>
       </div>
     </div>
   );
 }
-
 
 export function FinanceSection() {
   const [incomeSeries, setIncomeSeries] = useState<{ v: number }[]>([]);
@@ -66,8 +71,18 @@ export function FinanceSection() {
       const month = new Date().toISOString().slice(0, 7);
       const incomeMonth = incomeRows.filter((r) => r.date.startsWith(month));
       const expenseMonth = expenseRows.filter((r) => r.date.startsWith(month));
-      setIncomeSeries(incomeMonth.map((r) => ({ v: Number(r.total || 0) })).slice(0, 12).reverse());
-      setExpenseSeries(expenseMonth.map((r) => ({ v: Number(r.amount || 0) })).slice(0, 12).reverse());
+      setIncomeSeries(
+        incomeMonth
+          .map((r) => ({ v: Number(r.total || 0) }))
+          .slice(0, 12)
+          .reverse(),
+      );
+      setExpenseSeries(
+        expenseMonth
+          .map((r) => ({ v: Number(r.amount || 0) }))
+          .slice(0, 12)
+          .reverse(),
+      );
     }
     load();
   }, []);
@@ -75,7 +90,10 @@ export function FinanceSection() {
   const totalIncome = useMemo(() => incomeSeries.reduce((s, p) => s + p.v, 0), [incomeSeries]);
   const totalExpenses = useMemo(() => expenseSeries.reduce((s, p) => s + p.v, 0), [expenseSeries]);
   const totalProfit = totalIncome - totalExpenses;
-  const profitSeries = useMemo(() => incomeSeries.map((p, i) => ({ v: p.v - (expenseSeries[i]?.v ?? 0) })), [incomeSeries, expenseSeries]);
+  const profitSeries = useMemo(
+    () => incomeSeries.map((p, i) => ({ v: p.v - (expenseSeries[i]?.v ?? 0) })),
+    [incomeSeries, expenseSeries],
+  );
 
   return (
     <Card>
@@ -85,9 +103,33 @@ export function FinanceSection() {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <StatBlock id="g-income" label="Total Income" value={`KSh ${totalIncome.toLocaleString()}`} delta="Live" positive series={incomeSeries} color="var(--success)" />
-          <StatBlock id="g-exp" label="Total Expenses" value={`KSh ${totalExpenses.toLocaleString()}`} delta="Live" positive={false} series={expenseSeries} color="var(--destructive)" />
-          <StatBlock id="g-profit" label="Net Profit" value={`KSh ${totalProfit.toLocaleString()}`} delta="Live" positive={totalProfit >= 0} series={profitSeries} color="var(--brand)" />
+          <StatBlock
+            id="g-income"
+            label="Total Income"
+            value={`KSh ${totalIncome.toLocaleString()}`}
+            delta="Live"
+            positive
+            series={incomeSeries}
+            color="var(--success)"
+          />
+          <StatBlock
+            id="g-exp"
+            label="Total Expenses"
+            value={`KSh ${totalExpenses.toLocaleString()}`}
+            delta="Live"
+            positive={false}
+            series={expenseSeries}
+            color="var(--destructive)"
+          />
+          <StatBlock
+            id="g-profit"
+            label="Net Profit"
+            value={`KSh ${totalProfit.toLocaleString()}`}
+            delta="Live"
+            positive={totalProfit >= 0}
+            series={profitSeries}
+            color="var(--brand)"
+          />
         </div>
       </CardContent>
     </Card>

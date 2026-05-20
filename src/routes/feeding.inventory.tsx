@@ -11,8 +11,12 @@ function Page() {
   return (
     <DashboardLayout title="Feed Inventory" subtitle="Track stock levels and reorder points.">
       <Card>
-        <CardHeader><CardTitle className="text-base">Inventory</CardTitle></CardHeader>
-        <CardContent className="text-sm text-muted-foreground">No feed inventory records available.</CardContent>
+        <CardHeader>
+          <CardTitle className="text-base">Inventory</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+          No feed inventory records available.
+        </CardContent>
       </Card>
     </DashboardLayout>
   );

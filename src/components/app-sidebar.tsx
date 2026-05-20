@@ -113,18 +113,26 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     tooltip={item.title}
-                    onClick={() => setOpenSections((prev) => ({ ...prev, [item.title]: !prev[item.title] }))}
+                    onClick={() =>
+                      setOpenSections((prev) => ({ ...prev, [item.title]: !prev[item.title] }))
+                    }
                   >
                     <item.icon className="h-4 w-4" />
                     <span>{item.title}</span>
-                    <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                    <ChevronDown
+                      className={`ml-auto h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                    />
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 {isOpen && (
                   <div className="ml-7 mt-1 space-y-1 group-data-[collapsible=icon]:hidden">
                     {item.children.map((child) => (
                       <SidebarMenuItem key={child.url}>
-                        <SidebarMenuButton asChild isActive={path === child.url} tooltip={child.title}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={path === child.url}
+                          tooltip={child.title}
+                        >
                           <Link to={child.url as never}>
                             <LineChart className="h-3.5 w-3.5 opacity-60" />
                             <span>{child.title}</span>

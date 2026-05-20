@@ -4,7 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Hand, Play } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -21,15 +27,27 @@ function Page() {
   const [amount, setAmount] = useState([2.5]);
   const [pond, setPond] = useState("Pond A");
   return (
-    <DashboardLayout title="Manual Feeding" subtitle="Trigger an immediate feed cycle for any pond.">
+    <DashboardLayout
+      title="Manual Feeding"
+      subtitle="Trigger an immediate feed cycle for any pond."
+    >
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
-          <CardHeader><CardTitle className="text-base">Dispense Feed</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-base">Dispense Feed</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-5">
             <div className="space-y-2">
               <Label>Pond</Label>
-              <Select defaultValue="a" onValueChange={(v) => setPond(v === "a" ? "Pond A" : v === "b" ? "Pond B" : "Pond C")}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                defaultValue="a"
+                onValueChange={(v) =>
+                  setPond(v === "a" ? "Pond A" : v === "b" ? "Pond B" : "Pond C")
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="a">Pond A — Tilapia</SelectItem>
                   <SelectItem value="b">Pond B — Catfish</SelectItem>
@@ -38,7 +56,10 @@ function Page() {
               </Select>
             </div>
             <div className="space-y-2">
-              <div className="flex justify-between"><Label>Amount</Label><span className="text-sm font-mono">{amount[0].toFixed(1)} kg</span></div>
+              <div className="flex justify-between">
+                <Label>Amount</Label>
+                <span className="text-sm font-mono">{amount[0].toFixed(1)} kg</span>
+              </div>
               <Slider value={amount} onValueChange={setAmount} min={0.5} max={10} step={0.1} />
             </div>
             <Button
@@ -56,7 +77,9 @@ function Page() {
           </CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle className="text-base">Recent Manual Feeds</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-base">Recent Manual Feeds</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-3 text-sm">
             {[
               { t: "Today 09:14", kg: 1.5, pond: "Pond A", by: "John" },
@@ -65,7 +88,14 @@ function Page() {
             ].map((r, i) => (
               <div key={i} className="flex items-center gap-3 rounded-lg border p-3">
                 <Hand className="h-4 w-4 text-brand" />
-                <div className="flex-1"><p className="font-medium">{r.pond} · {r.kg} kg</p><p className="text-xs text-muted-foreground">{r.t} · by {r.by}</p></div>
+                <div className="flex-1">
+                  <p className="font-medium">
+                    {r.pond} · {r.kg} kg
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {r.t} · by {r.by}
+                  </p>
+                </div>
               </div>
             ))}
           </CardContent>
