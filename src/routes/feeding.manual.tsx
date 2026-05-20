@@ -19,6 +19,7 @@ export const Route = createFileRoute("/feeding/manual")({
 
 function Page() {
   const [amount, setAmount] = useState([2.5]);
+  const [pond, setPond] = useState("Pond A");
   return (
     <DashboardLayout title="Manual Feeding" subtitle="Trigger an immediate feed cycle for any pond.">
       <div className="grid gap-4 md:grid-cols-2">
@@ -27,7 +28,7 @@ function Page() {
           <CardContent className="space-y-5">
             <div className="space-y-2">
               <Label>Pond</Label>
-              <Select defaultValue="a">
+              <Select defaultValue="a" onValueChange={(v) => setPond(v === "a" ? "Pond A" : v === "b" ? "Pond B" : "Pond C")}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="a">Pond A — Tilapia</SelectItem>
