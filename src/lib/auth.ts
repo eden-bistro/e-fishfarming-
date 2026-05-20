@@ -52,7 +52,14 @@ export function getSessionUser(): (SessionUser & { name?: string }) | null {
 export function listUsers(): AuthUser[] {
   const session = getSessionUser();
   if (!session) return [];
-  return [{ id: session.id, name: session.email, email: session.email, farm: getCurrentUserRecord()?.farm }];
+  return [
+    {
+      id: session.id,
+      name: session.email,
+      email: session.email,
+      farm: getCurrentUserRecord()?.farm,
+    },
+  ];
 }
 
 export function getCurrentUserRecord(): AuthUser | null {
@@ -63,7 +70,9 @@ export function getCurrentUserRecord(): AuthUser | null {
   return { id: session.id, email: session.email, name: session.email, farm };
 }
 
-export function saveCurrentUserFarm(farm: FarmProfile): { ok: true } | { ok: false; message: string } {
+export function saveCurrentUserFarm(
+  farm: FarmProfile,
+): { ok: true } | { ok: false; message: string } {
   const current = getCurrentUserRecord();
   if (!current || !isBrowser()) return { ok: false, message: "No authenticated user." };
   window.localStorage.setItem(`${FARM_KEY}:${current.id}`, JSON.stringify(farm));

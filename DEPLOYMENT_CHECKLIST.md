@@ -1,25 +1,30 @@
 # Production Deployment Checklist
 
 ## 1) Environment variables
+
 Set all required variables from `.env.example`.
 
 Minimum required for current app features:
+
 - `VITE_SUPABASE_URL` or `SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY` or `SUPABASE_ANON_KEY`
 - `VITE_FIREBASE_DATABASE_URL` or `FIREBASE_DATABASE_URL`
 
 Optional but recommended:
+
 - `JWT_SECRET`
 - `IOT_INGEST_TOKEN`
 - Firebase Admin vars for server-side sync
 
 ## 2) Supabase setup
+
 1. Run `supabase/schema.sql`.
 2. Run `supabase/rls-policies.sql`.
 3. Ensure JWT includes `app_metadata.farm_id` for multi-tenant isolation.
 4. For initial bootstrap/testing, default farm id is `default`.
 
 ## 3) Firebase Realtime Database
+
 1. Apply `firebase/database.rules.json`.
 2. Ensure auth tokens include:
    - `device: true` for sensor/device writes
@@ -27,12 +32,15 @@ Optional but recommended:
 3. Confirm RTDB URL matches `VITE_FIREBASE_DATABASE_URL`.
 
 ## 4) Cloudflare deployment
+
 1. Confirm `wrangler.jsonc` is valid for your account/project.
 2. Configure secrets/vars in Cloudflare dashboard or wrangler.
 3. Build and deploy.
 
 ## 5) Health checks
+
 Use:
+
 - `GET /api/health/env` for environment sanity check.
 
 A healthy response returns `ok: true` with no missing required vars.

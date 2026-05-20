@@ -26,10 +26,7 @@ function RouteComponent() {
     feedKg: "",
   });
 
-  const events = useMemo(
-    () => listProductionEvents(),
-    [refresh]
-  );
+  const events = useMemo(() => listProductionEvents(), [refresh]);
 
   const stats = useMemo(() => {
     const stocked = events
@@ -48,28 +45,28 @@ function RouteComponent() {
       .filter((e) => e.type === "feeding")
       .reduce((s, e) => s + (e.feedKg ?? 0), 0);
 
-    const survival =
-      stocked > 0 ? ((stocked - mortality) / stocked) * 100 : 0;
+    const survival = stocked > 0 ? ((stocked - mortality) / stocked) * 100 : 0;
 
     const biomassGain = Math.max(harvestKg, 1);
     const fcr = feedKg / biomassGain;
 
     const byCage = Object.values(
-      events.reduce<
-        Record<string, { cageId: string; feedKg: number; harvestKg: number }>
-      >((acc, e) => {
-        const item = acc[e.cageId] ?? {
-          cageId: e.cageId,
-          feedKg: 0,
-          harvestKg: 0,
-        };
+      events.reduce<Record<string, { cageId: string; feedKg: number; harvestKg: number }>>(
+        (acc, e) => {
+          const item = acc[e.cageId] ?? {
+            cageId: e.cageId,
+            feedKg: 0,
+            harvestKg: 0,
+          };
 
-        if (e.type === "feeding") item.feedKg += e.feedKg ?? 0;
-        if (e.type === "harvest") item.harvestKg += e.weightKg ?? 0;
+          if (e.type === "feeding") item.feedKg += e.feedKg ?? 0;
+          if (e.type === "harvest") item.harvestKg += e.weightKg ?? 0;
 
-        acc[e.cageId] = item;
-        return acc;
-      }, {})
+          acc[e.cageId] = item;
+          return acc;
+        },
+        {},
+      ),
     ).map((c) => ({
       ...c,
       fcr: c.feedKg / Math.max(c.harvestKg, 1),
@@ -88,54 +85,42 @@ function RouteComponent() {
           <CardHeader>
             <CardTitle className="text-base">Stocked fish</CardTitle>
           </CardHeader>
-          <CardContent className="text-3xl font-semibold">
-            {stats.stocked}
-          </CardContent>
+          <CardContent className="text-3xl font-semibold">{stats.stocked}</CardContent>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Mortality</CardTitle>
           </CardHeader>
-          <CardContent className="text-3xl font-semibold">
-            {stats.mortality}
-          </CardContent>
+          <CardContent className="text-3xl font-semibold">{stats.mortality}</CardContent>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Harvest kg</CardTitle>
           </CardHeader>
-          <CardContent className="text-3xl font-semibold">
-            {stats.harvestKg.toFixed(1)}
-          </CardContent>
+          <CardContent className="text-3xl font-semibold">{stats.harvestKg.toFixed(1)}</CardContent>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Survival rate</CardTitle>
           </CardHeader>
-          <CardContent className="text-3xl font-semibold">
-            {stats.survival.toFixed(1)}%
-          </CardContent>
+          <CardContent className="text-3xl font-semibold">{stats.survival.toFixed(1)}%</CardContent>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Feed used</CardTitle>
           </CardHeader>
-          <CardContent className="text-3xl font-semibold">
-            {stats.feedKg.toFixed(1)} kg
-          </CardContent>
+          <CardContent className="text-3xl font-semibold">{stats.feedKg.toFixed(1)} kg</CardContent>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle className="text-base">FCR (overall)</CardTitle>
           </CardHeader>
-          <CardContent className="text-3xl font-semibold">
-            {stats.fcr.toFixed(2)}
-          </CardContent>
+          <CardContent className="text-3xl font-semibold">{stats.fcr.toFixed(2)}</CardContent>
         </Card>
       </div>
     </DashboardLayout>

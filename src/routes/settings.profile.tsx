@@ -22,20 +22,34 @@ function Page() {
     if (ix < 0) return;
     users[ix] = { ...users[ix], name: name.trim(), email: email.trim().toLowerCase() };
     localStorage.setItem("aquasmart_users", JSON.stringify(users));
-    localStorage.setItem("aquasmart_session", JSON.stringify({ id: current.id, name: name.trim(), email: email.trim().toLowerCase() }));
+    localStorage.setItem(
+      "aquasmart_session",
+      JSON.stringify({ id: current.id, name: name.trim(), email: email.trim().toLowerCase() }),
+    );
     setMsg("Profile updated.");
   }
 
   return (
     <DashboardLayout title="Profile" subtitle="Edit your account profile.">
       <Card>
-        <CardHeader><CardTitle className="text-base">My Profile</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">My Profile</CardTitle>
+        </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2"><Label>Full Name</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
-          <div className="space-y-2"><Label>Email</Label><Input value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+          <div className="space-y-2">
+            <Label>Full Name</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Email</Label>
+            <Input value={email} onChange={(e) => setEmail(e.target.value)} />
+          </div>
         </CardContent>
       </Card>
-      <div className="space-y-2"><Button onClick={save}>Save Profile</Button>{msg && <p className="text-sm text-muted-foreground">{msg}</p>}</div>
+      <div className="space-y-2">
+        <Button onClick={save}>Save Profile</Button>
+        {msg && <p className="text-sm text-muted-foreground">{msg}</p>}
+      </div>
     </DashboardLayout>
   );
 }

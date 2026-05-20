@@ -155,25 +155,30 @@ src/
 ## 2) Route map (enterprise)
 
 ### Auth
+
 - `/auth/login`
 - `/auth/register`
 - `/auth/forgot-password`
 
 ### Dashboard
+
 - `/dashboard`
 
 ### Cages
+
 - `/cages`
 - `/cages/new`
 - `/cages/:cageId`
 - `/cages/:cageId/edit`
 
 ### Monitoring + Devices
+
 - `/monitoring/live`
 - `/monitoring/history`
 - `/monitoring/devices`
 
 ### Feeding
+
 - `/feeding/schedule`
 - `/feeding/manual`
 - `/feeding/automatic`
@@ -181,11 +186,13 @@ src/
 - `/feeding/logs`
 
 ### Hatchery
+
 - `/hatchery/brooders`
 - `/hatchery/fingerling-production`
 - `/hatchery/fingerling-sales`
 
 ### Fish Production
+
 - `/production/batches`
 - `/production/growth`
 - `/production/mortality`
@@ -193,12 +200,14 @@ src/
 - `/production/analytics`
 
 ### Inventory
+
 - `/inventory/feed`
 - `/inventory/medicine`
 - `/inventory/equipment`
 - `/inventory/purchase-orders`
 
 ### Finance
+
 - `/finance/income`
 - `/finance/expenses`
 - `/finance/ledger`
@@ -206,22 +215,26 @@ src/
 - `/finance/cashflow`
 
 ### Alerts
+
 - `/alerts/active`
 - `/alerts/history`
 - `/alerts/rules`
 
 ### Reports
+
 - `/reports/financial`
 - `/reports/production`
 - `/reports/water-quality`
 - `/reports/sales`
 
 ### AI
+
 - `/ai/assistant`
 - `/ai/feed-optimizer`
 - `/ai/forecast`
 
 ### Settings
+
 - `/settings/farm`
 - `/settings/users`
 - `/settings/roles`
@@ -234,6 +247,7 @@ src/
 ## 3.1 Supabase contracts (ERP / business source of truth)
 
 ### Core tenant + identity
+
 - `farms`
   - `id uuid pk`
   - `name text`
@@ -249,6 +263,7 @@ src/
   - `is_active boolean`
 
 ### Cage management
+
 - `cages`
   - `id uuid pk`
   - `farm_id uuid fk`
@@ -259,6 +274,7 @@ src/
   - `created_at timestamptz`
 
 ### Devices
+
 - `devices`
   - `id uuid pk`
   - `farm_id uuid fk`
@@ -269,6 +285,7 @@ src/
   - `last_seen_at timestamptz`
 
 ### Feeding
+
 - `feeding_schedules`
   - `id uuid pk`
   - `farm_id uuid fk`
@@ -290,6 +307,7 @@ src/
   - `trigger_source text` (`manual|schedule|ai|fallback`)
 
 ### Production
+
 - `fish_batches`
   - `id uuid pk`
   - `farm_id uuid fk`
@@ -321,6 +339,7 @@ src/
   - `revenue numeric`
 
 ### Hatchery
+
 - `brooders`
 - `fingerling_production`
 - `fingerling_sales`
@@ -328,12 +347,14 @@ src/
 (Use same mandatory columns pattern: `id`, `farm_id`, business fields, `created_at`.)
 
 ### Finance
+
 - `finance_income`
 - `finance_expenses`
 - `ledger_entries`
 - `payments`
 
 ### Inventory
+
 - `inventory_items`
   - `id uuid pk`
   - `farm_id uuid fk`
@@ -351,12 +372,14 @@ src/
   - `reason text`
 
 ### Alerts + reporting
+
 - `alert_rules`
 - `alert_events`
 - `report_jobs`
 - `report_exports`
 
 ### RLS contract (must-have)
+
 - Every table includes `farm_id uuid not null`.
 - Policies use `farm_id = (auth.jwt()->'app_metadata'->>'farm_id')::uuid`.
 - No `'default'` tenant fallback in production.
@@ -366,9 +389,11 @@ src/
 ## 3.2 Firebase contracts (realtime / IoT)
 
 Root path:
+
 - `/farms/{farmId}`
 
 ### Sensors
+
 - `/farms/{farmId}/cages/{cageId}/sensors/latest`
   - `timestamp`
   - `temperature`
@@ -380,6 +405,7 @@ Root path:
 - `/farms/{farmId}/cages/{cageId}/sensors/history/{yyyy}/{mm}/{dd}/{eventId}`
 
 ### Device telemetry
+
 - `/farms/{farmId}/devices/{deviceId}/status`
   - `online`
   - `last_seen`
@@ -388,6 +414,7 @@ Root path:
   - `battery`
 
 ### Feeding commands + execution
+
 - `/farms/{farmId}/commands/feeding/{commandId}`
   - `cage_id`
   - `mode`
@@ -404,6 +431,7 @@ Root path:
   - `status`
 
 ### Alerts
+
 - `/farms/{farmId}/alerts/active/{alertId}`
   - `type`
   - `severity`
@@ -416,6 +444,7 @@ Root path:
 - `/farms/{farmId}/alerts/history/{yyyy}/{mm}/{alertId}`
 
 ### Security rules contract
+
 - Users may read/write only their `farmId` subtree (claims-based).
 - Device service account writes sensor/device paths only.
 - Frontend users cannot overwrite historical telemetry nodes.
@@ -433,68 +462,84 @@ Root path:
 ## 5) Phased sprint plan (Phase 1–4)
 
 ## Phase 1 — Foundation hardening (2–3 weeks)
+
 Goals:
+
 1. Replace localStorage auth with Supabase Auth.
 2. Introduce tenant + RBAC contexts and route guards.
 3. Remove hardcoded `default` farm usage from frontend clients.
 4. Create shared services (`firebase/*`, `supabase/*`, `services/*`) and move existing logic.
 
 Deliverables:
+
 - Auth/login/register/forgot-password working with secure sessions.
 - `farmId` and role resolved from JWT/profile for every request.
 - Realtime alerts page uses tenant-aware Firebase path.
 
 Exit criteria:
+
 - No plaintext credentials in browser storage.
 - No `default` tenant in code paths.
 - Build + smoke tests pass.
 
 ## Phase 2 — Core commercial modules (3–4 weeks)
+
 Goals:
+
 1. Cage management CRUD + detail views.
 2. Device monitoring page (online/offline, last seen, signal, firmware).
 3. Feeding expansion: schedule CRUD, automatic/hybrid modes, logs page.
 4. Inventory feed module with low-stock warnings.
 
 Deliverables:
+
 - Sidebar and routes aligned to enterprise map.
 - Firebase command + execution contract implemented.
 - Supabase tables for cages/devices/feeding_schedules/feeding_logs/inventory.
 
 Exit criteria:
+
 - Operator can configure and execute feeding across cages.
 - Live device health visible.
 - Inventory low-stock alerts visible.
 
 ## Phase 3 — ERP depth + analytics (3–4 weeks)
+
 Goals:
+
 1. Hatchery and production modules.
 2. Finance ledger/cashflow/report datasets.
 3. Reports center (financial/production/water/sales) with export jobs.
 4. Alert rules engine UI and history.
 
 Deliverables:
+
 - Production KPIs: survival, FCR, biomass, harvest estimates.
 - Monthly financial views (revenue/expense/profit/cashflow).
 - Historical alerts and acknowledgements.
 
 Exit criteria:
+
 - Cross-module reports consistent with source records.
 - Auditable data trail for operations + finance.
 
 ## Phase 4 — Enterprise readiness + scale (2–3 weeks)
+
 Goals:
+
 1. Observability, audit logs, SLO dashboards.
 2. E2E regression suite for critical workflows.
 3. Performance optimization and edge caching where safe.
 4. AI module integration points (recommendations + forecasting).
 
 Deliverables:
+
 - Sentry/logging/metrics dashboards.
 - CI gates: lint, typecheck, unit, e2e, migration checks.
 - Incident-ready alerts operations playbook.
 
 Exit criteria:
+
 - Production release checklist passed.
 - Multi-farm load test baseline passed.
 - Security review sign-off for tenant isolation.

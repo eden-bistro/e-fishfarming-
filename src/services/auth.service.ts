@@ -51,7 +51,10 @@ async function authRequest(path: string, body: Record<string, unknown>) {
   const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
 
   if (!response.ok) {
-    return { ok: false as const, message: String(payload.msg ?? payload.error_description ?? "Authentication failed.") };
+    return {
+      ok: false as const,
+      message: String(payload.msg ?? payload.error_description ?? "Authentication failed."),
+    };
   }
 
   return { ok: true as const, payload };

@@ -42,5 +42,7 @@ export function listEnterpriseAlerts(): EnterpriseAlert[] {
       scope: e.cageId,
     }));
 
-  return [...lowStock, ...recentMortality].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+  return [...lowStock, ...recentMortality].sort(
+    (a, b) => +new Date(b.createdAt) - +new Date(a.createdAt),
+  );
 }
