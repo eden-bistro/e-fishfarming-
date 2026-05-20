@@ -32,7 +32,7 @@ function Page() {
       setError(result.message);
       return;
     }
-    navigate({ to: "/auth/login" });
+    navigate({ to: "/" });
   }
 
   return (
