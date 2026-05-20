@@ -1,4 +1,5 @@
 import { pondPath } from "@/firebase/paths";
+import { getActivePondId } from "@/lib/tenant";
 const env = import.meta.env as Record<string, string | undefined>;
 
 const firebaseBaseUrl = env.VITE_FIREBASE_DATABASE_URL ?? env.FIREBASE_DATABASE_URL;
@@ -84,7 +85,7 @@ export async function getLatestWaterReading(): Promise<WaterReading | null> {
 export async function listWaterAlerts(limit = 20): Promise<WaterAlert[]> {
   if (!firebaseBaseUrl) return [];
 
-  const response = await fetch(`${firebaseBaseUrl}/farms/default/ponds/pond-a/alerts.json?orderBy="$key"&limitToLast=${limit}`);
+  const response = await fetch(`${firebaseBaseUrl}/${pondPath("alerts")}.json?orderBy="$key"&limitToLast=${limit}`);
 
   if (response.ok) {
     const raw = (await response.json()) as Record<string, Omit<WaterAlert, "id" | "source">> | null;
@@ -151,7 +152,7 @@ export async function pushManualFeedingEvent(amountKg: number): Promise<void> {
   if (!firebaseBaseUrl) return;
   const payload = {
     timestamp: new Date().toISOString(),
-    pondId: "pond-a",
+    pondId: getActivePondId(),
     mode: "manual",
     amountKg,
     status: "completed",
