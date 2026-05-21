@@ -74,6 +74,8 @@ function RouteComponent() {
     return { stocked, mortality, harvestKg, survival, feedKg, fcr, byCage };
   }, [events]);
 
+
+
   const intelligence = useMemo(() => buildProductionIntelligence(events), [events]);
   return (
     <DashboardLayout
@@ -127,18 +129,14 @@ function RouteComponent() {
           <CardHeader>
             <CardTitle className="text-base">Current biomass (est.)</CardTitle>
           </CardHeader>
-          <CardContent className="text-3xl font-semibold">
-            {intelligence.currentBiomassKg.toFixed(1)} kg
-          </CardContent>
+          <CardContent className="text-3xl font-semibold">{intelligence.currentBiomassKg.toFixed(1)} kg</CardContent>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Projected harvest (30d)</CardTitle>
           </CardHeader>
-          <CardContent className="text-3xl font-semibold">
-            {intelligence.projectedHarvestKg30d.toFixed(1)} kg
-          </CardContent>
+          <CardContent className="text-3xl font-semibold">{intelligence.projectedHarvestKg30d.toFixed(1)} kg</CardContent>
         </Card>
 
         <Card>

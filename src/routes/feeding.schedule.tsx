@@ -17,36 +17,28 @@ export const Route = createFileRoute("/feeding/schedule")({
 });
 
 function Page() {
-  const [rows, setRows] = useState<FeedingCommand[]>([]);
-  const [form, setForm] = useState({
-    amountKg: "",
-    targetPondId: "pond-a",
-    requestedBy: "operator",
-  });
+  const [rows, setRows] = useState<FeedScheduleRow[]>([]);
+  const [form, setForm] = useState({ time: "", pond: "Pond A", amountKg: "" });
 
-  async function load() {
-    setRows(await listFeedingCommands());
-  }
+  const totalKg = useMemo(() => rows.reduce((sum, row) => sum + row.amountKg, 0), [rows]);
 
-  useEffect(() => {
-    void load();
-    const timer = setInterval(() => void load(), 10000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const queuedCount = useMemo(() => rows.filter((r) => r.status === "queued").length, [rows]);
-
-  async function addCommand() {
+  function addSchedule() {
     const amount = Number(form.amountKg);
-    if (amount <= 0) return;
-    await queueFeedingCommand({
-      action: "dispense_feed",
+    if (!form.time || !form.pond.trim() || amount <= 0) return;
+
+    const next: FeedScheduleRow = {
+      id: crypto.randomUUID(),
+      time: form.time,
+      pond: form.pond.trim(),
       amountKg: amount,
-      targetPondId: form.targetPondId,
-      requestedBy: form.requestedBy,
-    });
+    };
+
+    setRows((current) =>
+      [...current, next].sort(
+        (a, b) => a.time.localeCompare(b.time) || a.pond.localeCompare(b.pond),
+      ),
+    );
     setForm((current) => ({ ...current, amountKg: "" }));
-    await load();
   }
 
   return (
