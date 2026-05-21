@@ -14,6 +14,30 @@ export const Route = createFileRoute("/feeding/schedule")({
 });
 
 function Page() {
+  const [rows, setRows] = useState<FeedScheduleRow[]>([]);
+  const [form, setForm] = useState({ time: "", pond: "Pond A", amountKg: "" });
+
+  const totalKg = useMemo(() => rows.reduce((sum, row) => sum + row.amountKg, 0), [rows]);
+
+  function addSchedule() {
+    const amount = Number(form.amountKg);
+    if (!form.time || !form.pond.trim() || amount <= 0) return;
+
+    const next: FeedScheduleRow = {
+      id: crypto.randomUUID(),
+      time: form.time,
+      pond: form.pond.trim(),
+      amountKg: amount,
+    };
+
+    setRows((current) =>
+      [...current, next].sort(
+        (a, b) => a.time.localeCompare(b.time) || a.pond.localeCompare(b.pond),
+      ),
+    );
+    setForm((current) => ({ ...current, amountKg: "" }));
+  }
+
   return (
     <DashboardLayout title="Feeding Schedule" subtitle="Plan daily feed windows per cage/pond.">
       <Card>
