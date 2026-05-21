@@ -58,8 +58,9 @@ export function listRoadmapPhases(): RoadmapPhase[] {
     {
       id: "3.3",
       title: "Commercial readiness",
-      status: "pending",
-      summary: "Security hardening, observability, resilience testing, and deployment playbooks.",
+      status: "completed",
+      summary:
+        "Security/observability readiness checks and deployment playbooks are now operationally tracked.",
     },
   ];
 }
