@@ -9,7 +9,6 @@ type ServerEntry = {
 
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
-
 function getEnvRecord(env: unknown): Record<string, string | undefined> {
   if (!env || typeof env !== "object") return {};
   return env as Record<string, string | undefined>;
@@ -23,8 +22,14 @@ function envHealthResponse(env: unknown): Response {
   const envRecord = getEnvRecord(env);
   const required = {
     SUPABASE_URL: firstDefined([envRecord.VITE_SUPABASE_URL, envRecord.SUPABASE_URL]),
-    SUPABASE_ANON_KEY: firstDefined([envRecord.VITE_SUPABASE_ANON_KEY, envRecord.SUPABASE_ANON_KEY]),
-    FIREBASE_DATABASE_URL: firstDefined([envRecord.VITE_FIREBASE_DATABASE_URL, envRecord.FIREBASE_DATABASE_URL]),
+    SUPABASE_ANON_KEY: firstDefined([
+      envRecord.VITE_SUPABASE_ANON_KEY,
+      envRecord.SUPABASE_ANON_KEY,
+    ]),
+    FIREBASE_DATABASE_URL: firstDefined([
+      envRecord.VITE_FIREBASE_DATABASE_URL,
+      envRecord.FIREBASE_DATABASE_URL,
+    ]),
   };
 
   const missing = Object.entries(required)
@@ -48,11 +53,10 @@ function envHealthResponse(env: unknown): Response {
   );
 }
 
-
 async function getServerEntry(): Promise<ServerEntry> {
   if (!serverEntryPromise) {
     serverEntryPromise = import("@tanstack/react-start/server-entry").then(
-      (m) => ((m as { default?: ServerEntry }).default ?? (m as unknown as ServerEntry)),
+      (m) => (m as { default?: ServerEntry }).default ?? (m as unknown as ServerEntry),
     );
   }
   return serverEntryPromise;

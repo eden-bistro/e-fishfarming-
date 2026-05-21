@@ -51,7 +51,10 @@ async function authRequest(path: string, body: Record<string, unknown>) {
   const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
 
   if (!response.ok) {
-    return { ok: false as const, message: String(payload.msg ?? payload.error_description ?? "Authentication failed.") };
+    return {
+      ok: false as const,
+      message: String(payload.msg ?? payload.error_description ?? "Authentication failed."),
+    };
   }
 
   return { ok: true as const, payload };
@@ -65,7 +68,24 @@ export async function registerUser(name: string, email: string, password: string
   });
 
   if (!result.ok) return result;
-  return { ok: true as const };
+
+  const access_token = String(result.payload.access_token ?? "");
+  const userObj = (result.payload.user ?? {}) as Record<string, unknown>;
+  const user = {
+    id: String(userObj.id ?? ""),
+    email: String(userObj.email ?? email.trim().toLowerCase()),
+  };
+
+  if (access_token && user.id) {
+    setSession(access_token, user);
+    return { ok: true as const, autoSignedIn: true as const };
+  }
+
+  return {
+    ok: false as const,
+    message:
+      "Email confirmation is enabled in Supabase. Disable 'Confirm email' in Supabase Auth settings to allow instant registration.",
+  };
 }
 
 export async function loginUser(email: string, password: string) {

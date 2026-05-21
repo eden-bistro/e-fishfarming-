@@ -1,3 +1,5 @@
+const env = import.meta.env as Record<string, string | undefined>;
+
 export type RoadmapStatus = "completed" | "in_progress" | "pending";
 
 export type RoadmapPhase = {
@@ -8,6 +10,8 @@ export type RoadmapPhase = {
 };
 
 export function listRoadmapPhases(): RoadmapPhase[] {
+  const hasSupabase = Boolean(env.VITE_SUPABASE_URL && env.VITE_SUPABASE_ANON_KEY);
+  const hasFirebase = Boolean(env.VITE_FIREBASE_DATABASE_URL);
 
   return [
     {
@@ -20,31 +24,36 @@ export function listRoadmapPhases(): RoadmapPhase[] {
       id: "2.8",
       title: "Unified alerts center (IoT + enterprise)",
       status: "completed",
-      summary: "Alerts page merges water quality telemetry alerts with inventory/production operational alerts.",
+      summary:
+        "Alerts page merges water quality telemetry alerts with inventory/production operational alerts.",
     },
     {
       id: "2.9",
       title: "Data integration hardening (Supabase + Firebase)",
-      status: "completed",
-      summary: "Added Supabase-backed enterprise storage adapters with tenant-id scoping and local fallback safety.",
+      status: hasSupabase && hasFirebase ? "in_progress" : "pending",
+      summary:
+        "Move enterprise modules from local demo storage to backend persistence with strict tenant boundaries.",
     },
     {
       id: "3.0",
       title: "Financial ERP depth and auditable ledgers",
       status: "pending",
-      summary: "Full accounting-grade postings, payments, cost links, and exportable financial statements.",
+      summary:
+        "Full accounting-grade postings, payments, cost links, and exportable financial statements.",
     },
     {
       id: "3.1",
       title: "Production intelligence and forecasting",
       status: "pending",
-      summary: "Advanced growth/FCR analytics, harvest forecasting, and trend-based operational guidance.",
+      summary:
+        "Advanced growth/FCR analytics, harvest forecasting, and trend-based operational guidance.",
     },
     {
       id: "3.2",
       title: "Automation + notification channels",
       status: "pending",
-      summary: "Rule engine for feeding/device actions and multi-channel notifications (push/email/SMS).",
+      summary:
+        "Rule engine for feeding/device actions and multi-channel notifications (push/email/SMS).",
     },
     {
       id: "3.3",

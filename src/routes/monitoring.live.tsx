@@ -8,7 +8,10 @@ export const Route = createFileRoute("/monitoring/live")({
 
 function Page() {
   return (
-    <DashboardLayout title="Realtime IoT Monitoring" subtitle="Live water sensor telemetry from Firebase">
+    <DashboardLayout
+      title="Realtime IoT Monitoring"
+      subtitle="Live water sensor telemetry from Firebase"
+    >
       <WaterMonitoring />
     </DashboardLayout>
   );

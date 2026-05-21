@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { getLatestWaterReading, listExpenses, listFeedingEvents, listIncome } from "@/lib/platform-clients";
+import {
+  getLatestWaterReading,
+  listExpenses,
+  listFeedingEvents,
+  listIncome,
+} from "@/lib/platform-clients";
 import { Droplets, UtensilsCrossed, Wallet, Timer, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "@tanstack/react-router";
@@ -79,7 +84,8 @@ export function KpiCards() {
       ]);
 
       if (water) {
-        const good = water.dissolvedOxygen >= 5 && water.ph >= 6.5 && water.ph <= 8.5 && water.ammonia <= 0.05;
+        const good =
+          water.dissolvedOxygen >= 5 && water.ph >= 6.5 && water.ph <= 8.5 && water.ammonia <= 0.05;
         setWaterStatus(good ? "Good" : "Attention");
       }
 
@@ -87,16 +93,22 @@ export function KpiCards() {
       const todayEvents = events.filter((e) => e.timestamp.slice(0, 10) === today);
       setTodayFeedKg(todayEvents.reduce((sum, e) => sum + Number(e.amount_kg || 0), 0));
 
-      const todayIncome = income.filter((r) => r.date === today).reduce((sum, r) => sum + Number(r.total || 0), 0);
-      const todayExpenses = expenses.filter((r) => r.date === today).reduce((sum, r) => sum + Number(r.amount || 0), 0);
+      const todayIncome = income
+        .filter((r) => r.date === today)
+        .reduce((sum, r) => sum + Number(r.total || 0), 0);
+      const todayExpenses = expenses
+        .filter((r) => r.date === today)
+        .reduce((sum, r) => sum + Number(r.amount || 0), 0);
       setTodayProfit(todayIncome - todayExpenses);
     }
 
     load();
   }, []);
 
-  const waterColor = useMemo(() => (waterStatus === "Good" ? "text-success" : "text-warning"), [waterStatus]);
-
+  const waterColor = useMemo(
+    () => (waterStatus === "Good" ? "text-success" : "text-warning"),
+    [waterStatus],
+  );
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -125,7 +137,8 @@ export function KpiCards() {
         label="Today's Feed"
         value={
           <>
-            {todayFeedKg.toFixed(1)} <span className="text-base font-medium text-muted-foreground">kg</span>
+            {todayFeedKg.toFixed(1)}{" "}
+            <span className="text-base font-medium text-muted-foreground">kg</span>
           </>
         }
         sub="From logged feeding events"

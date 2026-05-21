@@ -24,12 +24,23 @@ function Page() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-md">
-        <CardHeader><CardTitle>Forgot password</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Forgot password</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2"><Label>Email</Label><Input value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+          <div className="space-y-2">
+            <Label>Email</Label>
+            <Input value={email} onChange={(e) => setEmail(e.target.value)} />
+          </div>
           {message && <p className="text-sm text-muted-foreground">{message}</p>}
-          <Button className="w-full" onClick={() => void submit()}>Send recovery email</Button>
-          <p className="text-sm text-muted-foreground"><Link to="/auth/login" className="text-primary underline">Back to sign in</Link></p>
+          <Button className="w-full" onClick={() => void submit()}>
+            Send recovery email
+          </Button>
+          <p className="text-sm text-muted-foreground">
+            <Link to="/auth/login" className="text-primary underline">
+              Back to sign in
+            </Link>
+          </p>
         </CardContent>
       </Card>
     </div>

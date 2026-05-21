@@ -11,7 +11,9 @@ function Page() {
   return (
     <DashboardLayout title="Reports" subtitle="Download financial statements.">
       <Card>
-        <CardHeader><CardTitle className="text-base">Reports</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">Reports</CardTitle>
+        </CardHeader>
         <CardContent className="text-sm text-muted-foreground">No reports available.</CardContent>
       </Card>
     </DashboardLayout>

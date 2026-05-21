@@ -11,8 +11,12 @@ function Page() {
   return (
     <DashboardLayout title="Feeding History" subtitle="Past feed events across all ponds.">
       <Card>
-        <CardHeader><CardTitle className="text-base">Events</CardTitle></CardHeader>
-        <CardContent className="text-sm text-muted-foreground">No feeding history available.</CardContent>
+        <CardHeader>
+          <CardTitle className="text-base">Events</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+          No feeding history available.
+        </CardContent>
       </Card>
     </DashboardLayout>
   );

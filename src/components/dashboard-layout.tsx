@@ -27,10 +27,19 @@ export function DashboardLayout({
       <div className="flex min-h-screen items-center justify-center p-6">
         <div className="max-w-md text-center">
           <h1 className="text-2xl font-semibold">Login required</h1>
-          <p className="mt-2 text-sm text-muted-foreground">You must register and sign in to access your dashboard.</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            You must register and sign in to access your dashboard.
+          </p>
           <div className="mt-4 flex justify-center gap-2">
-            <Link to="/auth/register" className="rounded-md border px-4 py-2 text-sm">Register</Link>
-            <Link to="/auth/login" className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">Sign in</Link>
+            <Link to="/auth/register" className="rounded-md border px-4 py-2 text-sm">
+              Register
+            </Link>
+            <Link
+              to="/auth/login"
+              className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground"
+            >
+              Sign in
+            </Link>
           </div>
         </div>
       </div>
@@ -44,21 +53,23 @@ export function DashboardLayout({
         <TopNavbar />
         <main className="flex flex-col gap-4 p-4 md:gap-6 md:p-6">
           <div>
-            <Button variant="outline" size="sm" onClick={() => navigate({ to: ".", search: true, params: true, hash: true, replace: false }) || window.history.back()} className="gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                navigate({ to: ".", search: true, params: true, hash: true, replace: false }) ||
+                window.history.back()
+              }
+              className="gap-2"
+            >
               <ArrowLeft className="h-4 w-4" /> Back
             </Button>
           </div>
           {(title || actions) && (
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                {title && (
-                  <h1 className="text-2xl font-semibold tracking-tight">
-                    {title}
-                  </h1>
-                )}
-                {subtitle && (
-                  <p className="text-sm text-muted-foreground">{subtitle}</p>
-                )}
+                {title && <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>}
+                {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
               </div>
               {actions && <div className="flex items-center gap-2">{actions}</div>}
             </div>
