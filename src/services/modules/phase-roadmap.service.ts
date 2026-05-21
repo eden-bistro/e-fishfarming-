@@ -44,9 +44,9 @@ export function listRoadmapPhases(): RoadmapPhase[] {
     {
       id: "3.1",
       title: "Production intelligence and forecasting",
-      status: "pending",
+      status: "completed",
       summary:
-        "Advanced growth/FCR analytics, harvest forecasting, and trend-based operational guidance.",
+        "Production analytics now include growth trend metrics, estimated biomass, and harvest forecasting.",
     },
     {
       id: "3.2",

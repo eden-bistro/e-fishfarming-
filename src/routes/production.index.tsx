@@ -10,6 +10,7 @@ import {
   type ProductionEventType,
 } from "@/services/modules/production.service";
 import { useMemo, useState } from "react";
+import { buildProductionIntelligence } from "@/services/modules/production-intelligence.service";
 
 export const Route = createFileRoute("/production/")({ component: RouteComponent });
 
@@ -73,6 +74,9 @@ function RouteComponent() {
     return { stocked, mortality, harvestKg, survival, feedKg, fcr, byCage };
   }, [events]);
 
+
+
+  const intelligence = useMemo(() => buildProductionIntelligence(events), [events]);
   return (
     <DashboardLayout
       title="Fish Production"
@@ -119,6 +123,29 @@ function RouteComponent() {
             <CardTitle className="text-base">FCR (overall)</CardTitle>
           </CardHeader>
           <CardContent className="text-3xl font-semibold">{stats.fcr.toFixed(2)}</CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Current biomass (est.)</CardTitle>
+          </CardHeader>
+          <CardContent className="text-3xl font-semibold">{intelligence.currentBiomassKg.toFixed(1)} kg</CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Projected harvest (30d)</CardTitle>
+          </CardHeader>
+          <CardContent className="text-3xl font-semibold">{intelligence.projectedHarvestKg30d.toFixed(1)} kg</CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Projected target date</CardTitle>
+          </CardHeader>
+          <CardContent className="text-3xl font-semibold">
+            {intelligence.projectedHarvestDate ?? "Not enough data"}
+          </CardContent>
         </Card>
       </div>
     </DashboardLayout>
