@@ -5,6 +5,10 @@ import { useEffect, useMemo, useState } from "react";
 import { listWaterAlerts, type WaterAlert } from "@/lib/platform-clients";
 import { listEnterpriseAlerts, type EnterpriseAlert } from "@/services/modules/alerts.service";
 import { AlertTriangle, CheckCircle2, Siren, TriangleAlert } from "lucide-react";
+import {
+  evaluateNotificationEvents,
+  listAutomationRules,
+} from "@/services/modules/automation.service";
 
 export const Route = createFileRoute("/water/alerts")({
   head: () => ({ meta: [{ title: "Alerts Center — AquaSmart" }] }),
@@ -48,13 +52,18 @@ function Page() {
 
   const critical = useMemo(() => merged.filter((a) => a.severity === "critical").length, [merged]);
   const warning = useMemo(() => merged.filter((a) => a.severity === "warning").length, [merged]);
+  const activeRules = useMemo(
+    () => listAutomationRules().filter((rule) => rule.enabled).length,
+    [],
+  );
+  const notifications = useMemo(() => evaluateNotificationEvents(), [enterpriseAlerts]);
 
   return (
     <DashboardLayout
       title="Alerts Center"
       subtitle="IoT + enterprise alerts (water quality, inventory, production)."
     >
-      <div className="mb-4 grid gap-4 md:grid-cols-4">
+      <div className="mb-4 grid gap-4 md:grid-cols-6">
         <Card>
           <CardHeader>
             <CardTitle className="text-sm">Critical Alerts</CardTitle>
@@ -78,6 +87,18 @@ function Page() {
             <CardTitle className="text-sm">Enterprise Alerts</CardTitle>
           </CardHeader>
           <CardContent className="text-2xl font-semibold">{enterpriseAlerts.length}</CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Automation Rules</CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-semibold">{activeRules}</CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Triggered Notifications</CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-semibold">{notifications.length}</CardContent>
         </Card>
       </div>
       <Card>
