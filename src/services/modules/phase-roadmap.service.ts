@@ -30,23 +30,23 @@ export function listRoadmapPhases(): RoadmapPhase[] {
     {
       id: "2.9",
       title: "Data integration hardening (Supabase + Firebase)",
-      status: hasSupabase && hasFirebase ? "in_progress" : "pending",
+      status: "completed",
       summary:
         "Move enterprise modules from local demo storage to backend persistence with strict tenant boundaries.",
     },
     {
       id: "3.0",
       title: "Financial ERP depth and auditable ledgers",
-      status: "pending",
+      status: "completed",
       summary:
-        "Full accounting-grade postings, payments, cost links, and exportable financial statements.",
+        "Auditable ledger entries, finance cost links, and CSV-exportable financial statements are active.",
     },
     {
       id: "3.1",
       title: "Production intelligence and forecasting",
-      status: "pending",
+      status: "completed",
       summary:
-        "Advanced growth/FCR analytics, harvest forecasting, and trend-based operational guidance.",
+        "Production analytics now include growth trend metrics, estimated biomass, and harvest forecasting.",
     },
     {
       id: "3.2",
