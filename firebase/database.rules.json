@@ -21,6 +21,21 @@
                 "$eventId": {
                   ".write": "auth != null && (auth.token.device == true || auth.token.admin == true)"
                 }
+              },
+              "commands": {
+                "$commandId": {
+                  ".read": "auth != null",
+                  ".write": "auth != null && (auth.token.admin == true || auth.token.device == true)"
+                }
+              }
+            },
+            "devices": {
+              "status": {
+                "$deviceId": {
+                  ".read": "auth != null",
+                  ".write": "auth != null && auth.token.device == true",
+                  ".validate": "newData.hasChildren(['firmware','online','rssi','freeHeap','updatedAt'])"
+                }
               }
             }
           }

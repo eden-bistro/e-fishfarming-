@@ -17,7 +17,19 @@
             "history": {}
           },
           "feeding": {
-            "events": {}
+            "events": {},
+            "commands": {}
+          },
+          "devices": {
+            "status": {
+              "ESP32_001": {
+                "firmware": "v3.0-prod",
+                "online": true,
+                "rssi": -58,
+                "freeHeap": 188000,
+                "updatedAt": "2026-05-21T11:00:00.000Z"
+              }
+            }
           }
         }
       },
