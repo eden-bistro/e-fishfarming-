@@ -51,9 +51,9 @@ export function listRoadmapPhases(): RoadmapPhase[] {
     {
       id: "3.2",
       title: "Automation + notification channels",
-      status: "pending",
+      status: "completed",
       summary:
-        "Rule engine for feeding/device actions and multi-channel notifications (push/email/SMS).",
+        "Alert-driven automation rules now trigger multi-channel notifications (push/email/SMS).",
     },
     {
       id: "3.3",
