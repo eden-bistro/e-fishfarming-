@@ -15,12 +15,15 @@ export function tenantId() {
 export async function restSelect(table: string) {
   if (!backendEnabled()) return null;
   const tid = tenantId();
-  const response = await fetch(`${supabaseUrl}/rest/v1/${table}?tenant_id=eq.${encodeURIComponent(tid)}&select=*`, {
-    headers: {
-      apikey: supabaseAnonKey!,
-      authorization: `Bearer ${supabaseAnonKey!}`,
+  const response = await fetch(
+    `${supabaseUrl}/rest/v1/${table}?tenant_id=eq.${encodeURIComponent(tid)}&select=*`,
+    {
+      headers: {
+        apikey: supabaseAnonKey!,
+        authorization: `Bearer ${supabaseAnonKey!}`,
+      },
     },
-  });
+  );
   if (!response.ok) return null;
   return response.json();
 }
