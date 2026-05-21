@@ -73,16 +73,7 @@ export async function buildFinancialStatement(): Promise<FinancialStatement> {
 }
 
 export function exportLedgerCsv(entries: LedgerEntry[]): string {
-  const header = [
-    "Reference",
-    "Date",
-    "Type",
-    "Account",
-    "Description",
-    "Debit",
-    "Credit",
-    "Amount",
-  ];
+  const header = ["Reference", "Date", "Type", "Account", "Description", "Debit", "Credit", "Amount"];
 
   const rows = entries.map((entry) => [
     entry.reference,
