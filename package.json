@@ -11,7 +11,11 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "check:exports": "node scripts/verify-module-exports.mjs",
-    "ci:quick": "npm run check:exports && npm run build"
+    "ci:quick": "npm run check:exports && npm run build",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run check:exports && npm run lint",
+    "ci:full": "npm run lint && npm run test && npm run build",
+    "test:build": "npm run build"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",

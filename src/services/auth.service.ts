@@ -5,7 +5,7 @@ export type SessionUser = {
   email: string;
 };
 
-const SESSION_KEY = "aquasmart_session_v2";
+const SESSION_KEY = "aquasmart_session_v3";
 
 function isBrowser() {
   return typeof window !== "undefined";
@@ -13,12 +13,15 @@ function isBrowser() {
 
 function setSession(access_token: string, user: SessionUser) {
   if (!isBrowser()) return;
-  window.localStorage.setItem(SESSION_KEY, JSON.stringify({ access_token, user }));
+  window.sessionStorage.setItem(
+    SESSION_KEY,
+    JSON.stringify({ access_token, user, savedAt: Date.now() }),
+  );
 }
 
 export function getSessionUser(): SessionUser | null {
   if (!isBrowser()) return null;
-  const raw = window.localStorage.getItem(SESSION_KEY);
+  const raw = window.sessionStorage.getItem(SESSION_KEY);
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as { user?: SessionUser };
@@ -30,7 +33,7 @@ export function getSessionUser(): SessionUser | null {
 
 export function logoutUser() {
   if (!isBrowser()) return;
-  window.localStorage.removeItem(SESSION_KEY);
+  window.sessionStorage.removeItem(SESSION_KEY);
 }
 
 async function authRequest(path: string, body: Record<string, unknown>) {
