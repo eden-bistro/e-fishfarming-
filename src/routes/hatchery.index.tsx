@@ -14,9 +14,7 @@ import {
 } from "@/services/modules/hatchery.service";
 import { createProductionEvent } from "@/services/modules/production.service";
 
-export const Route = createFileRoute("/hatchery/")({
-  component: RouteComponent,
-});
+export const Route = createFileRoute("/hatchery/")({ component: RouteComponent });
 
 function RouteComponent() {
   const [refresh, setRefresh] = useState(0);

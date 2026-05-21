@@ -11,9 +11,7 @@ import {
 } from "@/services/modules/production.service";
 import { useMemo, useState } from "react";
 
-export const Route = createFileRoute("/production/")({
-  component: RouteComponent,
-});
+export const Route = createFileRoute("/production/")({ component: RouteComponent });
 
 function RouteComponent() {
   const [refresh, setRefresh] = useState(0);
