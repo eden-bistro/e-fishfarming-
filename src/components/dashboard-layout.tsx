@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode } from "react";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { TopNavbar } from "@/components/top-navbar";
@@ -56,13 +56,10 @@ export function DashboardLayout({
             <Button
               variant="outline"
               size="sm"
-              onClick={() =>
-                navigate({ to: ".", search: true, params: true, hash: true, replace: false }) ||
-                window.history.back()
-              }
+              onClick={() => (window.history.length > 1 ? window.history.back() : navigate({ to: "/" }))}
               className="gap-2"
             >
-              <ArrowLeft className="h-4 w-4" /> Back
+              <ArrowLeft className="h-4 w-4 icon-emphasis" /> Back
             </Button>
           </div>
           {(title || actions) && (

@@ -82,7 +82,7 @@ export function AppSidebar() {
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-brand-foreground shadow-sm">
-            <Fish className="h-5 w-5" />
+              <Fish className="h-5 w-5 icon-emphasis" />
           </div>
           <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
             <span className="text-base font-semibold tracking-tight">AquaSmart</span>
@@ -99,7 +99,7 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={path === item.url} tooltip={item.title}>
                     <Link to={item.url as never}>
-                      <item.icon className="h-4 w-4" />
+                      <item.icon className="h-4 w-4 icon-emphasis" />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -117,7 +117,7 @@ export function AppSidebar() {
                       setOpenSections((prev) => ({ ...prev, [item.title]: !prev[item.title] }))
                     }
                   >
-                    <item.icon className="h-4 w-4" />
+                    <item.icon className="h-4 w-4 icon-emphasis" />
                     <span>{item.title}</span>
                     <ChevronDown
                       className={`ml-auto h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
@@ -134,7 +134,7 @@ export function AppSidebar() {
                           tooltip={child.title}
                         >
                           <Link to={child.url as never}>
-                            <LineChart className="h-3.5 w-3.5 opacity-60" />
+                            <LineChart className="h-3.5 w-3.5 opacity-80 icon-emphasis" />
                             <span>{child.title}</span>
                           </Link>
                         </SidebarMenuButton>
@@ -152,7 +152,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton tooltip="Log out">
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-4 w-4 icon-emphasis" />
               <span>Log Out</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
