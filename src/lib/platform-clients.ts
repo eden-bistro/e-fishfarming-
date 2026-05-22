@@ -64,15 +64,12 @@ export async function listFeedingEvents(): Promise<FeedingEventRow[]> {
 async function supabaseRequest(path: string, init: RequestInit) {
   if (!supabaseUrl || !supabaseAnonKey) return null;
   const accessToken = await getAccessToken();
-  if (!accessToken) {
-    throw new Error("Authenticated session required for Supabase data access.");
-  }
   const response = await fetch(`${supabaseUrl}/rest/v1/${path}`, {
     ...init,
     headers: {
       "content-type": "application/json",
       apikey: supabaseAnonKey,
-      authorization: `Bearer ${accessToken}`,
+      authorization: `Bearer ${accessToken ?? supabaseAnonKey}`,
       ...(init.headers ?? {}),
     },
   });
