@@ -98,11 +98,6 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     envRecord.FIREBASE_DATABASE_SECRET,
     envRecord.FIREBASE_AUTH_TOKEN,
   ]);
-  const firebaseAuthSource = envRecord.FIREBASE_DATABASE_SECRET
-    ? "FIREBASE_DATABASE_SECRET"
-    : envRecord.FIREBASE_AUTH_TOKEN
-      ? "FIREBASE_AUTH_TOKEN"
-      : undefined;
 
   let body: Record<string, unknown>;
   try {
@@ -146,12 +141,9 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     if (res.ok) return;
 
     const responseBody = await res.text();
-    const shortBody = responseBody.slice(0, 200);
-    const permissionDenied = res.status === 401 && /permission denied/i.test(responseBody);
-    const authHint = permissionDenied
-      ? ` Hint: RTDB rejected auth for ${path}. Verify ${firebaseAuthSource ?? "FIREBASE_DATABASE_SECRET/FIREBASE_AUTH_TOKEN"} is set to a valid token/secret and compatible with your RTDB rules.`
-      : "";
-    const error = new Error(`write failed for ${path} (${res.status}): ${shortBody}${authHint}`);
+    const error = new Error(
+      `write failed for ${path} (${res.status}): ${responseBody.slice(0, 200)}`,
+    );
     if (allowFailure) {
       console.warn("[iot-ingest] non-blocking write failure", {
         path,
@@ -175,8 +167,6 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
         message: "Failed to write ingest payload.",
         failedStep: path,
         detail: error instanceof Error ? error.message : String(error),
-        hasFirebaseAuthToken: Boolean(firebaseDatabaseSecret),
-        firebaseAuthSource,
       },
       502,
     );
