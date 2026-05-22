@@ -81,6 +81,11 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     return jsonResponse({ ok: false, message: "Unauthorized ingest token." }, 401);
   }
 
+  const firebaseDatabaseSecret = firstDefined([
+    envRecord.FIREBASE_DATABASE_SECRET,
+    envRecord.FIREBASE_AUTH_TOKEN,
+  ]);
+
   let body: Record<string, unknown>;
   try {
     body = (await request.json()) as Record<string, unknown>;
@@ -102,13 +107,56 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
   }
 
   const basePath = `${firebaseBaseUrl}/farms/${encodeURIComponent(farmId)}/ponds/${encodeURIComponent(pondId)}`;
-  const write = async (path: string, payload: unknown, method: "PUT" | "POST" = "PUT") => {
-    const res = await fetch(`${basePath}/${path}.json`, {
+  const withAuth = (url: string) => {
+    if (!firebaseDatabaseSecret) return url;
+    const separator = url.includes("?") ? "&" : "?";
+    return `${url}${separator}auth=${encodeURIComponent(firebaseDatabaseSecret)}`;
+  };
+
+  const write = async (
+    path: string,
+    payload: unknown,
+    method: "PUT" | "POST" = "PUT",
+    allowFailure = false,
+  ) => {
+    const url = withAuth(`${basePath}/${path}.json`);
+    const res = await fetch(url, {
       method,
       headers: { "content-type": "application/json" },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) throw new Error(`${path} write failed: ${res.status}`);
+    if (res.ok) return;
+
+    const responseBody = await res.text();
+    const error = new Error(
+      `write failed for ${path} (${res.status}): ${responseBody.slice(0, 200)}`,
+    );
+    if (allowFailure) {
+      console.warn("[iot-ingest] non-blocking write failure", {
+        path,
+        status: res.status,
+        responseBody,
+      });
+      return;
+    }
+    throw error;
+  };
+
+  const fail = (path: string, error: unknown) => {
+    console.error("[iot-ingest] blocking write failure", {
+      path,
+      hasFirebaseAuthToken: Boolean(firebaseDatabaseSecret),
+      error,
+    });
+    return jsonResponse(
+      {
+        ok: false,
+        message: "Failed to write ingest payload.",
+        failedStep: path,
+        detail: error instanceof Error ? error.message : String(error),
+      },
+      502,
+    );
   };
 
   try {
@@ -122,7 +170,11 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
       ammonia: Number.isFinite(ammonia) ? ammonia : 0,
       nitrite: Number(body.nitrite ?? 0) || 0,
     });
+  } catch (error) {
+    return fail("water/latest", error);
+  }
 
+  try {
     await write(`devices/status/${encodeURIComponent(deviceId)}`, {
       firmware: String(body.firmware ?? "unknown"),
       online: true,
@@ -130,36 +182,37 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
       freeHeap: Number(body.freeHeap ?? 0) || 0,
       updatedAt: timestamp,
     });
-
-    if (Number.isFinite(dissolvedOxygen) && dissolvedOxygen < 5) {
-      await write(
-        "alerts",
-        {
-          type: "low_do",
-          severity: dissolvedOxygen < 4 ? "critical" : "warning",
-          message: `Low dissolved oxygen detected (${dissolvedOxygen} mg/L).`,
-          pond_id: pondId,
-          created_at: timestamp,
-        },
-        "POST",
-      );
-    }
-    if (Number.isFinite(ammonia) && ammonia > 0.05) {
-      await write(
-        "alerts",
-        {
-          type: "high_ammonia",
-          severity: ammonia > 0.1 ? "critical" : "warning",
-          message: `Ammonia above threshold (${ammonia} mg/L).`,
-          pond_id: pondId,
-          created_at: timestamp,
-        },
-        "POST",
-      );
-    }
   } catch (error) {
-    console.error(error);
-    return jsonResponse({ ok: false, message: "Failed to write ingest payload." }, 502);
+    return fail("devices/status", error);
+  }
+
+  if (Number.isFinite(dissolvedOxygen) && dissolvedOxygen < 5) {
+    await write(
+      "alerts",
+      {
+        type: "low_do",
+        severity: dissolvedOxygen < 4 ? "critical" : "warning",
+        message: `Low dissolved oxygen detected (${dissolvedOxygen} mg/L).`,
+        pond_id: pondId,
+        created_at: timestamp,
+      },
+      "POST",
+      true,
+    );
+  }
+  if (Number.isFinite(ammonia) && ammonia > 0.05) {
+    await write(
+      "alerts",
+      {
+        type: "high_ammonia",
+        severity: ammonia > 0.1 ? "critical" : "warning",
+        message: `Ammonia above threshold (${ammonia} mg/L).`,
+        pond_id: pondId,
+        created_at: timestamp,
+      },
+      "POST",
+      true,
+    );
   }
 
   return jsonResponse({ ok: true, farmId, pondId, deviceId, timestamp });
