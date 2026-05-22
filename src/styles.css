@@ -152,3 +152,17 @@
     color: var(--color-foreground);
   }
 }
+
+@layer components {
+  .icon-pill {
+    @apply rounded-md border border-border/60 bg-gradient-to-br from-muted/80 to-background p-1.5 text-muted-foreground shadow-sm transition-all duration-200;
+  }
+
+  .icon-pill:hover {
+    @apply -translate-y-px border-brand/40 text-foreground shadow-md;
+  }
+
+  .icon-emphasis {
+    @apply text-brand drop-shadow-[0_1px_2px_oklch(0.62_0.18_250_/_0.35)];
+  }
+}

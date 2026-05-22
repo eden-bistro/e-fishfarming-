@@ -1,4 +1,5 @@
 import { getSessionUser } from "@/lib/auth";
+import { getAccessToken } from "@/services/auth.service";
 
 const env = import.meta.env as Record<string, string | undefined>;
 const supabaseUrl = env.VITE_SUPABASE_URL ?? env.SUPABASE_URL;
@@ -9,18 +10,22 @@ export function backendEnabled() {
 }
 
 export function tenantId() {
-  return getSessionUser()?.tenantId ?? "demo";
+  const session = getSessionUser();
+  return session?.id ?? null;
 }
 
 export async function restSelect(table: string) {
   if (!backendEnabled()) return null;
   const tid = tenantId();
+  if (!tid) throw new Error("Authenticated tenant context required.");
+  const accessToken = await getAccessToken();
+  if (!accessToken) throw new Error("Authenticated session token required.");
   const response = await fetch(
     `${supabaseUrl}/rest/v1/${table}?tenant_id=eq.${encodeURIComponent(tid)}&select=*`,
     {
       headers: {
         apikey: supabaseAnonKey!,
-        authorization: `Bearer ${supabaseAnonKey!}`,
+        authorization: `Bearer ${accessToken}`,
       },
     },
   );
@@ -30,15 +35,19 @@ export async function restSelect(table: string) {
 
 export async function restInsert(table: string, row: Record<string, unknown>) {
   if (!backendEnabled()) return false;
+  const tid = tenantId();
+  if (!tid) throw new Error("Authenticated tenant context required.");
+  const accessToken = await getAccessToken();
+  if (!accessToken) throw new Error("Authenticated session token required.");
   const response = await fetch(`${supabaseUrl}/rest/v1/${table}`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
       Prefer: "return=minimal",
       apikey: supabaseAnonKey!,
-      authorization: `Bearer ${supabaseAnonKey!}`,
+      authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify([{ ...row, tenant_id: tenantId() }]),
+    body: JSON.stringify([{ ...row, tenant_id: tid }]),
   });
   return response.ok;
 }

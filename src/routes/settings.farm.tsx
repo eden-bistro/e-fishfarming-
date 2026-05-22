@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { getCurrentUserRecord, saveCurrentUserFarm } from "@/lib/auth";
 import { useState } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
@@ -13,7 +13,6 @@ export const Route = createFileRoute("/settings/farm")({
 });
 
 function Page() {
-  const navigate = useNavigate();
   const currentUser = getCurrentUserRecord();
   const currentFarm = currentUser?.farm;
   const [form, setForm] = useState({
@@ -27,21 +26,32 @@ function Page() {
   const [message, setMessage] = useState("");
 
   function saveFarm() {
+    if (!form.name.trim() || !form.location.trim() || !form.owner.trim() || !form.currency.trim()) {
+      setMessage("Farm name, location, owner and currency are required.");
+      return;
+    }
+
+    const totalPonds = form.totalPonds ? Number(form.totalPonds) : null;
+    const totalStockKg = form.totalStockKg ? Number(form.totalStockKg) : null;
+    if ((totalPonds !== null && Number.isNaN(totalPonds)) || (totalStockKg !== null && Number.isNaN(totalStockKg))) {
+      setMessage("Total ponds and total stock must be valid numbers.");
+      return;
+    }
+
     const result = saveCurrentUserFarm({
       name: form.name.trim(),
       location: form.location.trim(),
       owner: form.owner.trim(),
       currency: form.currency.trim(),
-      totalPonds: form.totalPonds ? Number(form.totalPonds) : null,
-      totalStockKg: form.totalStockKg ? Number(form.totalStockKg) : null,
+      totalPonds,
+      totalStockKg,
     });
 
     if (!result.ok) {
       setMessage(result.message);
       return;
     }
-    setMessage("Farm profile saved. Redirecting to dashboard...");
-    navigate({ to: "/" });
+    setMessage("Farm profile saved successfully.");
   }
 
   return (

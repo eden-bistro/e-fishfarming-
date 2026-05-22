@@ -41,6 +41,20 @@
 4. Parameterize pond/farm selection in all writes/reads (manual feed + water endpoints).
 5. Add end-to-end tests for data write/read flow and tenant isolation.
 
+## Industrial/commercial architecture decision
+
+- Keep the current dual-backend architecture for production workloads:
+  - **Firebase Realtime Database** for low-latency ESP32 telemetry/command paths.
+  - **Supabase** for authentication, tenant-aware relational records, and reporting.
+- Treat this as an intentional split of responsibilities, not a temporary workaround.
+
+### Token policy for production
+
+- Do **not** use non-expiring access tokens.
+- Use short-lived access tokens with automatic renewal (refresh token/session rotation).
+- Design for zero user/device disruption by refreshing before expiry and retrying transparently.
+- Maintain revocation and key-rotation procedures for compromised clients/devices.
+
 ## Evidence of backend wiring that _does_ exist
 
 - Supabase CRUD exists for income/expenses/feeding events in `src/lib/platform-clients.ts`.

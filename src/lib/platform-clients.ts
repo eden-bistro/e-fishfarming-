@@ -1,5 +1,6 @@
 import { pondPath } from "@/firebase/paths";
 import { getActivePondId } from "@/lib/tenant";
+import { getAccessToken } from "@/services/auth.service";
 const env = import.meta.env as Record<string, string | undefined>;
 
 const firebaseBaseUrl = env.VITE_FIREBASE_DATABASE_URL ?? env.FIREBASE_DATABASE_URL;
@@ -62,12 +63,16 @@ export async function listFeedingEvents(): Promise<FeedingEventRow[]> {
 
 async function supabaseRequest(path: string, init: RequestInit) {
   if (!supabaseUrl || !supabaseAnonKey) return null;
+  const accessToken = await getAccessToken();
+  if (!accessToken) {
+    throw new Error("Authenticated session required for Supabase data access.");
+  }
   const response = await fetch(`${supabaseUrl}/rest/v1/${path}`, {
     ...init,
     headers: {
       "content-type": "application/json",
       apikey: supabaseAnonKey,
-      authorization: `Bearer ${supabaseAnonKey}`,
+      authorization: `Bearer ${accessToken}`,
       ...(init.headers ?? {}),
     },
   });

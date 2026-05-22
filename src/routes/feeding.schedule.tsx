@@ -17,29 +17,61 @@ export const Route = createFileRoute("/feeding/schedule")({
 });
 
 function Page() {
-  const [rows, setRows] = useState<FeedScheduleRow[]>([]);
-  const [form, setForm] = useState({ time: "", pond: "Pond A", amountKg: "" });
+  const [rows, setRows] = useState<FeedingCommand[]>([]);
+  const [form, setForm] = useState({ targetPondId: "pond-a", amountKg: "", requestedBy: "operator" });
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const totalKg = useMemo(() => rows.reduce((sum, row) => sum + row.amountKg, 0), [rows]);
+  const queuedCount = useMemo(() => rows.filter((row) => row.status === "queued").length, [rows]);
 
-  function addSchedule() {
-    const amount = Number(form.amountKg);
-    if (!form.time || !form.pond.trim() || amount <= 0) return;
-
-    const next: FeedScheduleRow = {
-      id: crypto.randomUUID(),
-      time: form.time,
-      pond: form.pond.trim(),
-      amountKg: amount,
-    };
-
-    setRows((current) =>
-      [...current, next].sort(
-        (a, b) => a.time.localeCompare(b.time) || a.pond.localeCompare(b.pond),
-      ),
-    );
-    setForm((current) => ({ ...current, amountKg: "" }));
+  async function refreshCommands() {
+    const data = await listFeedingCommands(30);
+    setRows(data);
   }
+
+  async function addCommand() {
+    const amount = Number(form.amountKg);
+    if (!form.targetPondId.trim() || !form.requestedBy.trim() || amount <= 0) {
+      setMessage("Fill pond, requester and a valid amount.");
+      return;
+    }
+
+    setLoading(true);
+    setMessage("");
+    try {
+      const id = await queueFeedingCommand({
+        action: "dispense_feed",
+        amountKg: amount,
+        targetPondId: form.targetPondId.trim(),
+        requestedBy: form.requestedBy.trim(),
+      });
+      setMessage(`Command queued successfully (${id}).`);
+      setForm((current) => ({ ...current, amountKg: "" }));
+      await refreshCommands();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Failed to queue command.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        const data = await listFeedingCommands(30);
+        if (mounted) setRows(data);
+      } catch {
+        if (mounted) setRows([]);
+      }
+    };
+    void load();
+    const timer = setInterval(() => void load(), 7000);
+    return () => {
+      mounted = false;
+      clearInterval(timer);
+    };
+  }, []);
 
   return (
     <DashboardLayout
@@ -73,10 +105,13 @@ function Page() {
             />
           </div>
           <div className="flex items-end">
-            <Button onClick={() => void addCommand()}>Queue</Button>
+            <Button onClick={() => void addCommand()} disabled={loading}>
+              {loading ? "Queuing..." : "Queue"}
+            </Button>
           </div>
         </CardContent>
       </Card>
+      {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
 
       <Card>
         <CardHeader>
