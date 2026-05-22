@@ -10,8 +10,12 @@ type ServerEntry = {
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
 function getEnvRecord(env: unknown): Record<string, string | undefined> {
-  if (!env || typeof env !== "object") return {};
-  return env as Record<string, string | undefined>;
+  const runtime =
+    typeof process !== "undefined" && process.env
+      ? (process.env as Record<string, string | undefined>)
+      : {};
+  if (!env || typeof env !== "object") return runtime;
+  return { ...runtime, ...(env as Record<string, string | undefined>) };
 }
 
 function firstDefined(values: Array<string | undefined>): string | undefined {
@@ -29,6 +33,7 @@ function envHealthResponse(env: unknown): Response {
     FIREBASE_DATABASE_URL: firstDefined([
       envRecord.VITE_FIREBASE_DATABASE_URL,
       envRecord.FIREBASE_DATABASE_URL,
+      envRecord.FIREBASE_URL,
     ]),
   };
 
@@ -66,13 +71,21 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
   const firebaseBaseUrl = firstDefined([
     envRecord.VITE_FIREBASE_DATABASE_URL,
     envRecord.FIREBASE_DATABASE_URL,
+    envRecord.FIREBASE_URL,
   ]);
 
   if (!expectedToken) {
     return jsonResponse({ ok: false, message: "IOT_INGEST_TOKEN is not configured." }, 500);
   }
   if (!firebaseBaseUrl) {
-    return jsonResponse({ ok: false, message: "Firebase URL is not configured." }, 500);
+    return jsonResponse(
+      {
+        ok: false,
+        message:
+          "Firebase URL is not configured. Set VITE_FIREBASE_DATABASE_URL or FIREBASE_DATABASE_URL (FIREBASE_URL alias supported).",
+      },
+      500,
+    );
   }
 
   const authHeader = request.headers.get("authorization") ?? "";
