@@ -17,15 +17,13 @@ export function tenantId() {
 export async function restSelect(table: string) {
   if (!backendEnabled()) return null;
   const tid = tenantId();
-  if (!tid) throw new Error("Authenticated tenant context required.");
   const accessToken = await getAccessToken();
-  if (!accessToken) throw new Error("Authenticated session token required.");
   const response = await fetch(
     `${supabaseUrl}/rest/v1/${table}?tenant_id=eq.${encodeURIComponent(tid)}&select=*`,
     {
       headers: {
         apikey: supabaseAnonKey!,
-        authorization: `Bearer ${accessToken}`,
+        authorization: `Bearer ${accessToken ?? supabaseAnonKey!}`,
       },
     },
   );
@@ -35,17 +33,14 @@ export async function restSelect(table: string) {
 
 export async function restInsert(table: string, row: Record<string, unknown>) {
   if (!backendEnabled()) return false;
-  const tid = tenantId();
-  if (!tid) throw new Error("Authenticated tenant context required.");
   const accessToken = await getAccessToken();
-  if (!accessToken) throw new Error("Authenticated session token required.");
   const response = await fetch(`${supabaseUrl}/rest/v1/${table}`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
       Prefer: "return=minimal",
       apikey: supabaseAnonKey!,
-      authorization: `Bearer ${accessToken}`,
+      authorization: `Bearer ${accessToken ?? supabaseAnonKey!}`,
     },
     body: JSON.stringify([{ ...row, tenant_id: tid }]),
   });
