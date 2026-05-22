@@ -10,7 +10,8 @@ export function backendEnabled() {
 }
 
 export function tenantId() {
-  return getSessionUser()?.tenantId ?? "demo";
+  const session = getSessionUser();
+  return session?.id ?? null;
 }
 
 export async function restSelect(table: string) {
@@ -41,7 +42,7 @@ export async function restInsert(table: string, row: Record<string, unknown>) {
       apikey: supabaseAnonKey!,
       authorization: `Bearer ${accessToken ?? supabaseAnonKey!}`,
     },
-    body: JSON.stringify([{ ...row, tenant_id: tenantId() }]),
+    body: JSON.stringify([{ ...row, tenant_id: tid }]),
   });
   return response.ok;
 }
