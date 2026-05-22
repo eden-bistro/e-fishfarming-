@@ -1,4 +1,4 @@
-import { Bell, Calendar, ChevronDown, Settings } from "lucide-react";
+import { Calendar, ChevronDown } from "lucide-react";
 import { getSessionUser, logoutUser } from "@/lib/auth";
 import { useNavigate } from "@tanstack/react-router";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -24,7 +24,7 @@ export function TopNavbar() {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur md:px-6">
-      <SidebarTrigger className="md:-ml-1" />
+      <SidebarTrigger className="icon-pill md:-ml-1" />
       <div className="flex flex-col">
         <h1 className="text-lg font-semibold leading-tight">Dashboard</h1>
         <p className="text-xs text-muted-foreground">Welcome back, {session?.name ?? "User"}</p>
@@ -34,7 +34,7 @@ export function TopNavbar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="hidden md:inline-flex gap-2">
-              <Calendar className="h-4 w-4" />
+              <Calendar className="icon-emphasis h-4 w-4" />
               {today}
               <ChevronDown className="h-3.5 w-3.5 opacity-60" />
             </Button>
@@ -59,27 +59,6 @@ export function TopNavbar() {
             <DropdownMenuItem>My Farm</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute right-1.5 top-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground">
-                1
-              </span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate({ to: "/settings/farm" })}>
-              Complete your farm profile to activate your dashboard.
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <Button variant="ghost" size="icon" onClick={() => navigate({ to: "/settings/farm" })}>
-          <Settings className="h-5 w-5" />
-        </Button>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
