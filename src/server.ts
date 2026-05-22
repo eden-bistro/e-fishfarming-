@@ -53,6 +53,171 @@ function envHealthResponse(env: unknown): Response {
   );
 }
 
+function jsonResponse(payload: unknown, status = 200): Response {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { "content-type": "application/json; charset=utf-8" },
+  });
+}
+
+async function handleIotIngest(request: Request, env: unknown): Promise<Response> {
+  const envRecord = getEnvRecord(env);
+  const expectedToken = envRecord.IOT_INGEST_TOKEN;
+  const firebaseBaseUrl = firstDefined([
+    envRecord.VITE_FIREBASE_DATABASE_URL,
+    envRecord.FIREBASE_DATABASE_URL,
+  ]);
+
+  if (!expectedToken) {
+    return jsonResponse({ ok: false, message: "IOT_INGEST_TOKEN is not configured." }, 500);
+  }
+  if (!firebaseBaseUrl) {
+    return jsonResponse({ ok: false, message: "Firebase URL is not configured." }, 500);
+  }
+
+  const authHeader = request.headers.get("authorization") ?? "";
+  const incomingToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+  if (!incomingToken || incomingToken !== expectedToken) {
+    return jsonResponse({ ok: false, message: "Unauthorized ingest token." }, 401);
+  }
+
+  const firebaseDatabaseSecret = firstDefined([
+    envRecord.FIREBASE_DATABASE_SECRET,
+    envRecord.FIREBASE_AUTH_TOKEN,
+  ]);
+
+  let body: Record<string, unknown>;
+  try {
+    body = (await request.json()) as Record<string, unknown>;
+  } catch {
+    return jsonResponse({ ok: false, message: "Body must be valid JSON." }, 400);
+  }
+
+  const farmId = String(body.farmId ?? "default").trim();
+  const pondId = String(body.pondId ?? body.cageId ?? "pond-a").trim();
+  const deviceId = String(body.deviceId ?? "").trim();
+  const timestamp = String(body.timestamp ?? new Date().toISOString());
+  const temperature = Number(body.temperature);
+  const ph = Number(body.ph);
+  const dissolvedOxygen = Number(body.dissolvedOxygen);
+  const ammonia = Number(body.ammonia);
+
+  if (!deviceId || !Number.isFinite(temperature) || !Number.isFinite(ph)) {
+    return jsonResponse({ ok: false, message: "deviceId, temperature and ph are required." }, 400);
+  }
+
+  const basePath = `${firebaseBaseUrl}/farms/${encodeURIComponent(farmId)}/ponds/${encodeURIComponent(pondId)}`;
+  const withAuth = (url: string) => {
+    if (!firebaseDatabaseSecret) return url;
+    const separator = url.includes("?") ? "&" : "?";
+    return `${url}${separator}auth=${encodeURIComponent(firebaseDatabaseSecret)}`;
+  };
+
+  const write = async (
+    path: string,
+    payload: unknown,
+    method: "PUT" | "POST" = "PUT",
+    allowFailure = false,
+  ) => {
+    const url = withAuth(`${basePath}/${path}.json`);
+    const res = await fetch(url, {
+      method,
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) return;
+
+    const responseBody = await res.text();
+    const error = new Error(
+      `write failed for ${path} (${res.status}): ${responseBody.slice(0, 200)}`,
+    );
+    if (allowFailure) {
+      console.warn("[iot-ingest] non-blocking write failure", {
+        path,
+        status: res.status,
+        responseBody,
+      });
+      return;
+    }
+    throw error;
+  };
+
+  const fail = (path: string, error: unknown) => {
+    console.error("[iot-ingest] blocking write failure", {
+      path,
+      hasFirebaseAuthToken: Boolean(firebaseDatabaseSecret),
+      error,
+    });
+    return jsonResponse(
+      {
+        ok: false,
+        message: "Failed to write ingest payload.",
+        failedStep: path,
+        detail: error instanceof Error ? error.message : String(error),
+      },
+      502,
+    );
+  };
+
+  try {
+    await write("water/latest", {
+      timestamp,
+      pondId,
+      temperature,
+      ph,
+      dissolvedOxygen: Number.isFinite(dissolvedOxygen) ? dissolvedOxygen : 0,
+      turbidity: Number(body.turbidity ?? 0) || 0,
+      ammonia: Number.isFinite(ammonia) ? ammonia : 0,
+      nitrite: Number(body.nitrite ?? 0) || 0,
+    });
+  } catch (error) {
+    return fail("water/latest", error);
+  }
+
+  try {
+    await write(`devices/status/${encodeURIComponent(deviceId)}`, {
+      firmware: String(body.firmware ?? "unknown"),
+      online: true,
+      rssi: Number(body.rssi ?? 0) || 0,
+      freeHeap: Number(body.freeHeap ?? 0) || 0,
+      updatedAt: timestamp,
+    });
+  } catch (error) {
+    return fail("devices/status", error);
+  }
+
+  if (Number.isFinite(dissolvedOxygen) && dissolvedOxygen < 5) {
+    await write(
+      "alerts",
+      {
+        type: "low_do",
+        severity: dissolvedOxygen < 4 ? "critical" : "warning",
+        message: `Low dissolved oxygen detected (${dissolvedOxygen} mg/L).`,
+        pond_id: pondId,
+        created_at: timestamp,
+      },
+      "POST",
+      true,
+    );
+  }
+  if (Number.isFinite(ammonia) && ammonia > 0.05) {
+    await write(
+      "alerts",
+      {
+        type: "high_ammonia",
+        severity: ammonia > 0.1 ? "critical" : "warning",
+        message: `Ammonia above threshold (${ammonia} mg/L).`,
+        pond_id: pondId,
+        created_at: timestamp,
+      },
+      "POST",
+      true,
+    );
+  }
+
+  return jsonResponse({ ok: true, farmId, pondId, deviceId, timestamp });
+}
+
 async function getServerEntry(): Promise<ServerEntry> {
   if (!serverEntryPromise) {
     serverEntryPromise = import("@tanstack/react-start/server-entry").then(
@@ -115,6 +280,9 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/api/health/env") {
       return envHealthResponse(env);
+    }
+    if (url.pathname === "/api/iot/ingest" && request.method === "POST") {
+      return handleIotIngest(request, env);
     }
 
     try {

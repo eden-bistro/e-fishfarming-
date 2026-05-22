@@ -59,3 +59,18 @@ ESP32 should periodically publish:
 - `listFeedingCommands(...)`
 
 These are implemented in `src/lib/esp32-firebase.ts`.
+
+## Required backend-ingest mapping (if ESP32 posts to your API instead of direct Firebase)
+
+If devices send payloads to `BACKEND_INGEST_URL`, your backend **must** write to these Firebase paths so current frontend pages work:
+
+1. Update latest reading:
+   - `/farms/{farmId}/ponds/{pondId}/water/latest`
+2. Append event/history row:
+   - `/farms/{farmId}/ponds/{pondId}/feeding/events/{eventId}` (when applicable)
+3. Update device heartbeat:
+   - `/farms/{farmId}/ponds/{pondId}/devices/status/{deviceId}`
+4. Optional alert emit:
+   - `/farms/{farmId}/ponds/{pondId}/alerts/{alertId}`
+
+Without this mapping, `/water/live`, `/water/alerts`, `/settings/devices`, and `/feeding/schedule` will not reflect real device data.
