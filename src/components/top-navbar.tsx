@@ -24,7 +24,7 @@ export function TopNavbar() {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur md:px-6">
-      <SidebarTrigger className="md:-ml-1" />
+      <SidebarTrigger className="icon-pill md:-ml-1" />
       <div className="flex flex-col">
         <h1 className="text-lg font-semibold leading-tight">Dashboard</h1>
         <p className="text-xs text-muted-foreground">Welcome back, {session?.name ?? "User"}</p>
@@ -34,7 +34,7 @@ export function TopNavbar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="hidden md:inline-flex gap-2">
-              <Calendar className="h-4 w-4" />
+              <Calendar className="icon-emphasis h-4 w-4" />
               {today}
               <ChevronDown className="h-3.5 w-3.5 opacity-60" />
             </Button>

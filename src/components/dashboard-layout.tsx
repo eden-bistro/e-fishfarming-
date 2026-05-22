@@ -59,7 +59,7 @@ export function DashboardLayout({
               onClick={() => (window.history.length > 1 ? window.history.back() : navigate({ to: "/" }))}
               className="gap-2"
             >
-              <ArrowLeft className="h-4 w-4" /> Back
+              <ArrowLeft className="h-4 w-4 icon-emphasis" /> Back
             </Button>
           </div>
           {(title || actions) && (
