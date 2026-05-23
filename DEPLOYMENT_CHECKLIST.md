@@ -15,7 +15,6 @@ Optional but recommended:
 - `JWT_SECRET`
 - `IOT_INGEST_TOKEN`
 - `FIREBASE_DATABASE_SECRET` (or `FIREBASE_AUTH_TOKEN`) for authenticated server-side RTDB writes
-- `FIREBASE_AUTH_OVERRIDE_JSON` (optional) to map REST writes to rule claims, e.g. `{"device":true}`
 - Firebase Admin vars for server-side sync
 
 ## 2) Supabase setup
