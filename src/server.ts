@@ -7,6 +7,12 @@ type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
 };
 
+type ServiceAccount = {
+  client_email: string;
+  private_key: string;
+  project_id?: string;
+};
+
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
 function getEnvRecord(env: unknown): Record<string, string | undefined> {
@@ -35,6 +41,8 @@ function envHealthResponse(env: unknown): Response {
       envRecord.FIREBASE_DATABASE_URL,
       envRecord.FIREBASE_URL,
     ]),
+    IOT_INGEST_TOKEN: envRecord.IOT_INGEST_TOKEN,
+    FIREBASE_SERVICE_ACCOUNT: envRecord.FIREBASE_SERVICE_ACCOUNT,
   };
 
   const missing = Object.entries(required)
@@ -65,45 +73,95 @@ function jsonResponse(payload: unknown, status = 200): Response {
   });
 }
 
+function b64url(input: Uint8Array | string): string {
+  const bytes = typeof input === "string" ? new TextEncoder().encode(input) : input;
+  let str = "";
+  bytes.forEach((b) => (str += String.fromCharCode(b)));
+  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+async function getGoogleAccessToken(serviceAccountJson: string): Promise<string> {
+  let account: ServiceAccount;
+  try {
+    account = JSON.parse(serviceAccountJson) as ServiceAccount;
+  } catch {
+    throw new Error("FIREBASE_SERVICE_ACCOUNT must be valid JSON.");
+  }
+
+  if (!account.client_email || !account.private_key) {
+    throw new Error("FIREBASE_SERVICE_ACCOUNT missing client_email/private_key.");
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: "RS256", typ: "JWT" };
+  const claim = {
+    iss: account.client_email,
+    scope:
+      "https://www.googleapis.com/auth/firebase.database https://www.googleapis.com/auth/userinfo.email",
+    aud: "https://oauth2.googleapis.com/token",
+    iat: now,
+    exp: now + 3600,
+  };
+
+  const signingInput = `${b64url(JSON.stringify(header))}.${b64url(JSON.stringify(claim))}`;
+  const key = await crypto.subtle.importKey(
+    "pkcs8",
+    Uint8Array.from(
+      atob(account.private_key.replace(/-----[^-]+-----/g, "").replace(/\s+/g, "")),
+      (c) => c.charCodeAt(0),
+    ),
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+
+  const sig = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    key,
+    new TextEncoder().encode(signingInput),
+  );
+  const assertion = `${signingInput}.${b64url(new Uint8Array(sig))}`;
+
+  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion,
+    }),
+  });
+
+  if (!tokenRes.ok) {
+    throw new Error(`OAuth token exchange failed: ${tokenRes.status} ${await tokenRes.text()}`);
+  }
+
+  const tokenBody = (await tokenRes.json()) as { access_token?: string };
+  if (!tokenBody.access_token) throw new Error("OAuth response missing access_token.");
+  return tokenBody.access_token;
+}
+
 async function handleIotIngest(request: Request, env: unknown): Promise<Response> {
   const envRecord = getEnvRecord(env);
   const expectedToken = envRecord.IOT_INGEST_TOKEN;
   const firebaseBaseUrl = firstDefined([
-    envRecord.VITE_FIREBASE_DATABASE_URL,
     envRecord.FIREBASE_DATABASE_URL,
+    envRecord.VITE_FIREBASE_DATABASE_URL,
     envRecord.FIREBASE_URL,
   ]);
+  const serviceAccountJson = envRecord.FIREBASE_SERVICE_ACCOUNT;
 
-  if (!expectedToken) {
+  if (!expectedToken)
     return jsonResponse({ ok: false, message: "IOT_INGEST_TOKEN is not configured." }, 500);
-  }
-  if (!firebaseBaseUrl) {
-    return jsonResponse(
-      {
-        ok: false,
-        message:
-          "Firebase URL is not configured. Set VITE_FIREBASE_DATABASE_URL or FIREBASE_DATABASE_URL (FIREBASE_URL alias supported).",
-      },
-      500,
-    );
-  }
+  if (!firebaseBaseUrl)
+    return jsonResponse({ ok: false, message: "FIREBASE_DATABASE_URL is not configured." }, 500);
+  if (!serviceAccountJson)
+    return jsonResponse({ ok: false, message: "FIREBASE_SERVICE_ACCOUNT is not configured." }, 500);
 
   const authHeader = request.headers.get("authorization") ?? "";
   const incomingToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
   if (!incomingToken || incomingToken !== expectedToken) {
     return jsonResponse({ ok: false, message: "Unauthorized ingest token." }, 401);
   }
-
-  const firebaseDatabaseSecret = firstDefined([
-    envRecord.FIREBASE_SERVICE_ACCOUNT_JSON,
-    envRecord.FIREBASE_AUTH_TOKEN,
-  ]);
-  const firebaseAuthSource = envRecord.FIREBASE_SERVICE_ACCOUNT_JSON
-    ? "FIREBASE_SERVICE_ACCOUNT_JSON"
-    : envRecord.FIREBASE_AUTH_TOKEN
-      ? "FIREBASE_AUTH_TOKEN"
-      : undefined;
-  const firebaseAuthOverride = envRecord.FIREBASE_AUTH_OVERRIDE_JSON;
 
   let body: Record<string, unknown>;
   try {
@@ -112,143 +170,63 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     return jsonResponse({ ok: false, message: "Body must be valid JSON." }, 400);
   }
 
-  const farmId = String(body.farmId ?? "default").trim();
-  const pondId = String(body.pondId ?? body.cageId ?? "pond-a").trim();
   const deviceId = String(body.deviceId ?? "").trim();
-  const timestamp = String(body.timestamp ?? new Date().toISOString());
   const temperature = Number(body.temperature);
   const ph = Number(body.ph);
-  const dissolvedOxygen = Number(body.dissolvedOxygen);
-  const ammonia = Number(body.ammonia);
+  const dissolvedOxygen = Number(body.dissolvedOxygen ?? 0);
+  const ammonia = Number(body.ammonia ?? 0);
 
   if (!deviceId || !Number.isFinite(temperature) || !Number.isFinite(ph)) {
     return jsonResponse({ ok: false, message: "deviceId, temperature and ph are required." }, 400);
   }
 
-  const basePath = `${firebaseBaseUrl}/farms/${encodeURIComponent(farmId)}/ponds/${encodeURIComponent(pondId)}`;
-  const withAuth = (url: string) => {
-    const params = new URLSearchParams();
-    if (firebaseDatabaseSecret) {
-      params.set("auth", firebaseDatabaseSecret);
-    }
-    if (firebaseAuthOverride) {
-      params.set("auth_variable_override", firebaseAuthOverride);
-    }
-    const query = params.toString();
-    if (!query) return url;
-    const separator = url.includes("?") ? "&" : "?";
-    return `${url}${separator}${query}`;
+  const payload = {
+    deviceId,
+    temperature,
+    ph,
+    dissolvedOxygen: Number.isFinite(dissolvedOxygen) ? dissolvedOxygen : 0,
+    ammonia: Number.isFinite(ammonia) ? ammonia : 0,
+    timestamp: new Date().toISOString(),
   };
 
-  const write = async (
-    path: string,
-    payload: unknown,
-    method: "PUT" | "POST" = "PUT",
-    allowFailure = false,
-  ) => {
-    const url = withAuth(`${basePath}/${path}.json`);
-    const res = await fetch(url, {
-      method,
-      headers: { "content-type": "application/json" },
+  try {
+    const accessToken = await getGoogleAccessToken(serviceAccountJson);
+    const writeUrl = `${firebaseBaseUrl}/devices/${encodeURIComponent(deviceId)}/latest.json`;
+    const res = await fetch(writeUrl, {
+      method: "PUT",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${accessToken}`,
+      },
       body: JSON.stringify(payload),
     });
-    if (res.ok) return;
 
-    const responseBody = await res.text();
-    const shortBody = responseBody.slice(0, 200);
-    const permissionDenied = res.status === 401 && /permission denied/i.test(responseBody);
-    const authHint = permissionDenied
-      ? ` Hint: RTDB rejected auth for ${path}. Verify ${firebaseAuthSource ?? "FIREBASE_SERVICE_ACCOUNT_JSON/FIREBASE_AUTH_TOKEN"} is set to a valid token/secret and compatible with your RTDB rules.`
-      : "";
-    const error = new Error(`write failed for ${path} (${res.status}): ${shortBody}${authHint}`);
-    if (allowFailure) {
-      console.warn("[iot-ingest] non-blocking write failure", {
-        path,
-        status: res.status,
-        responseBody,
-      });
-      return;
+    if (!res.ok) {
+      const detail = await res.text();
+      console.error("[iot-ingest] firebase write failed", { status: res.status, detail });
+      return jsonResponse(
+        {
+          ok: false,
+          message: "Failed to write ingest payload.",
+          failedStep: "devices/latest",
+          detail,
+        },
+        502,
+      );
     }
-    throw error;
-  };
-
-  const fail = (path: string, error: unknown) => {
-    console.error("[iot-ingest] blocking write failure", {
-      path,
-      hasFirebaseAuthToken: Boolean(firebaseDatabaseSecret),
-      error,
-    });
+  } catch (error) {
+    console.error("[iot-ingest] ingest error", error);
     return jsonResponse(
       {
         ok: false,
         message: "Failed to write ingest payload.",
-        failedStep: path,
         detail: error instanceof Error ? error.message : String(error),
-        hasFirebaseAuthToken: Boolean(firebaseDatabaseSecret),
-        firebaseAuthSource,
-        hasFirebaseAuthOverride: Boolean(firebaseAuthOverride),
       },
       502,
     );
-  };
-
-  try {
-    await write("water/latest", {
-      timestamp,
-      pondId,
-      temperature,
-      ph,
-      dissolvedOxygen: Number.isFinite(dissolvedOxygen) ? dissolvedOxygen : 0,
-      turbidity: Number(body.turbidity ?? 0) || 0,
-      ammonia: Number.isFinite(ammonia) ? ammonia : 0,
-      nitrite: Number(body.nitrite ?? 0) || 0,
-    });
-  } catch (error) {
-    return fail("water/latest", error);
   }
 
-  try {
-    await write(`devices/status/${encodeURIComponent(deviceId)}`, {
-      firmware: String(body.firmware ?? "unknown"),
-      online: true,
-      rssi: Number(body.rssi ?? 0) || 0,
-      freeHeap: Number(body.freeHeap ?? 0) || 0,
-      updatedAt: timestamp,
-    });
-  } catch (error) {
-    return fail("devices/status", error);
-  }
-
-  if (Number.isFinite(dissolvedOxygen) && dissolvedOxygen < 5) {
-    await write(
-      "alerts",
-      {
-        type: "low_do",
-        severity: dissolvedOxygen < 4 ? "critical" : "warning",
-        message: `Low dissolved oxygen detected (${dissolvedOxygen} mg/L).`,
-        pond_id: pondId,
-        created_at: timestamp,
-      },
-      "POST",
-      true,
-    );
-  }
-  if (Number.isFinite(ammonia) && ammonia > 0.05) {
-    await write(
-      "alerts",
-      {
-        type: "high_ammonia",
-        severity: ammonia > 0.1 ? "critical" : "warning",
-        message: `Ammonia above threshold (${ammonia} mg/L).`,
-        pond_id: pondId,
-        created_at: timestamp,
-      },
-      "POST",
-      true,
-    );
-  }
-
-  return jsonResponse({ ok: true, farmId, pondId, deviceId, timestamp });
+  return jsonResponse({ ok: true, deviceId, path: `/devices/${deviceId}/latest` });
 }
 
 async function getServerEntry(): Promise<ServerEntry> {
@@ -292,8 +270,6 @@ function isCatastrophicSsrErrorBody(body: string, responseStatus: number): boole
   );
 }
 
-// h3 swallows in-handler throws into a normal 500 Response with body
-// {"unhandled":true,"message":"HTTPError"} — try/catch alone never fires for those.
 async function normalizeCatastrophicSsrResponse(response: Response): Promise<Response> {
   if (response.status < 500) return response;
   const contentType = response.headers.get("content-type") ?? "";
