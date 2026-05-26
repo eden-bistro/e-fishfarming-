@@ -33,6 +33,7 @@ export async function restSelect(table: string) {
 
 export async function restInsert(table: string, row: Record<string, unknown>) {
   if (!backendEnabled()) return false;
+  const tid = tenantId();
   const accessToken = await getAccessToken();
   const response = await fetch(`${supabaseUrl}/rest/v1/${table}`, {
     method: "POST",

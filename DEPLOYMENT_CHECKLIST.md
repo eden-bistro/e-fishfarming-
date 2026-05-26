@@ -14,6 +14,8 @@ Optional but recommended:
 
 - `JWT_SECRET`
 - `IOT_INGEST_TOKEN`
+- `FIREBASE_SERVICE_ACCOUNT` (JSON service account key) for authenticated server-side RTDB writes
+- `FIREBASE_AUTH_OVERRIDE_JSON` (optional) to map REST writes to rule claims, e.g. `{"device":true}`
 - Firebase Admin vars for server-side sync
 
 ## 2) Supabase setup
@@ -29,7 +31,7 @@ Optional but recommended:
 2. Ensure auth tokens include:
    - `device: true` for sensor/device writes
    - `admin: true` for admin writes
-3. Confirm RTDB URL matches `VITE_FIREBASE_DATABASE_URL`.
+3. Confirm RTDB URL matches `FIREBASE_DATABASE_URL`.
 
 ## 4) Cloudflare deployment
 
@@ -37,7 +39,7 @@ Optional but recommended:
 2. Configure env vars in Cloudflare dashboard:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
-   - `VITE_FIREBASE_DATABASE_URL`
+   - `FIREBASE_DATABASE_URL`
 3. Click path (Pages): `Workers & Pages` -> your Pages project -> `Settings` -> `Environment variables` -> add variables in both Preview and Production -> redeploy.
 4. Click path (Workers): `Workers & Pages` -> your Worker -> `Settings` -> `Variables` -> add environment variables -> deploy new version.
 5. Build and deploy.
@@ -49,3 +51,7 @@ Use:
 - `GET /api/health/env` for environment sanity check.
 
 A healthy response returns `ok: true` with no missing required vars.
+
+## 6) IoT troubleshooting
+
+See `IOT_TROUBLESHOOTING.md` for production debugging steps.
