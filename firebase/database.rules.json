@@ -37,6 +37,13 @@
                   ".validate": "newData.hasChildren(['firmware','online','rssi','freeHeap','updatedAt'])"
                 }
               }
+            },
+            "alerts": {
+              "$alertId": {
+                ".read": "auth != null",
+                ".write": "auth != null && (auth.token.device == true || auth.token.admin == true)",
+                ".validate": "newData.hasChildren(['type','severity','message','pond_id','created_at'])"
+              }
             }
           }
         },
