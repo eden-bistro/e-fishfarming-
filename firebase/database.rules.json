@@ -8,7 +8,7 @@
             "water": {
               "latest": {
                 ".write": "auth != null && auth.token.device == true",
-                ".validate": "newData.hasChildren(['timestamp','pondId','temperature','ph','dissolvedOxygen','turbidity','ammonia','nitrite'])"
+                ".validate": "newData.hasChildren(['timestamp','pondId','temperature','ph','dissolvedOxygen','ammonia','nitrite'])"
               },
               "history": {
                 "$readingId": {
