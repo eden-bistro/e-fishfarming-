@@ -20,10 +20,14 @@ function RouteComponent() {
   const [refresh, setRefresh] = useState(0);
   const [cageMap, setCageMap] = useState<Record<string, string>>({});
 
-  const [brooderForm, setBrooderForm] = useState({
+  const [brooderForm, setBrooderForm] = useState<{
+    name: string;
+    species: string;
+    status: "active" | "paused";
+  }>({
     name: "",
     species: "",
-    status: "active" as const,
+    status: "active",
   });
 
   const [batchForm, setBatchForm] = useState({
@@ -36,7 +40,7 @@ function RouteComponent() {
   const brooders = useMemo(() => listBrooders(), [refresh]);
   const batches = useMemo(() => listFingerlingBatches(), [refresh]);
 
-  const readyCount = batches.filter((b) => b.status === "ready_for_transfer").length;
+  const readyCount = batches.filter((b) => b.growthStatus === "ready_for_transfer").length;
 
   const totalFingerlings = useMemo(
     () => batches.reduce((acc, row) => acc + row.quantity, 0),
@@ -139,15 +143,15 @@ function RouteComponent() {
             batches.map((b) => (
               <div key={b.id} className="rounded border p-3">
                 <p className="font-medium">
-                  {b.code} · {b.species} · {b.quantity} pcs
+                  {b.id.slice(0, 8)} · batch · {b.quantity} pcs
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Produced: {b.producedAt} · Status: {b.status}
+                  Produced: {b.productionDate} · Status: {b.growthStatus}
                   {b.transferredToCage ? ` · Transferred to ${b.transferredToCage}` : ""}
                 </p>
 
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {b.status === "growing" && (
+                  {b.growthStatus !== "ready_for_transfer" && (
                     <Button
                       size="sm"
                       variant="outline"
@@ -160,7 +164,7 @@ function RouteComponent() {
                     </Button>
                   )}
 
-                  {b.status === "ready_for_transfer" && (
+                  {b.growthStatus === "ready_for_transfer" && (
                     <>
                       <Input
                         className="h-8 w-40"
@@ -183,12 +187,10 @@ function RouteComponent() {
                           markFingerlingBatchTransferred(b.id, cage);
 
                           createProductionEvent({
-                            cageName: cage,
-                            eventType: "stocking",
-                            quantity: b.quantity,
+                            cageId: cage,
+                            type: "stocking",
+                            fishCount: b.quantity,
                             weightKg: 0,
-                            date: new Date().toISOString().slice(0, 10),
-                            notes: `Transferred from hatchery batch ${b.id}`,
                           });
 
                           setRefresh((n) => n + 1);

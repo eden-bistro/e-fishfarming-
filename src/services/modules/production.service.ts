@@ -17,7 +17,7 @@ const KEY = "aquasmart_production_events";
 
 function storageKey() {
   const user = getSessionUser();
-  return `${KEY}:${user?.tenantId ?? "demo"}`;
+  return `${KEY}:${user?.id ?? "demo"}`;
 }
 
 function readLocal(): ProductionEvent[] {

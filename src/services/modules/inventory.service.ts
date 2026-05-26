@@ -29,7 +29,7 @@ const KEY = "aquasmart_inventory";
 
 function storageKey() {
   const user = getSessionUser();
-  return `${KEY}:${user?.tenantId ?? "demo"}`;
+  return `${KEY}:${user?.id ?? "demo"}`;
 }
 
 function readStore(): InventoryStore {

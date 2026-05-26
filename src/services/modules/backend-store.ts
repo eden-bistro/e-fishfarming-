@@ -11,7 +11,7 @@ export function backendEnabled() {
 
 export function tenantId() {
   const session = getSessionUser();
-  return session?.id ?? null;
+  return session?.id ?? "anonymous";
 }
 
 export async function restSelect(table: string) {
