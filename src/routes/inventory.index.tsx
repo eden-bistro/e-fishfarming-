@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   APP_ROLES,
   getCurrentUserRole,
@@ -14,9 +14,11 @@ import {
 } from "@/contexts/rbac";
 import {
   listInventoryItems,
+  listInventoryItemsRemote,
   listStockMovements,
-  recordStockMovement,
-  upsertInventoryItem,
+  listStockMovementsRemote,
+  recordStockMovementRemote,
+  upsertInventoryItemRemote,
   type InventoryCategory,
 } from "@/services/modules/inventory.service";
 
@@ -34,9 +36,30 @@ function RouteComponent() {
   });
 
   const canWrite = userHasRole(["super_admin", "farmer", "accountant"]);
-  const items = useMemo(() => listInventoryItems(), [refresh]);
-  const movements = useMemo(() => listStockMovements().slice(0, 8), [refresh]);
-  const lowStockCount = items.filter((i) => i.quantity <= i.lowStockThreshold).length;
+  const [items, setItems] = useState<Awaited<ReturnType<typeof listInventoryItems>>>([]);
+  const [movements, setMovements] = useState<Awaited<ReturnType<typeof listStockMovements>>>([]);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      const [itemsRows, movementRows] = await Promise.all([
+        listInventoryItemsRemote(),
+        listStockMovementsRemote(),
+      ]);
+      if (!mounted) return;
+      setItems(itemsRows);
+      setMovements(movementRows.slice(0, 8));
+    };
+    void load();
+    return () => {
+      mounted = false;
+    };
+  }, [refresh]);
+
+  const lowStockCount = useMemo(
+    () => items.filter((i) => i.quantity <= i.lowStockThreshold).length,
+    [items],
+  );
 
   return (
     <DashboardLayout
@@ -165,7 +188,7 @@ function RouteComponent() {
               <Button
                 onClick={() => {
                   if (!form.name.trim()) return;
-                  upsertInventoryItem({
+                  void upsertInventoryItemRemote({
                     name: form.name,
                     category: form.category,
                     unit: form.unit,
@@ -201,7 +224,7 @@ function RouteComponent() {
                     size="sm"
                     variant="outline"
                     onClick={() => {
-                      recordStockMovement({
+                      void recordStockMovementRemote({
                         itemId: i.id,
                         quantity: 10,
                         type: "purchase",
@@ -216,7 +239,7 @@ function RouteComponent() {
                     size="sm"
                     variant="outline"
                     onClick={() => {
-                      recordStockMovement({
+                      void recordStockMovementRemote({
                         itemId: i.id,
                         quantity: -1,
                         type: "adjustment",
