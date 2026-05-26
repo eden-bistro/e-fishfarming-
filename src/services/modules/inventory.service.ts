@@ -1,4 +1,5 @@
 import { getSessionUser } from "@/lib/auth";
+import { backendEnabled, restInsert, restSelect } from "@/services/modules/backend-store";
 
 export type InventoryCategory = "feed" | "medicine" | "equipment" | "fuel" | "consumable";
 export type StockMovementType = "purchase" | "usage" | "adjustment";
@@ -28,7 +29,7 @@ const KEY = "aquasmart_inventory";
 
 function storageKey() {
   const user = getSessionUser();
-  return `${KEY}:${user?.tenantId ?? "demo"}`;
+  return `${KEY}:${user?.id ?? "demo"}`;
 }
 
 function readStore(): InventoryStore {
@@ -47,11 +48,60 @@ function writeStore(store: InventoryStore) {
   window.localStorage.setItem(storageKey(), JSON.stringify(store));
 }
 
+function asInventoryItem(row: Record<string, unknown>): InventoryItem {
+  return {
+    id: String(row.id ?? crypto.randomUUID()),
+    name: String(row.name ?? ""),
+    category: String(row.category ?? "consumable") as InventoryCategory,
+    unit: String(row.unit ?? "unit"),
+    quantity: Number(row.quantity ?? 0),
+    lowStockThreshold: Number(row.low_stock_threshold ?? row.lowStockThreshold ?? 0),
+    createdAt: String(row.created_at ?? row.createdAt ?? new Date().toISOString()),
+  };
+}
+
+function asStockMovement(row: Record<string, unknown>): StockMovement {
+  return {
+    id: String(row.id ?? crypto.randomUUID()),
+    itemId: String(row.item_id ?? row.itemId ?? ""),
+    type: String(row.type ?? "adjustment") as StockMovementType,
+    quantity: Number(row.quantity ?? 0),
+    note: row.note ? String(row.note) : undefined,
+    createdAt: String(row.created_at ?? row.createdAt ?? new Date().toISOString()),
+  };
+}
+
 export function listInventoryItems() {
   return readStore().items;
 }
 
+export async function listInventoryItemsRemote() {
+  if (backendEnabled()) {
+    const rows = await restSelect("inventory_items");
+    if (Array.isArray(rows)) {
+      const mapped = rows.map((r) => asInventoryItem(r as Record<string, unknown>));
+      writeStore({ ...readStore(), items: mapped });
+      return mapped;
+    }
+  }
+  return readStore().items;
+}
+
 export function listStockMovements() {
+  return readStore().movements;
+}
+
+export async function listStockMovementsRemote() {
+  if (backendEnabled()) {
+    const rows = await restSelect("inventory_movements");
+    if (Array.isArray(rows)) {
+      const mapped = rows
+        .map((r) => asStockMovement(r as Record<string, unknown>))
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      writeStore({ ...readStore(), movements: mapped });
+      return mapped;
+    }
+  }
   return readStore().movements;
 }
 
@@ -71,6 +121,24 @@ export function upsertInventoryItem(
   return next;
 }
 
+export async function upsertInventoryItemRemote(
+  item: Omit<InventoryItem, "id" | "createdAt"> & { id?: string },
+) {
+  const next = upsertInventoryItem(item);
+  if (backendEnabled()) {
+    await restInsert("inventory_items", {
+      id: next.id,
+      name: next.name,
+      category: next.category,
+      unit: next.unit,
+      quantity: next.quantity,
+      low_stock_threshold: next.lowStockThreshold,
+      created_at: next.createdAt,
+    });
+  }
+  return next;
+}
+
 export function recordStockMovement(input: Omit<StockMovement, "id" | "createdAt">) {
   const store = readStore();
   const movement: StockMovement = {
@@ -84,6 +152,21 @@ export function recordStockMovement(input: Omit<StockMovement, "id" | "createdAt
     return { ...i, quantity: Math.max(0, i.quantity + delta) };
   });
   writeStore({ items, movements: [movement, ...store.movements] });
+  return movement;
+}
+
+export async function recordStockMovementRemote(input: Omit<StockMovement, "id" | "createdAt">) {
+  const movement = recordStockMovement(input);
+  if (backendEnabled()) {
+    await restInsert("inventory_movements", {
+      id: movement.id,
+      item_id: movement.itemId,
+      type: movement.type,
+      quantity: movement.quantity,
+      note: movement.note,
+      created_at: movement.createdAt,
+    });
+  }
   return movement;
 }
 
