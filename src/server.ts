@@ -149,9 +149,10 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
   ]);
   const serviceAccountJson = envRecord.FIREBASE_SERVICE_ACCOUNT;
 
-  if (!expectedToken)
+  if (!expectedToken) {
     return jsonResponse({ ok: false, message: "IOT_INGEST_TOKEN is not configured." }, 500);
   }
+
   if (!firebaseBaseUrl) {
     return jsonResponse(
       {
