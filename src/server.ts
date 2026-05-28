@@ -149,9 +149,10 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
   ]);
   const serviceAccountJson = envRecord.FIREBASE_SERVICE_ACCOUNT;
 
-  if (!expectedToken)
+  if (!expectedToken) {
     return jsonResponse({ ok: false, message: "IOT_INGEST_TOKEN is not configured." }, 500);
   }
+
   if (!firebaseBaseUrl) {
     return jsonResponse(
       {
@@ -182,14 +183,18 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
   }
 
   const deviceId = String(body.deviceId ?? "").trim();
+  const farmId = String(body.farmId ?? "").trim();
+  const pondId = String(body.pondId ?? "").trim();
+  const timestamp = String(body.timestamp ?? new Date().toISOString());
   const temperature = Number(body.temperature);
   const ph = Number(body.ph);
   const dissolvedOxygen = Number(body.dissolvedOxygen ?? 0);
   const ammonia = Number(body.ammonia ?? 0);
 
-  if (!deviceId || !Number.isFinite(temperature) || !Number.isFinite(ph)) {
-    return jsonResponse({ ok: false, message: "deviceId, temperature and ph are required." }, 400);
+  if (!deviceId || !farmId || !pondId || !Number.isFinite(temperature) || !Number.isFinite(ph)) {
+    return jsonResponse({ ok: false, message: "deviceId, farmId, pondId, temperature and ph are required." }, 400);
   }
+
 
   const basePath = `${firebaseBaseUrl}/farms/${encodeURIComponent(farmId)}/ponds/${encodeURIComponent(pondId)}`;
   const withAuth = (url: string) => {
