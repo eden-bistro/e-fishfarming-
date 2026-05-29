@@ -48,7 +48,6 @@ export const saveLocation = async (
     timezone: string;
   },
 ): Promise<SavedLocation> => {
-): Promise<SavedLocation> => {
   const { data, error } = await supabase
     .from("saved_locations")
     .insert({
