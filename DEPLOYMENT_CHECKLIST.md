@@ -37,18 +37,21 @@ Optional but recommended:
    - `admin: true` for admin writes
 4. Confirm RTDB URL matches `FIREBASE_DATABASE_URL`.
 
-## 4) Cloudflare deployment
+## 5) Cloudflare deployment
 
 1. Confirm `wrangler.jsonc` is valid for your account/project.
-2. Configure env vars in Cloudflare dashboard:
+2. For GitHub deployment, add repository secrets:
+   - `CLOUDFLARE_API_TOKEN`
+   - `CLOUDFLARE_ACCOUNT_ID`
+3. Configure env vars in Cloudflare dashboard:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
    - `FIREBASE_DATABASE_URL`
-3. Click path (Pages): `Workers & Pages` -> your Pages project -> `Settings` -> `Environment variables` -> add variables in both Preview and Production -> redeploy.
-4. Click path (Workers): `Workers & Pages` -> your Worker -> `Settings` -> `Variables` -> add environment variables -> deploy new version.
-5. Build and deploy.
+4. Click path (Pages): `Workers & Pages` -> your Pages project -> `Settings` -> `Environment variables` -> add variables in both Preview and Production -> redeploy.
+5. Click path (Workers): `Workers & Pages` -> your Worker -> `Settings` -> `Variables` -> add environment variables -> deploy new version.
+6. Build and deploy locally or let `.github/workflows/cloudflare-deploy.yml` deploy from `main`.
 
-## 5) Health checks
+## 6) Health checks
 
 Use:
 
@@ -56,6 +59,6 @@ Use:
 
 A healthy response returns `ok: true` with no missing required vars.
 
-## 6) IoT troubleshooting
+## 7) IoT troubleshooting
 
 See `IOT_TROUBLESHOOTING.md` for production debugging steps.
