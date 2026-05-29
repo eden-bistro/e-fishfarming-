@@ -45,8 +45,9 @@ export const saveLocation = async (
     latitude: number;
     longitude: number;
     country: string;
-    timezone: string,
-  }
+    timezone: string;
+  },
+): Promise<SavedLocation> => {
 ): Promise<SavedLocation> => {
   const { data, error } = await supabase
     .from("saved_locations")
@@ -81,10 +82,7 @@ export const getSavedLocations = async (userId: string): Promise<SavedLocation[]
  * Delete a saved location
  */
 export const deleteLocation = async (locationId: string): Promise<void> => {
-  const { error } = await supabase
-    .from("saved_locations")
-    .delete()
-    .eq("id", locationId);
+  const { error } = await supabase.from("saved_locations").delete().eq("id", locationId);
 
   if (error) throw new Error(`Failed to delete location: ${error.message}`);
 };
@@ -114,8 +112,8 @@ export const recordWeatherHistory = async (
     temperature: number;
     humidity: number;
     windSpeed: number;
-    weatherCode: number,
-  }
+    weatherCode: number;
+  },
 ): Promise<WeatherHistory> => {
   const { data, error } = await supabase
     .from("weather_history")
