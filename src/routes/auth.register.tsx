@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { type FormEvent, useState } from "react";
 import { registerUser } from "@/lib/auth";
 import { getMissingSupabaseConfigKeys } from "@/supabase/client";
 
@@ -21,7 +21,8 @@ function Page() {
       ? `Missing config: ${missingConfig.join(", ")}. Set these in your Cloudflare env vars, then redeploy.`
       : "";
 
-  async function submit() {
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     if (configError) {
       setError(configError);
       return;
@@ -41,24 +42,43 @@ function Page() {
         <CardHeader>
           <CardTitle>Create account</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>Email</Label>
-            <Input value={email} onChange={(e) => setEmail(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>Password</Label>
-            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-          </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button className="w-full" onClick={() => void submit()}>
-            Register
-          </Button>
-          <p className="text-sm text-muted-foreground">
+        <CardContent>
+          <form className="space-y-4" onSubmit={(event) => void submit(event)}>
+            <div className="space-y-2">
+              <Label htmlFor="register-name">Name</Label>
+              <Input
+                id="register-name"
+                autoComplete="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="register-email">Email</Label>
+              <Input
+                id="register-email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="register-password">Password</Label>
+              <Input
+                id="register-password"
+                type="password"
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            <Button type="submit" className="w-full">
+              Register
+            </Button>
+          </form>
+          <p className="mt-4 text-sm text-muted-foreground">
             Already have an account?{" "}
             <Link to="/auth/login" className="text-primary underline">
               Sign in
