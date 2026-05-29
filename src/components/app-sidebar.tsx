@@ -27,7 +27,6 @@ const navItems = [
   { title: "Hatchery", url: "/hatchery", icon: Fish },
   { title: "Production", url: "/production", icon: Fish },
   { title: "Inventory", url: "/inventory", icon: Wallet },
-  { title: "Reports", url: "/reports", icon: LineChart },
   { title: "AI Insights", url: "/ai/insights", icon: Cpu },
   {
     title: "Feeding System",
@@ -55,6 +54,7 @@ const navItems = [
       { title: "Income", url: "/finance/income" },
       { title: "Expenses", url: "/finance/expenses" },
       { title: "Profit & Loss", url: "/finance/pnl" },
+      { title: "Reports", url: "/finance/reports" },
     ],
   },
   {
@@ -82,7 +82,7 @@ export function AppSidebar() {
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-brand-foreground shadow-sm">
-              <Fish className="h-5 w-5 icon-emphasis" />
+            <Fish className="h-5 w-5 icon-emphasis" />
           </div>
           <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
             <span className="text-base font-semibold tracking-tight">AquaSmart</span>
