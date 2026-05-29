@@ -13,9 +13,11 @@ Minimum required for current app features:
 Optional but recommended:
 
 - `JWT_SECRET`
+
+Required for ESP32 ingest:
+
 - `IOT_INGEST_TOKEN`
-- `FIREBASE_DATABASE_SECRET` (or `FIREBASE_AUTH_TOKEN`) for authenticated server-side RTDB writes
-- Firebase Admin vars for server-side sync
+- `FIREBASE_SERVICE_ACCOUNT` for authenticated server-side RTDB writes, or legacy `FIREBASE_DATABASE_SECRET` / `FIREBASE_AUTH_TOKEN`
 
 ## 2) Supabase setup
 
@@ -32,10 +34,11 @@ Optional but recommended:
 2. For GitHub deployment, add repository secrets:
    - `FIREBASE_PROJECT_ID`
    - `FIREBASE_SERVICE_ACCOUNT_JSON`
-3. Ensure auth tokens include:
+3. Ensure direct Firebase device tokens include:
    - `device: true` for sensor/device writes
    - `admin: true` for admin writes
-4. Confirm RTDB URL matches `FIREBASE_DATABASE_URL`.
+4. For backend ESP32 ingest, configure `IOT_INGEST_TOKEN` and one server-side Firebase write-auth option.
+5. Confirm RTDB URL matches `FIREBASE_DATABASE_URL`.
 
 ## 5) Cloudflare deployment
 
@@ -47,6 +50,8 @@ Optional but recommended:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
    - `FIREBASE_DATABASE_URL`
+   - `IOT_INGEST_TOKEN`
+   - `FIREBASE_SERVICE_ACCOUNT` (or legacy `FIREBASE_DATABASE_SECRET` / `FIREBASE_AUTH_TOKEN`)
 4. Click path (Pages): `Workers & Pages` -> your Pages project -> `Settings` -> `Environment variables` -> add variables in both Preview and Production -> redeploy.
 5. Click path (Workers): `Workers & Pages` -> your Worker -> `Settings` -> `Variables` -> add environment variables -> deploy new version.
 6. Build and deploy locally or let `.github/workflows/cloudflare-deploy.yml` deploy from `main`.

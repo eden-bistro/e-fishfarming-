@@ -13,6 +13,11 @@ type ServiceAccount = {
   project_id?: string;
 };
 
+type FirebaseWriteAuth =
+  | { type: "database-secret"; token: string }
+  | { type: "oauth"; token: string }
+  | { type: "none" };
+
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
 function getEnvRecord(env: unknown): Record<string, string | undefined> {
@@ -42,7 +47,11 @@ function envHealthResponse(env: unknown): Response {
       envRecord.FIREBASE_URL,
     ]),
     IOT_INGEST_TOKEN: envRecord.IOT_INGEST_TOKEN,
-    FIREBASE_SERVICE_ACCOUNT: envRecord.FIREBASE_SERVICE_ACCOUNT,
+    FIREBASE_WRITE_AUTH: firstDefined([
+      envRecord.FIREBASE_SERVICE_ACCOUNT,
+      envRecord.FIREBASE_DATABASE_SECRET,
+      envRecord.FIREBASE_AUTH_TOKEN,
+    ]),
   };
 
   const missing = Object.entries(required)
@@ -143,7 +152,11 @@ async function getGoogleAccessToken(serviceAccountJson: string): Promise<string>
 async function handleIotIngest(request: Request, env: unknown): Promise<Response> {
   const envRecord = getEnvRecord(env);
   const expectedToken = envRecord.IOT_INGEST_TOKEN;
-  const firebaseBaseUrl = firstDefined([envRecord.FIREBASE_DATABASE_URL, envRecord.FIREBASE_URL]);
+  const firebaseBaseUrl = firstDefined([
+    envRecord.VITE_FIREBASE_DATABASE_URL,
+    envRecord.FIREBASE_DATABASE_URL,
+    envRecord.FIREBASE_URL,
+  ]);
   const serviceAccountJson = envRecord.FIREBASE_SERVICE_ACCOUNT;
 
   if (!expectedToken) {
@@ -172,6 +185,33 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     envRecord.FIREBASE_AUTH_TOKEN,
   ]);
 
+  let firebaseWriteAuth: FirebaseWriteAuth = { type: "none" };
+  if (firebaseDatabaseSecret) {
+    firebaseWriteAuth = { type: "database-secret", token: firebaseDatabaseSecret };
+  } else if (serviceAccountJson) {
+    try {
+      firebaseWriteAuth = { type: "oauth", token: await getGoogleAccessToken(serviceAccountJson) };
+    } catch (error) {
+      return jsonResponse(
+        {
+          ok: false,
+          message: "Firebase service account authentication failed.",
+          detail: error instanceof Error ? error.message : String(error),
+        },
+        500,
+      );
+    }
+  } else {
+    return jsonResponse(
+      {
+        ok: false,
+        message:
+          "Firebase write authentication is not configured. Set FIREBASE_SERVICE_ACCOUNT or FIREBASE_DATABASE_SECRET/FIREBASE_AUTH_TOKEN.",
+      },
+      500,
+    );
+  }
+
   let body: Record<string, unknown>;
   try {
     body = (await request.json()) as Record<string, unknown>;
@@ -197,9 +237,9 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
 
   const basePath = `${firebaseBaseUrl}/farms/${encodeURIComponent(farmId)}/ponds/${encodeURIComponent(pondId)}`;
   const withAuth = (url: string) => {
-    if (!firebaseDatabaseSecret) return url;
+    if (firebaseWriteAuth.type !== "database-secret") return url;
     const separator = url.includes("?") ? "&" : "?";
-    return `${url}${separator}auth=${encodeURIComponent(firebaseDatabaseSecret)}`;
+    return `${url}${separator}auth=${encodeURIComponent(firebaseWriteAuth.token)}`;
   };
 
   const write = async (
@@ -209,9 +249,14 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     allowFailure = false,
   ) => {
     const url = withAuth(`${basePath}/${path}.json`);
+    const headers: Record<string, string> = { "content-type": "application/json" };
+    if (firebaseWriteAuth.type === "oauth") {
+      headers.authorization = `Bearer ${firebaseWriteAuth.token}`;
+    }
+
     const res = await fetch(url, {
       method,
-      headers: { "content-type": "application/json" },
+      headers,
       body: JSON.stringify(payload),
     });
     if (res.ok) return;
@@ -234,7 +279,7 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
   const fail = (path: string, error: unknown) => {
     console.error("[iot-ingest] blocking write failure", {
       path,
-      hasFirebaseAuthToken: Boolean(firebaseDatabaseSecret),
+      firebaseAuthType: firebaseWriteAuth.type,
       error,
     });
     return jsonResponse(
@@ -248,19 +293,28 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     );
   };
 
+  const waterReading = {
+    timestamp,
+    pondId,
+    deviceId,
+    temperature,
+    ph,
+    dissolvedOxygen: Number.isFinite(dissolvedOxygen) ? dissolvedOxygen : 0,
+    turbidity: Number(body.turbidity ?? 0) || 0,
+    ammonia: Number.isFinite(ammonia) ? ammonia : 0,
+    nitrite: Number(body.nitrite ?? 0) || 0,
+  };
+
   try {
-    await write("water/latest", {
-      timestamp,
-      pondId,
-      temperature,
-      ph,
-      dissolvedOxygen: Number.isFinite(dissolvedOxygen) ? dissolvedOxygen : 0,
-      turbidity: Number(body.turbidity ?? 0) || 0,
-      ammonia: Number.isFinite(ammonia) ? ammonia : 0,
-      nitrite: Number(body.nitrite ?? 0) || 0,
-    });
+    await write("water/latest", waterReading);
   } catch (error) {
     return fail("water/latest", error);
+  }
+
+  try {
+    await write("water/history", waterReading, "POST", true);
+  } catch (error) {
+    return fail("water/history", error);
   }
 
   try {
@@ -304,7 +358,17 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     );
   }
 
-  return jsonResponse({ ok: true, deviceId, path: `/devices/${deviceId}/latest` });
+  return jsonResponse({
+    ok: true,
+    deviceId,
+    farmId,
+    pondId,
+    paths: {
+      latest: `/farms/${farmId}/ponds/${pondId}/water/latest`,
+      history: `/farms/${farmId}/ponds/${pondId}/water/history`,
+      deviceStatus: `/farms/${farmId}/ponds/${pondId}/devices/status/${deviceId}`,
+    },
+  });
 }
 
 async function getServerEntry(): Promise<ServerEntry> {

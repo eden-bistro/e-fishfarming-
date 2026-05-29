@@ -1,72 +1,90 @@
 # IoT Ingest Troubleshooting (ESP32 -> Cloudflare -> Firebase RTDB)
 
-## 1) Confirm production deploy target
+Use this checklist when an ESP32 cannot publish readings to Firebase through `/api/iot/ingest`.
 
-- Deploy from the branch/commit you expect.
-- In Cloudflare, verify the **Production** environment (not Preview) is active.
+## 1) Verify deployed backend health
 
-## 2) Verify required environment variables (Production)
+```bash
+curl -i "https://<your-domain>/api/health/env"
+```
+
+A healthy response returns `200` with `ok: true`. If it returns missing variables, configure them in your deployment platform and redeploy.
+
+Required for ingest:
 
 - `IOT_INGEST_TOKEN`
-- `FIREBASE_DATABASE_URL`
-- `FIREBASE_SERVICE_ACCOUNT` (full JSON service account key as a single env value)
+- `FIREBASE_DATABASE_URL` or `VITE_FIREBASE_DATABASE_URL`
+- one Firebase write-auth option:
+  - preferred: `FIREBASE_SERVICE_ACCOUNT`
+  - legacy: `FIREBASE_DATABASE_SECRET` or `FIREBASE_AUTH_TOKEN`
 
-Then redeploy.
+## 2) Verify backend route is deployed
 
-## 3) Check backend health
+```bash
+curl -i "https://<your-domain>/api/iot/ingest"
+```
 
-- `GET /api/health/env`
-- Expect: `ok: true` and no missing keys.
+`GET` is not the ingest method, but the endpoint should be handled by the deployed app. The actual device request must use `POST`.
 
-If missing keys are listed, fix env vars and redeploy.
-
-## 4) Validate ingest auth from device
+## 3) Validate ingest auth from device
 
 ESP32 must send:
 
-- `Authorization: Bearer <IOT_INGEST_TOKEN>`
-- `Content-Type: application/json`
+```text
+Authorization: Bearer <IOT_INGEST_TOKEN>
+Content-Type: application/json
+```
 
-If token mismatches, backend returns `401 Unauthorized ingest token`.
+If the token mismatches, the backend returns `401 Unauthorized ingest token`.
 
-## 5) Validate payload shape
+## 4) Validate required payload fields
 
-Required JSON fields:
+The backend requires:
 
 - `deviceId` (string)
+- `farmId` (string)
+- `pondId` (string)
 - `temperature` (number)
 - `ph` (number)
 
-Optional:
+Recommended sensor fields:
 
-- `dissolvedOxygen`
-- `ammonia`
+- `dissolvedOxygen` (number)
+- `ammonia` (number)
+- `nitrite` (number)
+- `turbidity` (number)
+- `firmware` (string)
+- `rssi` (number)
+- `freeHeap` (number)
 
-If required fields are missing/invalid, backend returns `400`.
+If required fields are missing, the backend returns `400`.
 
-## 6) Firebase service account issues
+## 5) Firebase write failures
 
-If response includes `OAuth token exchange failed` or `FIREBASE_SERVICE_ACCOUNT must be valid JSON`:
+If the backend returns `502` with write details:
 
-- Re-copy the service account JSON from Firebase/GCP IAM.
-- Ensure JSON includes `client_email` and `private_key`.
-- Ensure private key newline escapes are preserved in env storage.
+- Confirm `FIREBASE_DATABASE_URL` points to the correct Realtime Database instance.
+- Confirm Realtime Database is enabled in the target Firebase project.
+- If using `FIREBASE_SERVICE_ACCOUNT`, confirm the JSON is valid and belongs to the same Firebase project.
+- If using `FIREBASE_DATABASE_SECRET` or `FIREBASE_AUTH_TOKEN`, confirm the token has write access under `firebase/database.rules.json`.
+- Confirm `firebase/database.rules.json` has been deployed.
 
-## 7) Firebase write failures
-
-If backend returns `502` with write details:
-
-- Confirm `FIREBASE_DATABASE_URL` points to the correct RTDB instance.
-- Confirm service account belongs to the same Firebase project.
-- Confirm RTDB is enabled in the target project.
-
-## 8) Smoke test with curl
+## 6) Smoke test with curl
 
 ```bash
 curl -i -X POST "https://<your-domain>/api/iot/ingest" \
   -H "Authorization: Bearer <IOT_INGEST_TOKEN>" \
   -H "Content-Type: application/json" \
-  --data '{"deviceId":"ESP32_001","temperature":27.4,"ph":7.2,"dissolvedOxygen":6.1,"ammonia":0.03}'
+  --data '{"deviceId":"ESP32_001","farmId":"default","pondId":"default","temperature":27.4,"ph":7.2,"dissolvedOxygen":6.1,"ammonia":0.03,"nitrite":0,"firmware":"v3.0-prod","rssi":-57,"freeHeap":188000}'
 ```
 
-Expected success: `200` with `{"ok":true,...}`.
+Expected success: `200` with `{"ok":true,...}` and `paths.latest`, `paths.history`, and `paths.deviceStatus` in the response.
+
+## 7) Firebase paths to inspect
+
+After a successful ingest, verify these Realtime Database paths:
+
+- `/farms/default/ponds/default/water/latest`
+- `/farms/default/ponds/default/water/history`
+- `/farms/default/ponds/default/devices/status/ESP32_001`
+- `/farms/default/ponds/default/alerts` when thresholds are crossed
