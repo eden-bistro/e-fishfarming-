@@ -12,7 +12,6 @@ export const enterpriseStructure = {
     "inventory",
     "alerts",
     "ai",
-    "reports",
     "users",
   ],
 } as const;
