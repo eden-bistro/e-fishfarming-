@@ -1,0 +1,64 @@
+name: Firebase Realtime Database Rules
+
+on:
+  pull_request:
+    paths:
+      - firebase.json
+      - firebase/database.rules.json
+      - .github/workflows/firebase-rtdb-rules.yml
+  push:
+    branches:
+      - main
+    paths:
+      - firebase.json
+      - firebase/database.rules.json
+      - .github/workflows/firebase-rtdb-rules.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Firebase config
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate JSON files
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('firebase.json', 'utf8'))"
+          node -e "JSON.parse(require('fs').readFileSync('firebase/database.rules.json', 'utf8'))"
+
+  deploy-rtdb-rules:
+    name: Deploy Realtime Database rules
+    needs: validate
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Firebase CLI
+        run: npm install --global firebase-tools
+
+      - name: Write Firebase service account
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
+
+      - name: Deploy Realtime Database rules
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+        run: |
+          test -n "$FIREBASE_PROJECT_ID"
+          firebase deploy --only database --project "$FIREBASE_PROJECT_ID" --non-interactive

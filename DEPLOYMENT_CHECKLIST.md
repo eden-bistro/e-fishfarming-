@@ -28,11 +28,14 @@ Optional but recommended:
 
 ## 3) Firebase Realtime Database
 
-1. Apply `firebase/database.rules.json`.
-2. Ensure auth tokens include:
+1. Apply `firebase/database.rules.json` manually or let GitHub Actions deploy it from `firebase.json`.
+2. For GitHub deployment, add repository secrets:
+   - `FIREBASE_PROJECT_ID`
+   - `FIREBASE_SERVICE_ACCOUNT_JSON`
+3. Ensure auth tokens include:
    - `device: true` for sensor/device writes
    - `admin: true` for admin writes
-3. Confirm RTDB URL matches `FIREBASE_DATABASE_URL`.
+4. Confirm RTDB URL matches `FIREBASE_DATABASE_URL`.
 
 ## 4) Cloudflare deployment
 
