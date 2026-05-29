@@ -15,11 +15,19 @@ export type ProductionIntelligence = {
 
 const DAY = 24 * 60 * 60 * 1000;
 
-function sumByType(events: ProductionEvent[], type: ProductionEvent["type"], field: "fishCount" | "weightKg" | "feedKg") {
-  return events.filter((event) => event.type === type).reduce((sum, event) => sum + Number(event[field] ?? 0), 0);
+function sumByType(
+  events: ProductionEvent[],
+  type: ProductionEvent["type"],
+  field: "fishCount" | "weightKg" | "feedKg",
+) {
+  return events
+    .filter((event) => event.type === type)
+    .reduce((sum, event) => sum + Number(event[field] ?? 0), 0);
 }
 
-export function buildProductionIntelligence(events = listProductionEvents()): ProductionIntelligence {
+export function buildProductionIntelligence(
+  events = listProductionEvents(),
+): ProductionIntelligence {
   const sorted = [...events].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
   const totalStocked = sumByType(sorted, "stocking", "fishCount");
@@ -27,7 +35,8 @@ export function buildProductionIntelligence(events = listProductionEvents()): Pr
   const totalFeedKg = sumByType(sorted, "feeding", "feedKg");
   const totalHarvestKg = sumByType(sorted, "harvest", "weightKg");
 
-  const survivalRate = totalStocked > 0 ? ((totalStocked - totalMortality) / totalStocked) * 100 : 0;
+  const survivalRate =
+    totalStocked > 0 ? ((totalStocked - totalMortality) / totalStocked) * 100 : 0;
   const overallFcr = totalFeedKg / Math.max(totalHarvestKg, 1);
 
   const netFish = Math.max(totalStocked - totalMortality, 0);
@@ -45,7 +54,9 @@ export function buildProductionIntelligence(events = listProductionEvents()): Pr
   const remainingKg = Math.max(harvestTargetKg - currentBiomassKg, 0);
   const daysToTarget = avgDailyGrowthKg > 0 ? Math.ceil(remainingKg / avgDailyGrowthKg) : null;
   const projectedHarvestDate =
-    daysToTarget !== null ? new Date(Date.now() + daysToTarget * DAY).toISOString().slice(0, 10) : null;
+    daysToTarget !== null
+      ? new Date(Date.now() + daysToTarget * DAY).toISOString().slice(0, 10)
+      : null;
 
   return {
     totalStocked,

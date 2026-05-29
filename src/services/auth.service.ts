@@ -30,7 +30,13 @@ function setSession(
   const expires_at = expires_in ? Date.now() + expires_in * 1000 : undefined;
   window.sessionStorage.setItem(
     SESSION_KEY,
-    JSON.stringify({ access_token, refresh_token, expires_at, user, savedAt: Date.now() } satisfies SessionRecord),
+    JSON.stringify({
+      access_token,
+      refresh_token,
+      expires_at,
+      user,
+      savedAt: Date.now(),
+    } satisfies SessionRecord),
   );
 }
 

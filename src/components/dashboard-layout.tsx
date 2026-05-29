@@ -56,7 +56,9 @@ export function DashboardLayout({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => (window.history.length > 1 ? window.history.back() : navigate({ to: "/" }))}
+              onClick={() =>
+                window.history.length > 1 ? window.history.back() : navigate({ to: "/" })
+              }
               className="gap-2"
             >
               <ArrowLeft className="h-4 w-4 icon-emphasis" /> Back
