@@ -18,7 +18,11 @@ export const Route = createFileRoute("/feeding/schedule")({
 
 function Page() {
   const [rows, setRows] = useState<FeedingCommand[]>([]);
-  const [form, setForm] = useState({ targetPondId: "pond-a", amountKg: "", requestedBy: "operator" });
+  const [form, setForm] = useState({
+    targetPondId: "pond-a",
+    amountKg: "",
+    requestedBy: "operator",
+  });
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
