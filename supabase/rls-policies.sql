@@ -15,34 +15,46 @@ alter table if exists public.hatchery_fingerling_batches enable row level securi
 -- Newer enterprise module tables are scoped by tenant_id and match backend-store tenantId(),
 -- which currently uses the authenticated user's id.
 
-create policy if not exists "finance_income_select" on finance_income
+drop policy if exists "finance_income_select" on finance_income;
+create policy "finance_income_select" on finance_income
 for select using (farm_id = coalesce(auth.jwt() -> 'app_metadata' ->> 'farm_id', 'default'));
-create policy if not exists "finance_income_insert" on finance_income
+drop policy if exists "finance_income_insert" on finance_income;
+create policy "finance_income_insert" on finance_income
 for insert with check (farm_id = coalesce(auth.jwt() -> 'app_metadata' ->> 'farm_id', 'default'));
-create policy if not exists "finance_income_update" on finance_income
+drop policy if exists "finance_income_update" on finance_income;
+create policy "finance_income_update" on finance_income
 for update using (farm_id = coalesce(auth.jwt() -> 'app_metadata' ->> 'farm_id', 'default'))
 with check (farm_id = coalesce(auth.jwt() -> 'app_metadata' ->> 'farm_id', 'default'));
-create policy if not exists "finance_income_delete" on finance_income
+drop policy if exists "finance_income_delete" on finance_income;
+create policy "finance_income_delete" on finance_income
 for delete using (farm_id = coalesce(auth.jwt() -> 'app_metadata' ->> 'farm_id', 'default'));
 
-create policy if not exists "finance_expenses_select" on finance_expenses
+drop policy if exists "finance_expenses_select" on finance_expenses;
+create policy "finance_expenses_select" on finance_expenses
 for select using (farm_id = coalesce(auth.jwt() -> 'app_metadata' ->> 'farm_id', 'default'));
-create policy if not exists "finance_expenses_insert" on finance_expenses
+drop policy if exists "finance_expenses_insert" on finance_expenses;
+create policy "finance_expenses_insert" on finance_expenses
 for insert with check (farm_id = coalesce(auth.jwt() -> 'app_metadata' ->> 'farm_id', 'default'));
-create policy if not exists "finance_expenses_update" on finance_expenses
+drop policy if exists "finance_expenses_update" on finance_expenses;
+create policy "finance_expenses_update" on finance_expenses
 for update using (farm_id = coalesce(auth.jwt() -> 'app_metadata' ->> 'farm_id', 'default'))
 with check (farm_id = coalesce(auth.jwt() -> 'app_metadata' ->> 'farm_id', 'default'));
-create policy if not exists "finance_expenses_delete" on finance_expenses
+drop policy if exists "finance_expenses_delete" on finance_expenses;
+create policy "finance_expenses_delete" on finance_expenses
 for delete using (farm_id = coalesce(auth.jwt() -> 'app_metadata' ->> 'farm_id', 'default'));
 
-create policy if not exists "feeding_events_select" on feeding_events
+drop policy if exists "feeding_events_select" on feeding_events;
+create policy "feeding_events_select" on feeding_events
 for select using (farm_id = coalesce(auth.jwt() -> 'app_metadata' ->> 'farm_id', 'default'));
-create policy if not exists "feeding_events_insert" on feeding_events
+drop policy if exists "feeding_events_insert" on feeding_events;
+create policy "feeding_events_insert" on feeding_events
 for insert with check (farm_id = coalesce(auth.jwt() -> 'app_metadata' ->> 'farm_id', 'default'));
 
-create policy if not exists "water_readings_select" on water_readings
+drop policy if exists "water_readings_select" on water_readings;
+create policy "water_readings_select" on water_readings
 for select using (farm_id = coalesce(auth.jwt() -> 'app_metadata' ->> 'farm_id', 'default'));
-create policy if not exists "water_readings_insert" on water_readings
+drop policy if exists "water_readings_insert" on water_readings;
+create policy "water_readings_insert" on water_readings
 for insert with check (farm_id = coalesce(auth.jwt() -> 'app_metadata' ->> 'farm_id', 'default'));
 
 create policy if not exists "production_events_select" on production_events
