@@ -3,7 +3,9 @@
 This repo is now structured to support production ESP32 ↔ Firebase communication.
 
 ## .ino structure review
+
 Your sketch is well-structured for production:
+
 - secure TLS transport (`WiFiClientSecure` + root CA)
 - persistent offline queue with NVS (`Preferences`)
 - retry/backoff logic
@@ -11,6 +13,7 @@ Your sketch is well-structured for production:
 - NTP + RTC fallback
 
 ## Firebase paths expected by frontend/backend
+
 - Live latest sensors:
   - `/farms/{farmId}/ponds/{pondId}/water/latest`
 - Water alert stream:
@@ -23,7 +26,9 @@ Your sketch is well-structured for production:
   - `/farms/{farmId}/ponds/{pondId}/devices/status/{deviceId}`
 
 ## Feeding command contract (ESP32 consumer)
+
 For each command under `feeding/commands`:
+
 ```json
 {
   "action": "dispense_feed",
@@ -36,13 +41,16 @@ For each command under `feeding/commands`:
 ```
 
 Recommended ESP32 command lifecycle:
+
 1. read queued command
 2. write status `ack`
 3. perform dispense
 4. write status `done` (or `failed` with optional reason)
 
 ## Device status heartbeat contract
+
 ESP32 should periodically publish:
+
 ```json
 {
   "firmware": "v3.0-prod",
@@ -54,6 +62,7 @@ ESP32 should periodically publish:
 ```
 
 ## Frontend APIs added
+
 - `listDeviceStatuses()`
 - `queueFeedingCommand(...)`
 - `listFeedingCommands(...)`
