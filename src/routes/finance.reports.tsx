@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/finance/reports")({
-  head: () => ({ meta: [{ title: "Financial Reports — AquaSmart" }] }),
+  head: () => ({ meta: [{ title: "General Ledger — AquaSmart" }] }),
   component: Page,
 });
 

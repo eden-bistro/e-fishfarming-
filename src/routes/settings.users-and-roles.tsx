@@ -17,7 +17,7 @@ import {
 } from "@/contexts/rbac";
 import { AccessDenied } from "@/components/access-denied";
 
-type Role = "Super Admin" | "Farmer" | "Worker" | "Accountant";
+type Role = "System" | "Super Admin" | "Farmer" | "Worker" | "Accountant";
 
 type UserRow = {
   id: number;
@@ -28,7 +28,7 @@ type UserRow = {
 
 const initialUsers: UserRow[] = [];
 
-const roles: Role[] = ["Super Admin", "Farmer", "Worker", "Accountant"];
+const roles: Role[] = ["System", "Super Admin", "Farmer", "Worker", "Accountant"];
 
 export const Route = createFileRoute("/settings/users-and-roles")({
   head: () => ({ meta: [{ title: "Users & Roles — AquaSmart" }] }),
@@ -113,7 +113,7 @@ function Page() {
             ))}
           </select>
           <p className="text-xs text-muted-foreground">
-            Set this to super_admin to access this page in this phase.
+            System users can access every page; super_admin can manage users and roles.
           </p>
         </CardContent>
       </Card>
@@ -214,7 +214,7 @@ function Page() {
           </Card>
         </>
       ) : (
-        <AccessDenied message="Only Super Admin can access user CRUD and role assignment." />
+        <AccessDenied message="Only System or Super Admin users can access user CRUD and role assignment." />
       )}
     </DashboardLayout>
   );
