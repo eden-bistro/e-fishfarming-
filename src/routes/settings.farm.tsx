@@ -33,7 +33,10 @@ function Page() {
 
     const totalPonds = form.totalPonds ? Number(form.totalPonds) : null;
     const totalStockKg = form.totalStockKg ? Number(form.totalStockKg) : null;
-    if ((totalPonds !== null && Number.isNaN(totalPonds)) || (totalStockKg !== null && Number.isNaN(totalStockKg))) {
+    if (
+      (totalPonds !== null && Number.isNaN(totalPonds)) ||
+      (totalStockKg !== null && Number.isNaN(totalStockKg))
+    ) {
       setMessage("Total ponds and total stock must be valid numbers.");
       return;
     }
