@@ -1,0 +1,63 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    "farms": {
+      "$farmId": {
+        "ponds": {
+          "$pondId": {
+            "water": {
+              "latest": {
+                ".write": "auth != null && auth.token.device == true",
+                ".validate": "newData.hasChildren(['timestamp','pondId','temperature','ph','dissolvedOxygen','ammonia','nitrite'])"
+              },
+              "history": {
+                "$readingId": {
+                  ".write": "auth != null && auth.token.device == true"
+                }
+              }
+            },
+            "feeding": {
+              "events": {
+                "$eventId": {
+                  ".write": "auth != null && (auth.token.device == true || auth.token.admin == true)"
+                }
+              },
+              "commands": {
+                "$commandId": {
+                  ".read": "auth != null",
+                  ".write": "auth != null && (auth.token.admin == true || auth.token.device == true)"
+                }
+              }
+            },
+            "devices": {
+              "status": {
+                "$deviceId": {
+                  ".read": "auth != null",
+                  ".write": "auth != null && auth.token.device == true",
+                  ".validate": "newData.hasChildren(['firmware','online','rssi','freeHeap','updatedAt'])"
+                }
+              }
+            },
+            "alerts": {
+              "$alertId": {
+                ".read": "auth != null",
+                ".write": "auth != null && (auth.token.device == true || auth.token.admin == true)",
+                ".validate": "newData.hasChildren(['type','severity','message','pond_id','created_at'])"
+              }
+            }
+          }
+        },
+        "finance": {
+          "income": {
+            ".read": "auth != null",
+            ".write": "auth != null && auth.token.admin == true"
+          },
+          "expenses": {
+            ".read": "auth != null",
+            ".write": "auth != null && auth.token.admin == true"
+          }
+        }
+      }
+    }
+  }
+}
