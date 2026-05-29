@@ -71,6 +71,11 @@ const navItems = [
 export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    Production:
+      path.startsWith("/production") ||
+      path.startsWith("/cages") ||
+      path.startsWith("/hatchery") ||
+      path.startsWith("/inventory"),
     "Feeding System": path.startsWith("/feeding"),
     "Water Quality": path.startsWith("/water"),
     Financial: path.startsWith("/finance"),
