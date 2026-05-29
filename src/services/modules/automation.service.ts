@@ -50,8 +50,7 @@ export function listAutomationRules(): AutomationRule[] {
   ];
 }
 
-export function evaluateNotificationEvents(): NotificationEvent[] {
-  const alerts = listEnterpriseAlerts();
+export function evaluateNotificationEvents(alerts = listEnterpriseAlerts()): NotificationEvent[] {
   const rules = listAutomationRules().filter((rule) => rule.enabled);
 
   return alerts.flatMap((alert) =>
