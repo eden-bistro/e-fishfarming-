@@ -1,0 +1,59 @@
+name: Supabase Database
+
+on:
+  pull_request:
+    paths:
+      - supabase/**
+      - .github/workflows/supabase-db.yml
+  push:
+    branches:
+      - main
+    paths:
+      - supabase/**
+      - .github/workflows/supabase-db.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Supabase migration files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify migration files are present
+        run: |
+          test -d supabase/migrations
+          test -n "$(find supabase/migrations -maxdepth 1 -name '*.sql' -print -quit)"
+          find supabase -name '*.sql' -type f -print0 | xargs -0 -n1 test -s
+
+  deploy:
+    name: Push Supabase migrations
+    needs: validate
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link Supabase project
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN"
+          test -n "$SUPABASE_DB_PASSWORD"
+          test -n "$SUPABASE_PROJECT_REF"
+          supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Push database migrations
+        run: supabase db push

@@ -17,7 +17,7 @@ import { createProductionEvent } from "@/services/modules/production.service";
 export const Route = createFileRoute("/hatchery/")({ component: RouteComponent });
 
 function RouteComponent() {
-  const [refresh, setRefresh] = useState(0);
+  const [, refreshHatchery] = useState(0);
   const [cageMap, setCageMap] = useState<Record<string, string>>({});
 
   const [brooderForm, setBrooderForm] = useState<{
@@ -37,8 +37,8 @@ function RouteComponent() {
     growthStatus: "early" as const,
   });
 
-  const brooders = useMemo(() => listBrooders(), [refresh]);
-  const batches = useMemo(() => listFingerlingBatches(), [refresh]);
+  const brooders = listBrooders();
+  const batches = listFingerlingBatches();
 
   const readyCount = batches.filter((b) => b.growthStatus === "ready_for_transfer").length;
 
@@ -121,7 +121,7 @@ function RouteComponent() {
               onClick={() => {
                 if (!brooderForm.name.trim()) return;
                 createBrooder(brooderForm);
-                setRefresh((n) => n + 1);
+                refreshHatchery((n) => n + 1);
                 setBrooderForm({ name: "", species: "", status: "active" });
               }}
             >
@@ -157,7 +157,7 @@ function RouteComponent() {
                       variant="outline"
                       onClick={() => {
                         markFingerlingBatchTransferred(b.id, "");
-                        setRefresh((n) => n + 1);
+                        refreshHatchery((n) => n + 1);
                       }}
                     >
                       Mark Ready
@@ -193,7 +193,7 @@ function RouteComponent() {
                             weightKg: 0,
                           });
 
-                          setRefresh((n) => n + 1);
+                          refreshHatchery((n) => n + 1);
                         }}
                       >
                         Transfer
