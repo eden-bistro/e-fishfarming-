@@ -45,6 +45,75 @@ create table if not exists finance_expenses (
   created_at timestamptz not null default now()
 );
 
+create table if not exists production_events (
+  id uuid primary key,
+  tenant_id text not null,
+  cage_id text not null,
+  type text not null check (type in ('stocking', 'mortality', 'harvest', 'sale', 'feeding')),
+  fish_count numeric,
+  weight_kg numeric,
+  feed_kg numeric,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists inventory_items (
+  id uuid primary key,
+  tenant_id text not null,
+  name text not null,
+  category text not null check (category in ('feed', 'medicine', 'equipment', 'fuel', 'consumable')),
+  unit text not null,
+  quantity numeric not null default 0,
+  low_stock_threshold numeric not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists inventory_movements (
+  id uuid primary key,
+  tenant_id text not null,
+  item_id uuid not null references inventory_items(id) on delete cascade,
+  type text not null check (type in ('purchase', 'usage', 'adjustment')),
+  quantity numeric not null,
+  note text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists cages (
+  id uuid primary key,
+  tenant_id text not null,
+  name text not null,
+  location text not null,
+  fish_population numeric not null default 0,
+  biomass_kg numeric not null default 0,
+  status text not null check (status in ('active', 'maintenance')),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists hatchery_brooders (
+  id uuid primary key,
+  tenant_id text not null,
+  name text not null,
+  species text not null,
+  status text not null check (status in ('active', 'paused')),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists hatchery_fingerling_batches (
+  id uuid primary key,
+  tenant_id text not null,
+  brooder_id uuid references hatchery_brooders(id) on delete set null,
+  quantity numeric not null,
+  production_date date not null,
+  growth_status text not null check (growth_status in ('early', 'mid', 'ready_for_transfer')),
+  transferred_to_cage text,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists idx_water_readings_pond_time on water_readings (pond_id, timestamp desc);
 create index if not exists idx_income_date on finance_income (date desc);
 create index if not exists idx_expenses_date on finance_expenses (date desc);
+create index if not exists idx_production_events_tenant_time on production_events (tenant_id, created_at desc);
+create index if not exists idx_inventory_items_tenant_category on inventory_items (tenant_id, category);
+create index if not exists idx_inventory_movements_tenant_time on inventory_movements (tenant_id, created_at desc);
+create index if not exists idx_cages_tenant_status on cages (tenant_id, status);
+create index if not exists idx_hatchery_brooders_tenant_status on hatchery_brooders (tenant_id, status);
+create index if not exists idx_hatchery_batches_tenant_status on hatchery_fingerling_batches (tenant_id, growth_status);

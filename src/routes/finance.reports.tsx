@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/finance/reports")({
-  head: () => ({ meta: [{ title: "Financial Reports — AquaSmart" }] }),
+  head: () => ({ meta: [{ title: "General Ledger — AquaSmart" }] }),
   component: Page,
 });
 
@@ -56,7 +56,10 @@ function Page() {
   }
 
   return (
-    <DashboardLayout title="Reports" subtitle="Auditable ledgers and exportable financial statements.">
+    <DashboardLayout
+      title="Reports"
+      subtitle="Auditable ledgers and exportable financial statements."
+    >
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader>
