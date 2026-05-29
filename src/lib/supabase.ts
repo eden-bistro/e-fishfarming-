@@ -45,7 +45,7 @@ export const saveLocation = async (
     latitude: number;
     longitude: number;
     country: string;
-    timezone: string;
+    timezone: string,
   }
 ): Promise<SavedLocation> => {
   const { data, error } = await supabase
@@ -92,7 +92,10 @@ export const deleteLocation = async (locationId: string): Promise<void> => {
 /**
  * Toggle favorite status of a location
  */
-export const toggleLocationFavorite = async (locationId: string, isFavorite: boolean): Promise<void> => {
+export const toggleLocationFavorite = async (
+  locationId: string,
+  isFavorite: boolean,
+): Promise<void> => {
   const { error } = await supabase
     .from("saved_locations")
     .update({ is_favorite: isFavorite, updated_at: new Date().toISOString() })
@@ -111,7 +114,7 @@ export const recordWeatherHistory = async (
     temperature: number;
     humidity: number;
     windSpeed: number;
-    weatherCode: number;
+    weatherCode: number,
   }
 ): Promise<WeatherHistory> => {
   const { data, error } = await supabase
@@ -137,7 +140,7 @@ export const recordWeatherHistory = async (
  */
 export const getWeatherHistory = async (
   locationId: string,
-  days: number = 7
+  days: number = 7,
 ): Promise<WeatherHistory[]> => {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
