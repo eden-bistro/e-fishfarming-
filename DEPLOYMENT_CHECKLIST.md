@@ -19,18 +19,23 @@ Optional but recommended:
 
 ## 2) Supabase setup
 
-1. Run `supabase/schema.sql`.
-2. Run `supabase/rls-policies.sql`.
-3. Ensure JWT includes `app_metadata.farm_id` for multi-tenant isolation.
-4. For initial bootstrap/testing, default farm id is `default`.
+1. Create or select a Supabase project.
+2. Link the repo with `supabase link --project-ref <your-project-ref>`.
+3. Preview the migration with `supabase db push --dry-run`.
+4. Apply `supabase/migrations/20260529103000_initial_aquasmart_schema.sql` with `supabase db push`.
+5. Ensure JWT includes `app_metadata.farm_id` for multi-tenant isolation on finance/IoT tables.
+6. For initial bootstrap/testing, default farm id is `default`.
 
 ## 3) Firebase Realtime Database
 
-1. Apply `firebase/database.rules.json`.
-2. Ensure auth tokens include:
+1. Apply `firebase/database.rules.json` manually or let GitHub Actions deploy it from `firebase.json`.
+2. For GitHub deployment, add repository secrets:
+   - `FIREBASE_PROJECT_ID`
+   - `FIREBASE_SERVICE_ACCOUNT_JSON`
+3. Ensure auth tokens include:
    - `device: true` for sensor/device writes
    - `admin: true` for admin writes
-3. Confirm RTDB URL matches `FIREBASE_DATABASE_URL`.
+4. Confirm RTDB URL matches `FIREBASE_DATABASE_URL`.
 
 ## 4) Cloudflare deployment
 
