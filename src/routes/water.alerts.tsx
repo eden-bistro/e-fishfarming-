@@ -56,7 +56,10 @@ function Page() {
     () => listAutomationRules().filter((rule) => rule.enabled).length,
     [],
   );
-  const notifications = useMemo(() => evaluateNotificationEvents(), [enterpriseAlerts]);
+  const notifications = useMemo(
+    () => evaluateNotificationEvents(enterpriseAlerts),
+    [enterpriseAlerts],
+  );
 
   return (
     <DashboardLayout

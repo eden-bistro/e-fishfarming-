@@ -34,3 +34,6 @@ dist-ssr
 # IoT hardware secrets
 firmware/secrets.h
 *.secrets.h
+.env
+firmware/secret.h
+*.bak

@@ -3,16 +3,12 @@ export const enterpriseStructure = {
   modules: [
     "auth",
     "dashboard",
-    "cages",
     "monitoring",
     "feeding",
-    "hatchery",
     "production",
     "finance",
-    "inventory",
     "alerts",
     "ai",
-    "reports",
     "users",
   ],
 } as const;
