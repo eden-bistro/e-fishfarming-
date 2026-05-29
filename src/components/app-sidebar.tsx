@@ -23,16 +23,10 @@ import {
 
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  {
-    title: "Production",
-    icon: Fish,
-    children: [
-      { title: "Production Overview", url: "/production" },
-      { title: "Cage Management", url: "/cages" },
-      { title: "Hatchery", url: "/hatchery" },
-      { title: "Inventory", url: "/inventory" },
-    ],
-  },
+  { title: "Cage Management", url: "/cages", icon: Cpu },
+  { title: "Hatchery", url: "/hatchery", icon: Fish },
+  { title: "Production", url: "/production", icon: Fish },
+  { title: "Inventory", url: "/inventory", icon: Wallet },
   { title: "AI Insights", url: "/ai/insights", icon: Cpu },
   {
     title: "Feeding System",
@@ -60,7 +54,7 @@ const navItems = [
       { title: "Income", url: "/finance/income" },
       { title: "Expenses", url: "/finance/expenses" },
       { title: "Profit & Loss", url: "/finance/pnl" },
-      { title: "General Ledger", url: "/finance/reports" },
+      { title: "Reports", url: "/finance/reports" },
     ],
   },
   {

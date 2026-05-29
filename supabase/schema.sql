@@ -108,44 +108,6 @@ create table if not exists hatchery_fingerling_batches (
   created_at timestamptz not null default now()
 );
 
--- Repair guards for projects where tables were created before this schema was complete.
--- `create table if not exists` does not add missing columns to existing tables.
-alter table public.feeding_events
-  add column if not exists farm_id text not null default 'default';
-alter table public.water_readings
-  add column if not exists farm_id text not null default 'default';
-alter table public.finance_income
-  add column if not exists farm_id text not null default 'default';
-alter table public.finance_expenses
-  add column if not exists farm_id text not null default 'default';
-
-alter table public.production_events
-  add column if not exists tenant_id text;
-alter table public.inventory_items
-  add column if not exists tenant_id text;
-alter table public.inventory_movements
-  add column if not exists tenant_id text;
-alter table public.cages
-  add column if not exists tenant_id text;
-alter table public.hatchery_brooders
-  add column if not exists tenant_id text;
-alter table public.hatchery_fingerling_batches
-  add column if not exists tenant_id text;
-
-update public.production_events set tenant_id = 'default' where tenant_id is null;
-update public.inventory_items set tenant_id = 'default' where tenant_id is null;
-update public.inventory_movements set tenant_id = 'default' where tenant_id is null;
-update public.cages set tenant_id = 'default' where tenant_id is null;
-update public.hatchery_brooders set tenant_id = 'default' where tenant_id is null;
-update public.hatchery_fingerling_batches set tenant_id = 'default' where tenant_id is null;
-
-alter table public.production_events alter column tenant_id set not null;
-alter table public.inventory_items alter column tenant_id set not null;
-alter table public.inventory_movements alter column tenant_id set not null;
-alter table public.cages alter column tenant_id set not null;
-alter table public.hatchery_brooders alter column tenant_id set not null;
-alter table public.hatchery_fingerling_batches alter column tenant_id set not null;
-
 create index if not exists idx_water_readings_pond_time on water_readings (pond_id, timestamp desc);
 create index if not exists idx_income_date on finance_income (date desc);
 create index if not exists idx_expenses_date on finance_expenses (date desc);

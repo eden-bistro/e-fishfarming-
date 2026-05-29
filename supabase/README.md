@@ -25,8 +25,6 @@ This directory contains the database definition for creating a fresh Supabase pr
    supabase db push
    ```
 
-   The migration includes repair guards for existing projects where enterprise tables were created before `tenant_id` was added, so RLS policies are created only after required tenant columns exist.
-
 6. Copy the generated API settings into the deployment environment:
 
    ```text
