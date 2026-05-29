@@ -143,10 +143,7 @@ async function getGoogleAccessToken(serviceAccountJson: string): Promise<string>
 async function handleIotIngest(request: Request, env: unknown): Promise<Response> {
   const envRecord = getEnvRecord(env);
   const expectedToken = envRecord.IOT_INGEST_TOKEN;
-  const firebaseBaseUrl = firstDefined([
-    envRecord.FIREBASE_DATABASE_URL,
-    envRecord.FIREBASE_URL,
-  ]);
+  const firebaseBaseUrl = firstDefined([envRecord.FIREBASE_DATABASE_URL, envRecord.FIREBASE_URL]);
   const serviceAccountJson = envRecord.FIREBASE_SERVICE_ACCOUNT;
 
   if (!expectedToken) {
@@ -192,9 +189,11 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
   const ammonia = Number(body.ammonia ?? 0);
 
   if (!deviceId || !farmId || !pondId || !Number.isFinite(temperature) || !Number.isFinite(ph)) {
-    return jsonResponse({ ok: false, message: "deviceId, farmId, pondId, temperature and ph are required." }, 400);
+    return jsonResponse(
+      { ok: false, message: "deviceId, farmId, pondId, temperature and ph are required." },
+      400,
+    );
   }
-
 
   const basePath = `${firebaseBaseUrl}/farms/${encodeURIComponent(farmId)}/ponds/${encodeURIComponent(pondId)}`;
   const withAuth = (url: string) => {
