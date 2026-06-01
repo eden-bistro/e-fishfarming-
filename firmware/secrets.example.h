@@ -7,6 +7,9 @@
 #define WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
 #define BACKEND_INGEST_URL "https://api.yourdomain.com/api/iot/ingest"
 #define IOT_INGEST_TOKEN "YOUR_DEVICE_BEARER_TOKEN"
+#define FARM_ID "default"
+#define POND_ID "default"
+#define FIRMWARE_VERSION "v3.0-prod"
 
 // Root CA for TLS pinning / HTTPS validation on ESP32.
 #define TLS_ROOT_CA R"EOF(
