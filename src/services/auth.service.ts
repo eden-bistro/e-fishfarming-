@@ -61,20 +61,13 @@ export async function getAccessToken(): Promise<string | null> {
   if (!session.expires_at || session.expires_at - Date.now() > REFRESH_WINDOW_MS) {
     return session.access_token;
   }
-  if (!session.refresh_token || !hasSupabaseConfig()) return session.access_token;
+  if (!session.refresh_token) return session.access_token;
 
-  const response = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      apikey: supabaseAnonKey,
-      authorization: `Bearer ${supabaseAnonKey}`,
-    },
-    body: JSON.stringify({ refresh_token: session.refresh_token }),
+  const result = await authRequest("refresh", "token?grant_type=refresh_token", {
+    refresh_token: session.refresh_token,
   });
-
-  if (!response.ok) return session.access_token;
-  const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+  if (!result.ok) return session.access_token;
+  const payload = result.payload;
   const access_token = String(payload.access_token ?? "");
   const refresh_token = String(payload.refresh_token ?? session.refresh_token ?? "");
   const expires_in = Number(payload.expires_in ?? 0);
@@ -88,7 +81,7 @@ export function logoutUser() {
   window.sessionStorage.removeItem(SESSION_KEY);
 }
 
-async function authRequest(path: string, body: Record<string, unknown>) {
+async function directSupabaseAuthRequest(path: string, body: Record<string, unknown>) {
   if (!hasSupabaseConfig()) {
     return { ok: false as const, message: "Supabase auth is not configured." };
   }
@@ -115,8 +108,42 @@ async function authRequest(path: string, body: Record<string, unknown>) {
   return { ok: true as const, payload };
 }
 
+async function authRequest(
+  action: "login" | "register" | "recover" | "refresh",
+  directPath: string,
+  body: Record<string, unknown>,
+) {
+  if (isBrowser()) {
+    try {
+      const response = await fetch(`/api/auth/${action}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (response.status !== 404) {
+        const result = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+        if (!response.ok || result.ok === false) {
+          const message = String(result.message ?? "Authentication failed.");
+          if (message.includes("Supabase auth is not configured") && hasSupabaseConfig()) {
+            return directSupabaseAuthRequest(directPath, body);
+          }
+          return {
+            ok: false as const,
+            message,
+          };
+        }
+        return { ok: true as const, payload: (result.payload ?? {}) as Record<string, unknown> };
+      }
+    } catch {
+      // Fall back to direct Supabase Auth below for static/local environments.
+    }
+  }
+
+  return directSupabaseAuthRequest(directPath, body);
+}
+
 export async function registerUser(name: string, email: string, password: string) {
-  const result = await authRequest("signup", {
+  const result = await authRequest("register", "signup", {
     email: email.trim().toLowerCase(),
     password,
     data: { full_name: name.trim() },
@@ -146,7 +173,7 @@ export async function registerUser(name: string, email: string, password: string
 }
 
 export async function loginUser(email: string, password: string) {
-  const result = await authRequest("token?grant_type=password", {
+  const result = await authRequest("login", "token?grant_type=password", {
     email: email.trim().toLowerCase(),
     password,
   });
@@ -171,7 +198,7 @@ export async function loginUser(email: string, password: string) {
 }
 
 export async function forgotPassword(email: string) {
-  const result = await authRequest("recover", { email: email.trim().toLowerCase() });
+  const result = await authRequest("recover", "recover", { email: email.trim().toLowerCase() });
   if (!result.ok) return result;
   return { ok: true as const };
 }
