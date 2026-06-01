@@ -76,6 +76,16 @@ function envHealthResponse(env: unknown): Response {
   );
 }
 
+function jsonResponse(payload: unknown, status = 200, extraHeaders?: HeadersInit): Response {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      ...extraHeaders,
+    },
+  });
+}
+
 function noContentResponse(status = 204, extraHeaders?: HeadersInit): Response {
   return new Response(null, { status, headers: extraHeaders });
 }
@@ -467,9 +477,6 @@ export default {
     }
     if (url.pathname === "/api/health/env") {
       return envHealthResponse(env);
-    }
-    if (url.pathname.startsWith("/api/auth/")) {
-      return handleSupabaseAuthProxy(request, env, url.pathname.replace("/api/auth/", ""));
     }
     if (isIotIngestPath(url.pathname)) {
       if (request.method === "OPTIONS") {

@@ -34,8 +34,6 @@ ESP32 devices should post to your deployed app backend, not directly to Firebase
 POST https://<your-domain>/api/iot/ingest
 Authorization: Bearer <IOT_INGEST_TOKEN>
 Content-Type: application/json
-
-Compatibility alias: POST https://<your-domain>/ingest
 ```
 
 Required JSON fields:
