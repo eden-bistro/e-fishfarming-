@@ -75,81 +75,6 @@ function envHealthResponse(env: unknown): Response {
   );
 }
 
-function getSupabaseAuthConfig(env: unknown) {
-  const envRecord = getEnvRecord(env);
-  const url = firstDefined([envRecord.VITE_SUPABASE_URL, envRecord.SUPABASE_URL]);
-  const anonKey = firstDefined([envRecord.VITE_SUPABASE_ANON_KEY, envRecord.SUPABASE_ANON_KEY]);
-  return { url, anonKey };
-}
-
-function supabaseConfigError(env: unknown): Response | null {
-  const { url, anonKey } = getSupabaseAuthConfig(env);
-  const missing = [];
-  if (!url) missing.push("VITE_SUPABASE_URL or SUPABASE_URL");
-  if (!anonKey) missing.push("VITE_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY");
-  if (missing.length === 0) return null;
-  return jsonResponse(
-    {
-      ok: false,
-      message: `Supabase auth is not configured. Missing: ${missing.join(", ")}.`,
-    },
-    500,
-  );
-}
-
-async function handleSupabaseAuthProxy(request: Request, env: unknown, action: string) {
-  if (request.method !== "POST") {
-    return jsonResponse({ ok: false, message: "Method not allowed for auth endpoint." }, 405, {
-      allow: "POST",
-    });
-  }
-
-  const configError = supabaseConfigError(env);
-  if (configError) return configError;
-
-  let body: Record<string, unknown>;
-  try {
-    body = (await request.json()) as Record<string, unknown>;
-  } catch {
-    return jsonResponse({ ok: false, message: "Body must be valid JSON." }, 400);
-  }
-
-  const pathByAction: Record<string, string> = {
-    login: "token?grant_type=password",
-    register: "signup",
-    recover: "recover",
-    refresh: "token?grant_type=refresh_token",
-  };
-  const supabasePath = pathByAction[action];
-  if (!supabasePath) {
-    return jsonResponse({ ok: false, message: "Unknown auth action." }, 404);
-  }
-
-  const { url, anonKey } = getSupabaseAuthConfig(env);
-  const response = await fetch(`${url}/auth/v1/${supabasePath}`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      apikey: anonKey!,
-      authorization: `Bearer ${anonKey}`,
-    },
-    body: JSON.stringify(body),
-  });
-
-  const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
-  if (!response.ok) {
-    return jsonResponse(
-      {
-        ok: false,
-        message: String(payload.msg ?? payload.error_description ?? "Authentication failed."),
-      },
-      response.status,
-    );
-  }
-
-  return jsonResponse({ ok: true, payload });
-}
-
 function jsonResponse(payload: unknown, status = 200, extraHeaders?: HeadersInit): Response {
   return new Response(JSON.stringify(payload), {
     status,
@@ -551,9 +476,6 @@ export default {
     }
     if (url.pathname === "/api/health/env") {
       return envHealthResponse(env);
-    }
-    if (url.pathname.startsWith("/api/auth/")) {
-      return handleSupabaseAuthProxy(request, env, url.pathname.replace("/api/auth/", ""));
     }
     if (isIotIngestPath(url.pathname)) {
       if (request.method === "OPTIONS") {
