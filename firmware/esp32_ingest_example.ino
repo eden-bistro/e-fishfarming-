@@ -6,6 +6,9 @@ const char* WIFI_SSID = "YOUR_WIFI";
 const char* WIFI_PASSWORD = "YOUR_PASSWORD";
 const char* INGEST_URL = "https://your-worker-domain.com/api/iot/ingest";
 const char* IOT_INGEST_TOKEN = "YOUR_INGEST_TOKEN";
+const char* FARM_ID = "default";
+const char* POND_ID = "default";
+const char* FIRMWARE_VERSION = "v3.0-prod";
 
 unsigned long lastSendMs = 0;
 const unsigned long SEND_INTERVAL_MS = 7000;
@@ -39,13 +42,20 @@ void loop() {
   const float ph = 7.2;
   const float dissolvedOxygen = 6.1;
   const float ammonia = 0.03;
+  const float nitrite = 0.00;
 
   String body = "{";
   body += "\"deviceId\":\"" + deviceId + "\",";
+  body += "\"farmId\":\"" + String(FARM_ID) + "\",";
+  body += "\"pondId\":\"" + String(POND_ID) + "\",";
+  body += "\"firmware\":\"" + String(FIRMWARE_VERSION) + "\",";
+  body += "\"rssi\":" + String(WiFi.RSSI()) + ",";
+  body += "\"freeHeap\":" + String(ESP.getFreeHeap()) + ",";
   body += "\"temperature\":" + String(temperature, 2) + ",";
   body += "\"ph\":" + String(ph, 2) + ",";
   body += "\"dissolvedOxygen\":" + String(dissolvedOxygen, 2) + ",";
-  body += "\"ammonia\":" + String(ammonia, 4);
+  body += "\"ammonia\":" + String(ammonia, 4) + ",";
+  body += "\"nitrite\":" + String(nitrite, 4);
   body += "}";
 
   WiFiClientSecure client;

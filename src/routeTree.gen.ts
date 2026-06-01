@@ -37,6 +37,7 @@ import { Route as AuthRegisterRouteImport } from './routes/auth.register'
 import { Route as AuthLoginRouteImport } from './routes/auth.login'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth.forgot-password'
 import { Route as AiInsightsRouteImport } from './routes/ai.insights'
+import { Route as ApiAuthActionRouteImport } from './routes/api.auth.$action'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -178,6 +179,11 @@ const AiInsightsRoute = AiInsightsRouteImport.update({
   path: '/ai/insights',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthActionRoute = ApiAuthActionRouteImport.update({
+  id: '/api/auth/$action',
+  path: '/api/auth/$action',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -208,6 +214,7 @@ export interface FileRoutesByFullPath {
   '/inventory/': typeof InventoryIndexRoute
   '/production/': typeof ProductionIndexRoute
   '/reports/': typeof ReportsIndexRoute
+  '/api/auth/$action': typeof ApiAuthActionRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -238,6 +245,7 @@ export interface FileRoutesByTo {
   '/inventory': typeof InventoryIndexRoute
   '/production': typeof ProductionIndexRoute
   '/reports': typeof ReportsIndexRoute
+  '/api/auth/$action': typeof ApiAuthActionRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -269,6 +277,7 @@ export interface FileRoutesById {
   '/inventory/': typeof InventoryIndexRoute
   '/production/': typeof ProductionIndexRoute
   '/reports/': typeof ReportsIndexRoute
+  '/api/auth/$action': typeof ApiAuthActionRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -301,6 +310,7 @@ export interface FileRouteTypes {
     | '/inventory/'
     | '/production/'
     | '/reports/'
+    | '/api/auth/$action'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -331,6 +341,7 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/production'
     | '/reports'
+    | '/api/auth/$action'
   id:
     | '__root__'
     | '/'
@@ -361,6 +372,7 @@ export interface FileRouteTypes {
     | '/inventory/'
     | '/production/'
     | '/reports/'
+    | '/api/auth/$action'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -392,6 +404,7 @@ export interface RootRouteChildren {
   InventoryIndexRoute: typeof InventoryIndexRoute
   ProductionIndexRoute: typeof ProductionIndexRoute
   ReportsIndexRoute: typeof ReportsIndexRoute
+  ApiAuthActionRoute: typeof ApiAuthActionRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -592,6 +605,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AiInsightsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/$action': {
+      id: '/api/auth/$action'
+      path: '/api/auth/$action'
+      fullPath: '/api/auth/$action'
+      preLoaderRoute: typeof ApiAuthActionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -624,6 +644,7 @@ const rootRouteChildren: RootRouteChildren = {
   InventoryIndexRoute: InventoryIndexRoute,
   ProductionIndexRoute: ProductionIndexRoute,
   ReportsIndexRoute: ReportsIndexRoute,
+  ApiAuthActionRoute: ApiAuthActionRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
