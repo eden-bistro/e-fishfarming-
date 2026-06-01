@@ -45,9 +45,6 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install Firebase CLI
-        run: npm install --global firebase-tools
-
       - name: Write Firebase service account
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
@@ -61,4 +58,4 @@ jobs:
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
         run: |
           test -n "$FIREBASE_PROJECT_ID"
-          firebase deploy --only database --project "$FIREBASE_PROJECT_ID" --non-interactive
+          npx -y firebase-tools@latest deploy --only database --project "$FIREBASE_PROJECT_ID" --non-interactive
