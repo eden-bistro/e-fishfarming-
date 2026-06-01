@@ -2,10 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
-import {
-  handleSupabaseAuthProxy,
-  jsonResponse as sharedJsonResponse,
-} from "./lib/supabase-auth-proxy";
+import { handleSupabaseAuthProxy, jsonResponse } from "./lib/supabase-auth-proxy";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -77,6 +74,16 @@ function envHealthResponse(env: unknown): Response {
       headers: { "content-type": "application/json; charset=utf-8" },
     },
   );
+}
+
+function jsonResponse(payload: unknown, status = 200, extraHeaders?: HeadersInit): Response {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      ...extraHeaders,
+    },
+  });
 }
 
 function noContentResponse(status = 204, extraHeaders?: HeadersInit): Response {
@@ -172,7 +179,7 @@ function faviconResponse(): Response {
 }
 
 function iotIngestInfoResponse(): Response {
-  return sharedJsonResponse({
+  return jsonResponse({
     ok: true,
     endpoint: "/api/iot/ingest",
     aliases: ["/ingest"],
@@ -228,7 +235,7 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     try {
       firebaseWriteAuth = { type: "oauth", token: await getGoogleAccessToken(serviceAccountJson) };
     } catch (error) {
-      return sharedJsonResponse(
+      return jsonResponse(
         {
           ok: false,
           message: "Firebase service account authentication failed.",
@@ -238,7 +245,7 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
       );
     }
   } else {
-    return sharedJsonResponse(
+    return jsonResponse(
       {
         ok: false,
         message:
@@ -394,7 +401,7 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     );
   }
 
-  return sharedJsonResponse({
+  return jsonResponse({
     ok: true,
     deviceId,
     farmId,
@@ -471,9 +478,6 @@ export default {
     if (url.pathname === "/api/health/env") {
       return envHealthResponse(env);
     }
-    if (url.pathname.startsWith("/api/auth/")) {
-      return handleSupabaseAuthProxy(request, env, url.pathname.replace("/api/auth/", ""));
-    }
     if (isIotIngestPath(url.pathname)) {
       if (request.method === "OPTIONS") {
         return noContentResponse(204, {
@@ -488,7 +492,7 @@ export default {
       if (request.method === "POST") {
         return handleIotIngest(request, env);
       }
-      return sharedJsonResponse({ ok: false, message: "Method not allowed for IoT ingest." }, 405, {
+      return jsonResponse({ ok: false, message: "Method not allowed for IoT ingest." }, 405, {
         allow: "GET, POST, OPTIONS",
       });
     }
