@@ -75,11 +75,18 @@ function envHealthResponse(env: unknown): Response {
   );
 }
 
-function jsonResponse(payload: unknown, status = 200): Response {
+function jsonResponse(payload: unknown, status = 200, extraHeaders?: HeadersInit): Response {
   return new Response(JSON.stringify(payload), {
     status,
-    headers: { "content-type": "application/json; charset=utf-8" },
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      ...extraHeaders,
+    },
   });
+}
+
+function noContentResponse(status = 204, extraHeaders?: HeadersInit): Response {
+  return new Response(null, { status, headers: extraHeaders });
 }
 
 function b64url(input: Uint8Array | string): string {
@@ -147,6 +154,41 @@ async function getGoogleAccessToken(serviceAccountJson: string): Promise<string>
   const tokenBody = (await tokenRes.json()) as { access_token?: string };
   if (!tokenBody.access_token) throw new Error("OAuth response missing access_token.");
   return tokenBody.access_token;
+}
+
+function isIotIngestPath(pathname: string): boolean {
+  return pathname === "/api/iot/ingest" || pathname === "/ingest";
+}
+
+function faviconResponse(): Response {
+  return new Response(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#0f766e"/>
+  <path d="M14 34c10-12 26-12 36 0-10 12-26 12-36 0Z" fill="#ccfbf1"/>
+  <circle cx="43" cy="32" r="3" fill="#0f766e"/>
+  <path d="M18 46c8 3 20 3 28-1" fill="none" stroke="#67e8f9" stroke-width="4" stroke-linecap="round"/>
+</svg>`,
+    {
+      headers: {
+        "content-type": "image/svg+xml; charset=utf-8",
+        "cache-control": "public, max-age=86400",
+      },
+    },
+  );
+}
+
+function iotIngestInfoResponse(): Response {
+  return jsonResponse({
+    ok: true,
+    endpoint: "/api/iot/ingest",
+    aliases: ["/ingest"],
+    method: "POST",
+    requiredHeaders: {
+      authorization: "Bearer <IOT_INGEST_TOKEN>",
+      "content-type": "application/json",
+    },
+    requiredFields: ["deviceId", "farmId", "pondId", "temperature", "ph"],
+  });
 }
 
 async function handleIotIngest(request: Request, env: unknown): Promise<Response> {
@@ -429,11 +471,29 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     const url = new URL(request.url);
+    if (url.pathname === "/favicon.ico") {
+      return faviconResponse();
+    }
     if (url.pathname === "/api/health/env") {
       return envHealthResponse(env);
     }
-    if (url.pathname === "/api/iot/ingest" && request.method === "POST") {
-      return handleIotIngest(request, env);
+    if (isIotIngestPath(url.pathname)) {
+      if (request.method === "OPTIONS") {
+        return noContentResponse(204, {
+          allow: "GET, POST, OPTIONS",
+          "access-control-allow-methods": "GET, POST, OPTIONS",
+          "access-control-allow-headers": "authorization, content-type",
+        });
+      }
+      if (request.method === "GET" || request.method === "HEAD") {
+        return iotIngestInfoResponse();
+      }
+      if (request.method === "POST") {
+        return handleIotIngest(request, env);
+      }
+      return jsonResponse({ ok: false, message: "Method not allowed for IoT ingest." }, 405, {
+        allow: "GET, POST, OPTIONS",
+      });
     }
 
     try {
