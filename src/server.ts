@@ -203,11 +203,11 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
   const serviceAccountJson = envRecord.FIREBASE_SERVICE_ACCOUNT;
 
   if (!expectedToken) {
-    return jsonResponse({ ok: false, message: "IOT_INGEST_TOKEN is not configured." }, 500);
+    return sharedJsonResponse({ ok: false, message: "IOT_INGEST_TOKEN is not configured." }, 500);
   }
 
   if (!firebaseBaseUrl) {
-    return jsonResponse(
+    return sharedJsonResponse(
       {
         ok: false,
         message:
@@ -220,7 +220,7 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
   const authHeader = request.headers.get("authorization") ?? "";
   const incomingToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
   if (!incomingToken || incomingToken !== expectedToken) {
-    return jsonResponse({ ok: false, message: "Unauthorized ingest token." }, 401);
+    return sharedJsonResponse({ ok: false, message: "Unauthorized ingest token." }, 401);
   }
 
   const firebaseDatabaseSecret = firstDefined([
@@ -259,7 +259,7 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
   try {
     body = (await request.json()) as Record<string, unknown>;
   } catch {
-    return jsonResponse({ ok: false, message: "Body must be valid JSON." }, 400);
+    return sharedJsonResponse({ ok: false, message: "Body must be valid JSON." }, 400);
   }
 
   const deviceId = String(body.deviceId ?? "").trim();
@@ -272,7 +272,7 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
   const ammonia = Number(body.ammonia ?? 0);
 
   if (!deviceId || !farmId || !pondId || !Number.isFinite(temperature) || !Number.isFinite(ph)) {
-    return jsonResponse(
+    return sharedJsonResponse(
       { ok: false, message: "deviceId, farmId, pondId, temperature and ph are required." },
       400,
     );
@@ -325,7 +325,7 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
       firebaseAuthType: firebaseWriteAuth.type,
       error,
     });
-    return jsonResponse(
+    return sharedJsonResponse(
       {
         ok: false,
         message: "Failed to write ingest payload.",
