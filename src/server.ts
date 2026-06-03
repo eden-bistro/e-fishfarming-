@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { handleSupabaseAuthProxy } from "./lib/supabase-auth-proxy";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -12,6 +13,11 @@ type ServiceAccount = {
   private_key: string;
   project_id?: string;
 };
+
+type FirebaseWriteAuth =
+  | { type: "database-secret"; token: string }
+  | { type: "oauth"; token: string }
+  | { type: "none" };
 
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
@@ -42,7 +48,11 @@ function envHealthResponse(env: unknown): Response {
       envRecord.FIREBASE_URL,
     ]),
     IOT_INGEST_TOKEN: envRecord.IOT_INGEST_TOKEN,
-    FIREBASE_SERVICE_ACCOUNT: envRecord.FIREBASE_SERVICE_ACCOUNT,
+    FIREBASE_WRITE_AUTH: firstDefined([
+      envRecord.FIREBASE_SERVICE_ACCOUNT,
+      envRecord.FIREBASE_DATABASE_SECRET,
+      envRecord.FIREBASE_AUTH_TOKEN,
+    ]),
   };
 
   const missing = Object.entries(required)
@@ -66,11 +76,18 @@ function envHealthResponse(env: unknown): Response {
   );
 }
 
-function jsonResponse(payload: unknown, status = 200): Response {
+function serverJsonResponse(payload: unknown, status = 200, extraHeaders?: HeadersInit): Response {
   return new Response(JSON.stringify(payload), {
     status,
-    headers: { "content-type": "application/json; charset=utf-8" },
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      ...extraHeaders,
+    },
   });
+}
+
+function noContentResponse(status = 204, extraHeaders?: HeadersInit): Response {
+  return new Response(null, { status, headers: extraHeaders });
 }
 
 function b64url(input: Uint8Array | string): string {
@@ -140,18 +157,57 @@ async function getGoogleAccessToken(serviceAccountJson: string): Promise<string>
   return tokenBody.access_token;
 }
 
+function isIotIngestPath(pathname: string): boolean {
+  return pathname === "/api/iot/ingest" || pathname === "/ingest";
+}
+
+function faviconResponse(): Response {
+  return new Response(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#0f766e"/>
+  <path d="M14 34c10-12 26-12 36 0-10 12-26 12-36 0Z" fill="#ccfbf1"/>
+  <circle cx="43" cy="32" r="3" fill="#0f766e"/>
+  <path d="M18 46c8 3 20 3 28-1" fill="none" stroke="#67e8f9" stroke-width="4" stroke-linecap="round"/>
+</svg>`,
+    {
+      headers: {
+        "content-type": "image/svg+xml; charset=utf-8",
+        "cache-control": "public, max-age=86400",
+      },
+    },
+  );
+}
+
+function iotIngestInfoResponse(): Response {
+  return serverJsonResponse({
+    ok: true,
+    endpoint: "/api/iot/ingest",
+    aliases: ["/ingest"],
+    method: "POST",
+    requiredHeaders: {
+      authorization: "Bearer <IOT_INGEST_TOKEN>",
+      "content-type": "application/json",
+    },
+    requiredFields: ["deviceId", "farmId", "pondId", "temperature", "ph"],
+  });
+}
+
 async function handleIotIngest(request: Request, env: unknown): Promise<Response> {
   const envRecord = getEnvRecord(env);
   const expectedToken = envRecord.IOT_INGEST_TOKEN;
-  const firebaseBaseUrl = firstDefined([envRecord.FIREBASE_DATABASE_URL, envRecord.FIREBASE_URL]);
+  const firebaseBaseUrl = firstDefined([
+    envRecord.VITE_FIREBASE_DATABASE_URL,
+    envRecord.FIREBASE_DATABASE_URL,
+    envRecord.FIREBASE_URL,
+  ]);
   const serviceAccountJson = envRecord.FIREBASE_SERVICE_ACCOUNT;
 
   if (!expectedToken) {
-    return jsonResponse({ ok: false, message: "IOT_INGEST_TOKEN is not configured." }, 500);
+    return serverJsonResponse({ ok: false, message: "IOT_INGEST_TOKEN is not configured." }, 500);
   }
 
   if (!firebaseBaseUrl) {
-    return jsonResponse(
+    return serverJsonResponse(
       {
         ok: false,
         message:
@@ -164,7 +220,7 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
   const authHeader = request.headers.get("authorization") ?? "";
   const incomingToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
   if (!incomingToken || incomingToken !== expectedToken) {
-    return jsonResponse({ ok: false, message: "Unauthorized ingest token." }, 401);
+    return serverJsonResponse({ ok: false, message: "Unauthorized ingest token." }, 401);
   }
 
   const firebaseDatabaseSecret = firstDefined([
@@ -172,11 +228,38 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     envRecord.FIREBASE_AUTH_TOKEN,
   ]);
 
+  let firebaseWriteAuth: FirebaseWriteAuth = { type: "none" };
+  if (firebaseDatabaseSecret) {
+    firebaseWriteAuth = { type: "database-secret", token: firebaseDatabaseSecret };
+  } else if (serviceAccountJson) {
+    try {
+      firebaseWriteAuth = { type: "oauth", token: await getGoogleAccessToken(serviceAccountJson) };
+    } catch (error) {
+      return serverJsonResponse(
+        {
+          ok: false,
+          message: "Firebase service account authentication failed.",
+          detail: error instanceof Error ? error.message : String(error),
+        },
+        500,
+      );
+    }
+  } else {
+    return serverJsonResponse(
+      {
+        ok: false,
+        message:
+          "Firebase write authentication is not configured. Set FIREBASE_SERVICE_ACCOUNT or FIREBASE_DATABASE_SECRET/FIREBASE_AUTH_TOKEN.",
+      },
+      500,
+    );
+  }
+
   let body: Record<string, unknown>;
   try {
     body = (await request.json()) as Record<string, unknown>;
   } catch {
-    return jsonResponse({ ok: false, message: "Body must be valid JSON." }, 400);
+    return serverJsonResponse({ ok: false, message: "Body must be valid JSON." }, 400);
   }
 
   const deviceId = String(body.deviceId ?? "").trim();
@@ -189,7 +272,7 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
   const ammonia = Number(body.ammonia ?? 0);
 
   if (!deviceId || !farmId || !pondId || !Number.isFinite(temperature) || !Number.isFinite(ph)) {
-    return jsonResponse(
+    return serverJsonResponse(
       { ok: false, message: "deviceId, farmId, pondId, temperature and ph are required." },
       400,
     );
@@ -197,9 +280,9 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
 
   const basePath = `${firebaseBaseUrl}/farms/${encodeURIComponent(farmId)}/ponds/${encodeURIComponent(pondId)}`;
   const withAuth = (url: string) => {
-    if (!firebaseDatabaseSecret) return url;
+    if (firebaseWriteAuth.type !== "database-secret") return url;
     const separator = url.includes("?") ? "&" : "?";
-    return `${url}${separator}auth=${encodeURIComponent(firebaseDatabaseSecret)}`;
+    return `${url}${separator}auth=${encodeURIComponent(firebaseWriteAuth.token)}`;
   };
 
   const write = async (
@@ -209,9 +292,14 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     allowFailure = false,
   ) => {
     const url = withAuth(`${basePath}/${path}.json`);
+    const headers: Record<string, string> = { "content-type": "application/json" };
+    if (firebaseWriteAuth.type === "oauth") {
+      headers.authorization = `Bearer ${firebaseWriteAuth.token}`;
+    }
+
     const res = await fetch(url, {
       method,
-      headers: { "content-type": "application/json" },
+      headers,
       body: JSON.stringify(payload),
     });
     if (res.ok) return;
@@ -234,10 +322,10 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
   const fail = (path: string, error: unknown) => {
     console.error("[iot-ingest] blocking write failure", {
       path,
-      hasFirebaseAuthToken: Boolean(firebaseDatabaseSecret),
+      firebaseAuthType: firebaseWriteAuth.type,
       error,
     });
-    return jsonResponse(
+    return serverJsonResponse(
       {
         ok: false,
         message: "Failed to write ingest payload.",
@@ -248,19 +336,28 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     );
   };
 
+  const waterReading = {
+    timestamp,
+    pondId,
+    deviceId,
+    temperature,
+    ph,
+    dissolvedOxygen: Number.isFinite(dissolvedOxygen) ? dissolvedOxygen : 0,
+    turbidity: Number(body.turbidity ?? 0) || 0,
+    ammonia: Number.isFinite(ammonia) ? ammonia : 0,
+    nitrite: Number(body.nitrite ?? 0) || 0,
+  };
+
   try {
-    await write("water/latest", {
-      timestamp,
-      pondId,
-      temperature,
-      ph,
-      dissolvedOxygen: Number.isFinite(dissolvedOxygen) ? dissolvedOxygen : 0,
-      turbidity: Number(body.turbidity ?? 0) || 0,
-      ammonia: Number.isFinite(ammonia) ? ammonia : 0,
-      nitrite: Number(body.nitrite ?? 0) || 0,
-    });
+    await write("water/latest", waterReading);
   } catch (error) {
     return fail("water/latest", error);
+  }
+
+  try {
+    await write("water/history", waterReading, "POST", true);
+  } catch (error) {
+    return fail("water/history", error);
   }
 
   try {
@@ -304,7 +401,17 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     );
   }
 
-  return jsonResponse({ ok: true, deviceId, path: `/devices/${deviceId}/latest` });
+  return serverJsonResponse({
+    ok: true,
+    deviceId,
+    farmId,
+    pondId,
+    paths: {
+      latest: `/farms/${farmId}/ponds/${pondId}/water/latest`,
+      history: `/farms/${farmId}/ponds/${pondId}/water/history`,
+      deviceStatus: `/farms/${farmId}/ponds/${pondId}/devices/status/${deviceId}`,
+    },
+  });
 }
 
 async function getServerEntry(): Promise<ServerEntry> {
@@ -365,11 +472,32 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     const url = new URL(request.url);
+    if (url.pathname === "/favicon.ico") {
+      return faviconResponse();
+    }
     if (url.pathname === "/api/health/env") {
       return envHealthResponse(env);
     }
-    if (url.pathname === "/api/iot/ingest" && request.method === "POST") {
-      return handleIotIngest(request, env);
+    if (url.pathname.startsWith("/api/auth/")) {
+      return handleSupabaseAuthProxy(request, env, url.pathname.replace("/api/auth/", ""));
+    }
+    if (isIotIngestPath(url.pathname)) {
+      if (request.method === "OPTIONS") {
+        return noContentResponse(204, {
+          allow: "GET, POST, OPTIONS",
+          "access-control-allow-methods": "GET, POST, OPTIONS",
+          "access-control-allow-headers": "authorization, content-type",
+        });
+      }
+      if (request.method === "GET" || request.method === "HEAD") {
+        return iotIngestInfoResponse();
+      }
+      if (request.method === "POST") {
+        return handleIotIngest(request, env);
+      }
+      return serverJsonResponse({ ok: false, message: "Method not allowed for IoT ingest." }, 405, {
+        allow: "GET, POST, OPTIONS",
+      });
     }
 
     try {
