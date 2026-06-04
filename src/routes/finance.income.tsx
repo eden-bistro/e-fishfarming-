@@ -55,6 +55,7 @@ function Page() {
     }
   }
   useEffect(() => {
+    setRange(currentMonthRange());
     void load();
   }, []);
 
