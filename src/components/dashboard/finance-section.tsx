@@ -1,8 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
-import { listExpenses, listIncome } from "@/lib/platform-clients";
+import { listExpenses, listIncome, type ExpenseRow, type IncomeRow } from "@/lib/platform-clients";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Area, AreaChart, ResponsiveContainer } from "recharts";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
+import {
+  buildDailySeries,
+  currentMonthRange,
+  filterExpensesByDate,
+  filterIncomeByDate,
+  formatCurrency,
+  profitMargin,
+  sumExpenses,
+  sumIncome,
+  type DateRange,
+} from "@/services/modules/finance-analytics.service";
+import { Input } from "@/components/ui/input";
 
 function StatBlock({
   label,
@@ -62,52 +74,77 @@ function StatBlock({
 }
 
 export function FinanceSection() {
-  const [incomeSeries, setIncomeSeries] = useState<{ v: number }[]>([]);
-  const [expenseSeries, setExpenseSeries] = useState<{ v: number }[]>([]);
+  const [incomeRows, setIncomeRows] = useState<IncomeRow[]>([]);
+  const [expenseRows, setExpenseRows] = useState<ExpenseRow[]>([]);
+  const [range, setRange] = useState<DateRange>(() => currentMonthRange());
 
   useEffect(() => {
     async function load() {
-      const [incomeRows, expenseRows] = await Promise.all([listIncome(), listExpenses()]);
-      const month = new Date().toISOString().slice(0, 7);
-      const incomeMonth = incomeRows.filter((r) => r.date.startsWith(month));
-      const expenseMonth = expenseRows.filter((r) => r.date.startsWith(month));
-      setIncomeSeries(
-        incomeMonth
-          .map((r) => ({ v: Number(r.total || 0) }))
-          .slice(0, 12)
-          .reverse(),
-      );
-      setExpenseSeries(
-        expenseMonth
-          .map((r) => ({ v: Number(r.amount || 0) }))
-          .slice(0, 12)
-          .reverse(),
-      );
+      const [income, expenses] = await Promise.all([listIncome(), listExpenses()]);
+      setIncomeRows(income);
+      setExpenseRows(expenses);
     }
-    load();
+    void load();
   }, []);
 
-  const totalIncome = useMemo(() => incomeSeries.reduce((s, p) => s + p.v, 0), [incomeSeries]);
-  const totalExpenses = useMemo(() => expenseSeries.reduce((s, p) => s + p.v, 0), [expenseSeries]);
+  const filteredIncome = useMemo(() => filterIncomeByDate(incomeRows, range), [incomeRows, range]);
+  const filteredExpenses = useMemo(
+    () => filterExpensesByDate(expenseRows, range),
+    [expenseRows, range],
+  );
+  const dailySeries = useMemo(
+    () => buildDailySeries(filteredIncome, filteredExpenses),
+    [filteredIncome, filteredExpenses],
+  );
+  const incomeSeries = useMemo(
+    () => dailySeries.map((point) => ({ v: point.income })),
+    [dailySeries],
+  );
+  const expenseSeries = useMemo(
+    () => dailySeries.map((point) => ({ v: point.expenses })),
+    [dailySeries],
+  );
+
+  const totalIncome = useMemo(() => sumIncome(filteredIncome), [filteredIncome]);
+  const totalExpenses = useMemo(() => sumExpenses(filteredExpenses), [filteredExpenses]);
   const totalProfit = totalIncome - totalExpenses;
+  const margin = profitMargin(totalIncome, totalProfit);
   const profitSeries = useMemo(
-    () => incomeSeries.map((p, i) => ({ v: p.v - (expenseSeries[i]?.v ?? 0) })),
-    [incomeSeries, expenseSeries],
+    () => dailySeries.map((point) => ({ v: point.profit })),
+    [dailySeries],
   );
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-base">Profit &amp; Loss Overview</CardTitle>
-        <span className="text-xs text-muted-foreground">This month</span>
+      <CardHeader className="flex flex-col gap-3 space-y-0 pb-2 md:flex-row md:items-center md:justify-between">
+        <div>
+          <CardTitle className="text-base">Profit &amp; Loss Overview</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Filter by date range for monthly or custom reporting.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            type="date"
+            className="h-8 w-auto"
+            value={range.startDate}
+            onChange={(e) => setRange((current) => ({ ...current, startDate: e.target.value }))}
+          />
+          <Input
+            type="date"
+            className="h-8 w-auto"
+            value={range.endDate}
+            onChange={(e) => setRange((current) => ({ ...current, endDate: e.target.value }))}
+          />
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
           <StatBlock
             id="g-income"
             label="Total Income"
-            value={`KSh ${totalIncome.toLocaleString()}`}
-            delta="Live"
+            value={formatCurrency(totalIncome)}
+            delta="Range"
             positive
             series={incomeSeries}
             color="var(--success)"
@@ -115,8 +152,8 @@ export function FinanceSection() {
           <StatBlock
             id="g-exp"
             label="Total Expenses"
-            value={`KSh ${totalExpenses.toLocaleString()}`}
-            delta="Live"
+            value={formatCurrency(totalExpenses)}
+            delta="Range"
             positive={false}
             series={expenseSeries}
             color="var(--destructive)"
@@ -124,11 +161,20 @@ export function FinanceSection() {
           <StatBlock
             id="g-profit"
             label="Net Profit"
-            value={`KSh ${totalProfit.toLocaleString()}`}
-            delta="Live"
+            value={formatCurrency(totalProfit)}
+            delta="Range"
             positive={totalProfit >= 0}
             series={profitSeries}
             color="var(--brand)"
+          />
+          <StatBlock
+            id="g-margin"
+            label="Profit Margin"
+            value={`${(margin * 100).toFixed(1)}%`}
+            delta="Margin"
+            positive={margin >= 0}
+            series={profitSeries}
+            color="var(--warning)"
           />
         </div>
       </CardContent>
