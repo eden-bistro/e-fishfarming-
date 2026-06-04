@@ -165,6 +165,14 @@ async function getGoogleAccessToken(serviceAccountJson: string): Promise<string>
   return tokenBody.access_token;
 }
 
+function getSupabaseAuthProxyAction(pathname: string): string | null {
+  const prefix = "/api/auth/";
+  if (!pathname.startsWith(prefix)) return null;
+
+  const action = pathname.slice(prefix.length);
+  return action && !action.includes("/") ? action : null;
+}
+
 function isIotIngestPath(pathname: string): boolean {
   return pathname === "/api/iot/ingest" || pathname === "/ingest";
 }
@@ -486,6 +494,12 @@ export default {
     if (url.pathname === "/api/health/env") {
       return envHealthResponse(env);
     }
+
+    const authProxyAction = getSupabaseAuthProxyAction(url.pathname);
+    if (authProxyAction) {
+      return handleSupabaseAuthProxy(request, env, authProxyAction);
+    }
+
     if (isIotIngestPath(url.pathname)) {
       if (request.method === "OPTIONS") {
         return noContentResponse(204, {
