@@ -7,6 +7,10 @@ export type SessionUser = {
 
 const SESSION_KEY = "aquasmart_session_v3";
 const REFRESH_WINDOW_MS = 60_000;
+const OFFLINE_AUTH_MESSAGE =
+  "You are offline. Reconnect to the internet before signing in or refreshing your session.";
+const PROXY_AUTH_UNAVAILABLE_MESSAGE =
+  "Authentication service is unavailable. In Cloudflare, configure SUPABASE_URL and SUPABASE_ANON_KEY as Worker variables/secrets, then redeploy.";
 
 type SessionRecord = {
   access_token: string;
@@ -20,15 +24,25 @@ function isBrowser() {
   return typeof window !== "undefined";
 }
 
+function getSessionStorage() {
+  if (!isBrowser()) return null;
+  try {
+    return window.localStorage;
+  } catch {
+    return window.sessionStorage;
+  }
+}
+
 function setSession(
   access_token: string,
   user: SessionUser,
   refresh_token?: string,
   expires_in?: number,
 ) {
-  if (!isBrowser()) return;
+  const storage = getSessionStorage();
+  if (!storage) return;
   const expires_at = expires_in ? Date.now() + expires_in * 1000 : undefined;
-  window.sessionStorage.setItem(
+  storage.setItem(
     SESSION_KEY,
     JSON.stringify({
       access_token,
@@ -41,12 +55,22 @@ function setSession(
 }
 
 function getSessionRecord(): SessionRecord | null {
-  if (!isBrowser()) return null;
-  const raw = window.sessionStorage.getItem(SESSION_KEY);
+  const storage = getSessionStorage();
+  if (!storage) return null;
+
+  const raw = storage.getItem(SESSION_KEY) ?? window.sessionStorage.getItem(SESSION_KEY);
   if (!raw) return null;
+
+  if (!storage.getItem(SESSION_KEY)) {
+    storage.setItem(SESSION_KEY, raw);
+    window.sessionStorage.removeItem(SESSION_KEY);
+  }
+
   try {
     return JSON.parse(raw) as SessionRecord;
   } catch {
+    storage.removeItem(SESSION_KEY);
+    window.sessionStorage.removeItem(SESSION_KEY);
     return null;
   }
 }
@@ -77,8 +101,17 @@ export async function getAccessToken(): Promise<string | null> {
 }
 
 export function logoutUser() {
-  if (!isBrowser()) return;
-  window.sessionStorage.removeItem(SESSION_KEY);
+  const storage = getSessionStorage();
+  storage?.removeItem(SESSION_KEY);
+  if (isBrowser()) window.sessionStorage.removeItem(SESSION_KEY);
+}
+
+function canUseDirectSupabaseAuth() {
+  return hasSupabaseConfig();
+}
+
+function isOffline() {
+  return isBrowser() && "onLine" in navigator && !navigator.onLine;
 }
 
 async function directSupabaseAuthRequest(path: string, body: Record<string, unknown>) {

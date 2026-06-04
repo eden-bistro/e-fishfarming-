@@ -103,6 +103,10 @@ function noContentResponse(status = 204, extraHeaders?: HeadersInit): Response {
   return new Response(null, { status, headers: extraHeaders });
 }
 
+function noContentResponse(status = 204, extraHeaders?: HeadersInit): Response {
+  return new Response(null, { status, headers: extraHeaders });
+}
+
 function b64url(input: Uint8Array | string): string {
   const bytes = typeof input === "string" ? new TextEncoder().encode(input) : input;
   let str = "";

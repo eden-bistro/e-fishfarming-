@@ -46,9 +46,9 @@ Required for ESP32 ingest:
 2. For GitHub deployment, add repository secrets:
    - `CLOUDFLARE_API_TOKEN`
    - `CLOUDFLARE_ACCOUNT_ID`
-3. Configure env vars in Cloudflare dashboard:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
+3. Configure durable runtime variables/secrets in Cloudflare. Prefer the server-style names below because the Supabase auth proxy reads them at Worker runtime:
+   - `SUPABASE_URL`
+   - `SUPABASE_ANON_KEY`
    - `FIREBASE_DATABASE_URL`
    - `IOT_INGEST_TOKEN`
    - `FIREBASE_SERVICE_ACCOUNT` (or legacy `FIREBASE_DATABASE_SECRET` / `FIREBASE_AUTH_TOKEN`)
@@ -62,7 +62,7 @@ Use:
 
 - `GET /api/health/env` for environment sanity check.
 
-A healthy response returns `ok: true` with no missing required vars.
+A healthy response returns `ok: true` with no missing required vars. If Supabase auth says it is not configured after an offline/online cycle, check this endpoint first; the fix is to restore `SUPABASE_URL` and `SUPABASE_ANON_KEY` on the deployed Cloudflare Worker, not only in your local `.env` file.
 
 ## 7) IoT troubleshooting
 
