@@ -11,15 +11,13 @@
 #include <math.h>
 #include "secrets.h"
 
-// Backward-compatible fallbacks for older secrets.h files.
-// Prefer explicit FARM_ID and POND_ID values in secrets.h.
-#ifndef FARM_ID
-#ifdef FARMER_ID
-#define FARM_ID FARMER_ID
-#else
-#define FARM_ID "default"
-#endif
-#endif
+const char* WIFI_SSID = "YOUR_WIFI";
+const char* WIFI_PASSWORD = "YOUR_PASSWORD";
+const char* INGEST_URL = "https://your-worker-domain.com/api/iot/ingest";
+const char* IOT_INGEST_TOKEN = "YOUR_INGEST_TOKEN";
+const char* FARM_ID = "default";
+const char* POND_ID = "default";
+const char* FIRMWARE_VERSION = "v3.0-prod";
 
 #ifndef POND_ID
 #ifdef CAGE_ID
@@ -294,38 +292,26 @@ void readSensors() {
     tempC = smooth(t, tempC);
   }
 
-  float phRaw = analogRead(PH_PIN);
-  float doRaw = analogRead(DO_PIN);
-  float nh3Raw = analogRead(NH3_PIN);
+  const String deviceId = "ESP32_001";
+  const float temperature = 27.4;
+  const float ph = 7.2;
+  const float dissolvedOxygen = 6.1;
+  const float ammonia = 0.03;
+  const float nitrite = 0.00;
 
-  float phCalc = phRaw * (14.0f / 4095.0f);
-  float doCalc = doRaw * (20.0f / 4095.0f);
-  float nh3Calc = nh3Raw * (10.0f / 4095.0f);
-
-  phValue = smooth(phCalc, phValue);
-  doValue = smooth(doCalc, doValue);
-  nh3Value = smooth(nh3Calc, nh3Value);
-}
-
-bool isWaterSafe() {
-  if (doValue < DO_MIN) return false;
-  if (nh3Value > NH3_MAX) return false;
-  if (tempC < TEMP_MIN || tempC > TEMP_MAX) return false;
-  if (phValue < PH_MIN || phValue > PH_MAX) return false;
-  return true;
-}
-
-// =========================
-// PAYLOAD
-// =========================
-String buildPayload() {
-  StaticJsonDocument<768> doc;
-
-  // These exact keys are required by POST /api/iot/ingest.
-  doc["deviceId"] = DEVICE_ID;
-  doc["farmId"] = FARM_ID;
-  doc["pondId"] = POND_ID;
-  doc["firmware"] = FIRMWARE_VERSION;
+  String body = "{";
+  body += "\"deviceId\":\"" + deviceId + "\",";
+  body += "\"farmId\":\"" + String(FARM_ID) + "\",";
+  body += "\"pondId\":\"" + String(POND_ID) + "\",";
+  body += "\"firmware\":\"" + String(FIRMWARE_VERSION) + "\",";
+  body += "\"rssi\":" + String(WiFi.RSSI()) + ",";
+  body += "\"freeHeap\":" + String(ESP.getFreeHeap()) + ",";
+  body += "\"temperature\":" + String(temperature, 2) + ",";
+  body += "\"ph\":" + String(ph, 2) + ",";
+  body += "\"dissolvedOxygen\":" + String(dissolvedOxygen, 2) + ",";
+  body += "\"ammonia\":" + String(ammonia, 4) + ",";
+  body += "\"nitrite\":" + String(nitrite, 4);
+  body += "}";
 
 #ifdef FARMER_ID
   doc["farmerId"] = FARMER_ID;

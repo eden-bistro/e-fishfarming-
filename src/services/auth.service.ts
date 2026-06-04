@@ -115,8 +115,8 @@ function isOffline() {
 }
 
 async function directSupabaseAuthRequest(path: string, body: Record<string, unknown>) {
-  if (!canUseDirectSupabaseAuth()) {
-    return { ok: false as const, message: PROXY_AUTH_UNAVAILABLE_MESSAGE };
+  if (!hasSupabaseConfig()) {
+    return { ok: false as const, message: "Supabase auth is not configured." };
   }
 
   const response = await fetch(`${supabaseUrl}/auth/v1/${path}`, {
@@ -146,10 +146,6 @@ async function authRequest(
   directPath: string,
   body: Record<string, unknown>,
 ) {
-  if (isOffline()) {
-    return { ok: false as const, message: OFFLINE_AUTH_MESSAGE };
-  }
-
   if (isBrowser()) {
     try {
       const response = await fetch(`/api/auth/${action}`, {
@@ -161,25 +157,17 @@ async function authRequest(
         const result = (await response.json().catch(() => ({}))) as Record<string, unknown>;
         if (!response.ok || result.ok === false) {
           const message = String(result.message ?? "Authentication failed.");
-          if (message.includes("Supabase auth is not configured") && canUseDirectSupabaseAuth()) {
+          if (message.includes("Supabase auth is not configured") && hasSupabaseConfig()) {
             return directSupabaseAuthRequest(directPath, body);
           }
           return {
             ok: false as const,
-            message: message.includes("Supabase auth is not configured")
-              ? PROXY_AUTH_UNAVAILABLE_MESSAGE
-              : message,
+            message,
           };
         }
         return { ok: true as const, payload: (result.payload ?? {}) as Record<string, unknown> };
       }
     } catch {
-      if (!canUseDirectSupabaseAuth()) {
-        return {
-          ok: false as const,
-          message: isOffline() ? OFFLINE_AUTH_MESSAGE : PROXY_AUTH_UNAVAILABLE_MESSAGE,
-        };
-      }
       // Fall back to direct Supabase Auth below for static/local environments.
     }
   }
