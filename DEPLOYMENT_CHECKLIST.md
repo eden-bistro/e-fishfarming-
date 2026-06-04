@@ -13,9 +13,11 @@ Minimum required for current app features:
 Optional but recommended:
 
 - `JWT_SECRET`
+
+Required for ESP32 ingest:
+
 - `IOT_INGEST_TOKEN`
-- `FIREBASE_DATABASE_SECRET` (or `FIREBASE_AUTH_TOKEN`) for authenticated server-side RTDB writes
-- Firebase Admin vars for server-side sync
+- `FIREBASE_SERVICE_ACCOUNT` for authenticated server-side RTDB writes, or legacy `FIREBASE_DATABASE_SECRET` / `FIREBASE_AUTH_TOKEN`
 
 ## 2) Supabase setup
 
@@ -32,10 +34,11 @@ Optional but recommended:
 2. For GitHub deployment, add repository secrets:
    - `FIREBASE_PROJECT_ID`
    - `FIREBASE_SERVICE_ACCOUNT_JSON`
-3. Ensure auth tokens include:
+3. Ensure direct Firebase device tokens include:
    - `device: true` for sensor/device writes
    - `admin: true` for admin writes
-4. Confirm RTDB URL matches `FIREBASE_DATABASE_URL`.
+4. For backend ESP32 ingest, configure `IOT_INGEST_TOKEN` and one server-side Firebase write-auth option.
+5. Confirm RTDB URL matches `FIREBASE_DATABASE_URL`.
 
 ## 5) Cloudflare deployment
 
@@ -43,13 +46,26 @@ Optional but recommended:
 2. For GitHub deployment, add repository secrets:
    - `CLOUDFLARE_API_TOKEN`
    - `CLOUDFLARE_ACCOUNT_ID`
-3. Configure env vars in Cloudflare dashboard:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
+3. Configure durable runtime variables/secrets in Cloudflare. Prefer the server-style names below because the Supabase auth proxy reads them at Worker runtime:
+   - `SUPABASE_URL`
+   - `SUPABASE_ANON_KEY`
    - `FIREBASE_DATABASE_URL`
-4. Click path (Pages): `Workers & Pages` -> your Pages project -> `Settings` -> `Environment variables` -> add variables in both Preview and Production -> redeploy.
-5. Click path (Workers): `Workers & Pages` -> your Worker -> `Settings` -> `Variables` -> add environment variables -> deploy new version.
-6. Build and deploy locally or let `.github/workflows/cloudflare-deploy.yml` deploy from `main`.
+   - `IOT_INGEST_TOKEN`
+   - `FIREBASE_SERVICE_ACCOUNT` (or legacy `FIREBASE_DATABASE_SECRET` / `FIREBASE_AUTH_TOKEN`)
+4. For a Worker deploy, set them with Wrangler so they survive rebuilds/redeploys:
+
+   ```bash
+   wrangler secret put SUPABASE_ANON_KEY
+   wrangler secret put IOT_INGEST_TOKEN
+   wrangler secret put FIREBASE_SERVICE_ACCOUNT
+   wrangler secret put FIREBASE_DATABASE_URL
+   wrangler secret put SUPABASE_URL
+   ```
+
+   If you use dashboard variables instead, set them on the **Worker**, not only in local `.env`, then deploy a new version.
+5. Click path (Pages): `Workers & Pages` -> your Pages project -> `Settings` -> `Environment variables` -> add variables in both Preview and Production -> redeploy.
+6. Click path (Workers): `Workers & Pages` -> your Worker -> `Settings` -> `Variables` -> add environment variables -> deploy new version.
+7. Build and deploy locally or let `.github/workflows/cloudflare-deploy.yml` deploy from `main`.
 
 ## 6) Health checks
 
@@ -57,7 +73,7 @@ Use:
 
 - `GET /api/health/env` for environment sanity check.
 
-A healthy response returns `ok: true` with no missing required vars.
+A healthy response returns `ok: true` with no missing required vars. If Supabase auth says it is not configured after an offline/online cycle, check this endpoint first; the fix is to restore `SUPABASE_URL` and `SUPABASE_ANON_KEY` on the deployed Cloudflare Worker, not only in your local `.env` file.
 
 ## 7) IoT troubleshooting
 
