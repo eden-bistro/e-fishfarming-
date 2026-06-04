@@ -12,7 +12,8 @@
               },
               "history": {
                 "$readingId": {
-                  ".write": "auth != null && auth.token.device == true"
+                  ".write": "auth != null && auth.token.device == true",
+                  ".validate": "newData.hasChildren(['timestamp','pondId','deviceId','temperature','ph','dissolvedOxygen','ammonia','nitrite'])"
                 }
               }
             },
