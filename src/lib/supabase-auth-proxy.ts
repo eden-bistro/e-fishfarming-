@@ -39,8 +39,12 @@ function supabaseConfigError(env: unknown): Response | null {
   return jsonResponse(
     {
       ok: false,
+<<<<<<< HEAD
       message: `Supabase auth is not configured on this Worker. Configure SUPABASE_URL (or VITE_SUPABASE_URL) and SUPABASE_ANON_KEY (or VITE_SUPABASE_ANON_KEY) in Cloudflare Worker variables/secrets, then redeploy. Missing: ${missing.join(", ")}.`,
       missing,
+=======
+      message: `Supabase auth is not configured. Missing: ${missing.join(", ")}.`,
+>>>>>>> origin/main
     },
     500,
   );

@@ -50,22 +50,10 @@ Required for ESP32 ingest:
    - `SUPABASE_URL`
    - `SUPABASE_ANON_KEY`
    - `FIREBASE_DATABASE_URL`
-   - `IOT_INGEST_TOKEN`
-   - `FIREBASE_SERVICE_ACCOUNT` (or legacy `FIREBASE_DATABASE_SECRET` / `FIREBASE_AUTH_TOKEN`)
-4. For a Worker deploy, set them with Wrangler so they survive rebuilds/redeploys:
-
-   ```bash
-   wrangler secret put SUPABASE_ANON_KEY
-   wrangler secret put IOT_INGEST_TOKEN
-   wrangler secret put FIREBASE_SERVICE_ACCOUNT
-   wrangler secret put FIREBASE_DATABASE_URL
-   wrangler secret put SUPABASE_URL
-   ```
-
-   If you use dashboard variables instead, set them on the **Worker**, not only in local `.env`, then deploy a new version.
-5. Click path (Pages): `Workers & Pages` -> your Pages project -> `Settings` -> `Environment variables` -> add variables in both Preview and Production -> redeploy.
-6. Click path (Workers): `Workers & Pages` -> your Worker -> `Settings` -> `Variables` -> add environment variables -> deploy new version.
-7. Build and deploy locally or let `.github/workflows/cloudflare-deploy.yml` deploy from `main`. This repo is pinned to npm via `packageManager`, so Cloudflare Workers Builds should use `npm ci` / `npm run deploy` rather than Bun.
+4. Click path (Pages): `Workers & Pages` -> your Pages project -> `Settings` -> `Environment variabl
+s` -> add variables in both Preview and Production -> redeploy.
+5. Click path (Workers): `Workers & Pages` -> your Worker -> `Settings` -> `Variables` -> add environment variables -> deploy new version.
+6. Build and deploy locally or let `.github/workflows/cloudflare-deploy.yml` deploy from `main`.
 
 ## 6) Health checks
 
@@ -73,7 +61,9 @@ Use:
 
 - `GET /api/health/env` for environment sanity check.
 
-A healthy response returns `ok: true` with no missing required vars. If Supabase auth says it is not configured after an offline/online cycle, check this endpoint first; the fix is to restore `SUPABASE_URL` and `SUPABASE_ANON_KEY` on the deployed Cloudflare Worker, not only in your local `.env` file.
+A healthy response returns `ok: true` with no missing required vars. If Supabase auth says it is not configu
+red 
+after an offline/online cycle, check this endpoint first; the fix is to restore `SUPABASE_URL` and `SUPABASE_ANON_KEY` on the deployed Cloudflare Worker, not only in your local `.env` file.
 
 ## 7) IoT troubleshooting
 

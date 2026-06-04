@@ -1,5 +1,6 @@
 # IoT Ingest Troubleshooting (ESP32 -> Cloudflare -> Firebase RTDB)
 
+<<<<<<< HEAD
 
 ## Supabase auth after offline/online
 
@@ -15,6 +16,12 @@ Use this checklist when an ESP32 cannot publish readings to Firebase through `/a
 
 ## 1) Verify deployed backend health
 
+=======
+Use this checklist when an ESP32 cannot publish readings to Firebase through `/api/iot/ingest`.
+
+## 1) Verify deployed backend health
+
+>>>>>>> origin/main
 ```bash
 curl -i "https://<your-domain>/api/health/env"
 ```
@@ -35,7 +42,11 @@ Required for ingest:
 curl -i "https://<your-domain>/api/iot/ingest"
 ```
 
+<<<<<<< HEAD
 `GET` returns a JSON diagnostic response so browsers and manual checks do not show a 404. The actual device request must use `POST`. `/ingest` is also accepted as a compatibility alias for `/api/iot/ingest`.
+=======
+`GET` is not the ingest method, but the endpoint should be handled by the deployed app. The actual device request must use `POST`.
+>>>>>>> origin/main
 
 ## 3) Validate ingest auth from device
 
