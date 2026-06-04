@@ -1,4 +1,13 @@
 import { listExpenses, listIncome, type ExpenseRow, type IncomeRow } from "@/lib/platform-clients";
+import {
+  type DateRange,
+  filterExpensesByDate,
+  filterIncomeByDate,
+  incomeAmount,
+  expenseAmount,
+  summarizeExpensesByCategory,
+  type ExpenseCategorySummary,
+} from "@/services/modules/finance-analytics.service";
 
 export type LedgerEntryType = "income" | "expense";
 
@@ -19,10 +28,12 @@ export type FinancialStatement = {
   totalIncome: number;
   totalExpense: number;
   netProfit: number;
+  expenseBreakdown: ExpenseCategorySummary[];
+  range?: DateRange;
 };
 
 function incomeToLedger(row: IncomeRow): LedgerEntry {
-  const amount = Number(row.total ?? Number(row.quantity_kg) * Number(row.price_per_kg));
+  const amount = incomeAmount(row);
   return {
     reference: `INC-${row.id ?? "NA"}-${row.date}`,
     date: row.date,
@@ -37,7 +48,7 @@ function incomeToLedger(row: IncomeRow): LedgerEntry {
 }
 
 function expenseToLedger(row: ExpenseRow): LedgerEntry {
-  const amount = Number(row.amount);
+  const amount = expenseAmount(row);
   return {
     reference: `EXP-${row.id ?? "NA"}-${row.date}`,
     date: row.date,
@@ -51,8 +62,10 @@ function expenseToLedger(row: ExpenseRow): LedgerEntry {
   };
 }
 
-export async function buildFinancialStatement(): Promise<FinancialStatement> {
-  const [incomeRows, expenseRows] = await Promise.all([listIncome(), listExpenses()]);
+export async function buildFinancialStatement(range?: DateRange): Promise<FinancialStatement> {
+  const [allIncomeRows, allExpenseRows] = await Promise.all([listIncome(), listExpenses()]);
+  const incomeRows = range ? filterIncomeByDate(allIncomeRows, range) : allIncomeRows;
+  const expenseRows = range ? filterExpensesByDate(allExpenseRows, range) : allExpenseRows;
 
   const incomeEntries = incomeRows.map(incomeToLedger);
   const expenseEntries = expenseRows.map(expenseToLedger);
@@ -69,6 +82,8 @@ export async function buildFinancialStatement(): Promise<FinancialStatement> {
     totalIncome,
     totalExpense,
     netProfit: totalIncome - totalExpense,
+    expenseBreakdown: summarizeExpensesByCategory(expenseRows),
+    range,
   };
 }
 
