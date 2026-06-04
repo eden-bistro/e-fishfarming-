@@ -2,7 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
-import { handleSupabaseAuthProxy, jsonResponse } from "./lib/supabase-auth-proxy";
+import { handleSupabaseAuthProxy } from "./lib/supabase-auth-proxy";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -99,14 +99,6 @@ function noContentResponse(status = 204, extraHeaders?: HeadersInit): Response {
   return new Response(null, { status, headers: extraHeaders });
 }
 
-function noContentResponse(status = 204, extraHeaders?: HeadersInit): Response {
-  return new Response(null, { status, headers: extraHeaders });
-}
-
-function noContentResponse(status = 204, extraHeaders?: HeadersInit): Response {
-  return new Response(null, { status, headers: extraHeaders });
-}
-
 function b64url(input: Uint8Array | string): string {
   const bytes = typeof input === "string" ? new TextEncoder().encode(input) : input;
   let str = "";
@@ -172,6 +164,14 @@ async function getGoogleAccessToken(serviceAccountJson: string): Promise<string>
   const tokenBody = (await tokenRes.json()) as { access_token?: string };
   if (!tokenBody.access_token) throw new Error("OAuth response missing access_token.");
   return tokenBody.access_token;
+}
+
+function getSupabaseAuthProxyAction(pathname: string): string | null {
+  const prefix = "/api/auth/";
+  if (!pathname.startsWith(prefix)) return null;
+
+  const action = pathname.slice(prefix.length);
+  return action && !action.includes("/") ? action : null;
 }
 
 function isIotIngestPath(pathname: string): boolean {
@@ -495,6 +495,12 @@ export default {
     if (url.pathname === "/api/health/env") {
       return envHealthResponse(env);
     }
+
+    const authProxyAction = getSupabaseAuthProxyAction(url.pathname);
+    if (authProxyAction) {
+      return handleSupabaseAuthProxy(request, env, authProxyAction);
+    }
+
     if (isIotIngestPath(url.pathname)) {
       if (request.method === "OPTIONS") {
         return noContentResponse(204, {

@@ -1,4 +1,13 @@
 import { listExpenses, listIncome, type ExpenseRow, type IncomeRow } from "@/lib/platform-clients";
+import {
+  type DateRange,
+  filterExpensesByDate,
+  filterIncomeByDate,
+  incomeAmount,
+  expenseAmount,
+  summarizeExpensesByCategory,
+  type ExpenseCategorySummary,
+} from "@/services/modules/finance-analytics.service";
 
 export type LedgerEntryType = "income" | "expense";
 
@@ -14,15 +23,49 @@ export type LedgerEntry = {
   sourceId: number | null;
 };
 
+export type JournalLine = {
+  transactionId: string;
+  date: string;
+  account: string;
+  description: string;
+  debit: number;
+  credit: number;
+};
+
+export type JournalTransaction = {
+  id: string;
+  date: string;
+  source: LedgerEntryType;
+  description: string;
+  sourceId: number | null;
+  lines: JournalLine[];
+  balanced: boolean;
+};
+
+export type AccountBalance = {
+  account: string;
+  debit: number;
+  credit: number;
+  balance: number;
+};
+
 export type FinancialStatement = {
   entries: LedgerEntry[];
+  journalTransactions: JournalTransaction[];
+  journalLines: JournalLine[];
+  accountBalances: AccountBalance[];
+  totalDebits: number;
+  totalCredits: number;
+  isBalanced: boolean;
   totalIncome: number;
   totalExpense: number;
   netProfit: number;
+  expenseBreakdown: ExpenseCategorySummary[];
+  range?: DateRange;
 };
 
 function incomeToLedger(row: IncomeRow): LedgerEntry {
-  const amount = Number(row.total ?? Number(row.quantity_kg) * Number(row.price_per_kg));
+  const amount = incomeAmount(row);
   return {
     reference: `INC-${row.id ?? "NA"}-${row.date}`,
     date: row.date,
@@ -37,7 +80,7 @@ function incomeToLedger(row: IncomeRow): LedgerEntry {
 }
 
 function expenseToLedger(row: ExpenseRow): LedgerEntry {
-  const amount = Number(row.amount);
+  const amount = expenseAmount(row);
   return {
     reference: `EXP-${row.id ?? "NA"}-${row.date}`,
     date: row.date,
@@ -51,11 +94,111 @@ function expenseToLedger(row: ExpenseRow): LedgerEntry {
   };
 }
 
-export async function buildFinancialStatement(): Promise<FinancialStatement> {
-  const [incomeRows, expenseRows] = await Promise.all([listIncome(), listExpenses()]);
+function incomeToJournal(row: IncomeRow): JournalTransaction {
+  const amount = incomeAmount(row);
+  const id = `JRN-INC-${row.id ?? "NA"}-${row.date}`;
+  const description = `Fish sale to ${row.buyer}`;
+  const lines: JournalLine[] = [
+    {
+      transactionId: id,
+      date: row.date,
+      account: "Cash / Accounts Receivable",
+      description,
+      debit: amount,
+      credit: 0,
+    },
+    {
+      transactionId: id,
+      date: row.date,
+      account: "Revenue - Fish Sales",
+      description,
+      debit: 0,
+      credit: amount,
+    },
+  ];
+
+  return {
+    id,
+    date: row.date,
+    source: "income",
+    description,
+    sourceId: row.id ?? null,
+    lines,
+    balanced: isTransactionBalanced(lines),
+  };
+}
+
+function expenseToJournal(row: ExpenseRow): JournalTransaction {
+  const amount = expenseAmount(row);
+  const id = `JRN-EXP-${row.id ?? "NA"}-${row.date}`;
+  const description = row.description;
+  const lines: JournalLine[] = [
+    {
+      transactionId: id,
+      date: row.date,
+      account: `Expense - ${row.category}`,
+      description,
+      debit: amount,
+      credit: 0,
+    },
+    {
+      transactionId: id,
+      date: row.date,
+      account: "Cash / Accounts Payable",
+      description,
+      debit: 0,
+      credit: amount,
+    },
+  ];
+
+  return {
+    id,
+    date: row.date,
+    source: "expense",
+    description,
+    sourceId: row.id ?? null,
+    lines,
+    balanced: isTransactionBalanced(lines),
+  };
+}
+
+function isTransactionBalanced(lines: JournalLine[]): boolean {
+  const debit = lines.reduce((sum, line) => sum + line.debit, 0);
+  const credit = lines.reduce((sum, line) => sum + line.credit, 0);
+  return Math.abs(debit - credit) < 0.01;
+}
+
+function buildAccountBalances(lines: JournalLine[]): AccountBalance[] {
+  const balances = new Map<string, AccountBalance>();
+
+  lines.forEach((line) => {
+    const current = balances.get(line.account) ?? {
+      account: line.account,
+      debit: 0,
+      credit: 0,
+      balance: 0,
+    };
+    current.debit += line.debit;
+    current.credit += line.credit;
+    current.balance = current.debit - current.credit;
+    balances.set(line.account, current);
+  });
+
+  return Array.from(balances.values()).sort((a, b) => a.account.localeCompare(b.account));
+}
+
+export async function buildFinancialStatement(range?: DateRange): Promise<FinancialStatement> {
+  const [allIncomeRows, allExpenseRows] = await Promise.all([listIncome(), listExpenses()]);
+  const incomeRows = range ? filterIncomeByDate(allIncomeRows, range) : allIncomeRows;
+  const expenseRows = range ? filterExpensesByDate(allExpenseRows, range) : allExpenseRows;
 
   const incomeEntries = incomeRows.map(incomeToLedger);
   const expenseEntries = expenseRows.map(expenseToLedger);
+  const journalTransactions = [
+    ...incomeRows.map(incomeToJournal),
+    ...expenseRows.map(expenseToJournal),
+  ].sort((a, b) => (a.date === b.date ? a.id.localeCompare(b.id) : b.date.localeCompare(a.date)));
+  const journalLines = journalTransactions.flatMap((transaction) => transaction.lines);
 
   const entries = [...incomeEntries, ...expenseEntries].sort((a, b) =>
     a.date === b.date ? a.reference.localeCompare(b.reference) : b.date.localeCompare(a.date),
@@ -63,12 +206,24 @@ export async function buildFinancialStatement(): Promise<FinancialStatement> {
 
   const totalIncome = incomeEntries.reduce((sum, entry) => sum + entry.amount, 0);
   const totalExpense = expenseEntries.reduce((sum, entry) => sum + entry.amount, 0);
+  const totalDebits = journalLines.reduce((sum, line) => sum + line.debit, 0);
+  const totalCredits = journalLines.reduce((sum, line) => sum + line.credit, 0);
 
   return {
     entries,
+    journalTransactions,
+    journalLines,
+    accountBalances: buildAccountBalances(journalLines),
+    totalDebits,
+    totalCredits,
+    isBalanced:
+      journalTransactions.every((transaction) => transaction.balanced) &&
+      Math.abs(totalDebits - totalCredits) < 0.01,
     totalIncome,
     totalExpense,
     netProfit: totalIncome - totalExpense,
+    expenseBreakdown: summarizeExpensesByCategory(expenseRows),
+    range,
   };
 }
 
