@@ -66,7 +66,7 @@ function Page() {
   return (
     <DashboardLayout
       title="Reports"
-      subtitle="Auditable ledgers and exportable financial statements."
+      subtitle="Auditable ledgers, operational profitability, and exportable financial statements."
     >
       <Card>
         <CardHeader>

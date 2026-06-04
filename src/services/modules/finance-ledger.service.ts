@@ -23,8 +23,40 @@ export type LedgerEntry = {
   sourceId: number | null;
 };
 
+export type JournalLine = {
+  transactionId: string;
+  date: string;
+  account: string;
+  description: string;
+  debit: number;
+  credit: number;
+};
+
+export type JournalTransaction = {
+  id: string;
+  date: string;
+  source: LedgerEntryType;
+  description: string;
+  sourceId: number | null;
+  lines: JournalLine[];
+  balanced: boolean;
+};
+
+export type AccountBalance = {
+  account: string;
+  debit: number;
+  credit: number;
+  balance: number;
+};
+
 export type FinancialStatement = {
   entries: LedgerEntry[];
+  journalTransactions: JournalTransaction[];
+  journalLines: JournalLine[];
+  accountBalances: AccountBalance[];
+  totalDebits: number;
+  totalCredits: number;
+  isBalanced: boolean;
   totalIncome: number;
   totalExpense: number;
   netProfit: number;
@@ -69,6 +101,11 @@ export async function buildFinancialStatement(range?: DateRange): Promise<Financ
 
   const incomeEntries = incomeRows.map(incomeToLedger);
   const expenseEntries = expenseRows.map(expenseToLedger);
+  const journalTransactions = [
+    ...incomeRows.map(incomeToJournal),
+    ...expenseRows.map(expenseToJournal),
+  ].sort((a, b) => (a.date === b.date ? a.id.localeCompare(b.id) : b.date.localeCompare(a.date)));
+  const journalLines = journalTransactions.flatMap((transaction) => transaction.lines);
 
   const entries = [...incomeEntries, ...expenseEntries].sort((a, b) =>
     a.date === b.date ? a.reference.localeCompare(b.reference) : b.date.localeCompare(a.date),
@@ -76,9 +113,19 @@ export async function buildFinancialStatement(range?: DateRange): Promise<Financ
 
   const totalIncome = incomeEntries.reduce((sum, entry) => sum + entry.amount, 0);
   const totalExpense = expenseEntries.reduce((sum, entry) => sum + entry.amount, 0);
+  const totalDebits = journalLines.reduce((sum, line) => sum + line.debit, 0);
+  const totalCredits = journalLines.reduce((sum, line) => sum + line.credit, 0);
 
   return {
     entries,
+    journalTransactions,
+    journalLines,
+    accountBalances: buildAccountBalances(journalLines),
+    totalDebits,
+    totalCredits,
+    isBalanced:
+      journalTransactions.every((transaction) => transaction.balanced) &&
+      Math.abs(totalDebits - totalCredits) < 0.01,
     totalIncome,
     totalExpense,
     netProfit: totalIncome - totalExpense,
