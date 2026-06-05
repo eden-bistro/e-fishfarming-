@@ -94,99 +94,6 @@ function expenseToLedger(row: ExpenseRow): LedgerEntry {
   };
 }
 
-function incomeToJournal(row: IncomeRow): JournalTransaction {
-  const amount = incomeAmount(row);
-  const id = `JRN-INC-${row.id ?? "NA"}-${row.date}`;
-  const description = `Fish sale to ${row.buyer}`;
-  const lines: JournalLine[] = [
-    {
-      transactionId: id,
-      date: row.date,
-      account: "Cash / Accounts Receivable",
-      description,
-      debit: amount,
-      credit: 0,
-    },
-    {
-      transactionId: id,
-      date: row.date,
-      account: "Revenue - Fish Sales",
-      description,
-      debit: 0,
-      credit: amount,
-    },
-  ];
-
-  return {
-    id,
-    date: row.date,
-    source: "income",
-    description,
-    sourceId: row.id ?? null,
-    lines,
-    balanced: isTransactionBalanced(lines),
-  };
-}
-
-function expenseToJournal(row: ExpenseRow): JournalTransaction {
-  const amount = expenseAmount(row);
-  const id = `JRN-EXP-${row.id ?? "NA"}-${row.date}`;
-  const description = row.description;
-  const lines: JournalLine[] = [
-    {
-      transactionId: id,
-      date: row.date,
-      account: `Expense - ${row.category}`,
-      description,
-      debit: amount,
-      credit: 0,
-    },
-    {
-      transactionId: id,
-      date: row.date,
-      account: "Cash / Accounts Payable",
-      description,
-      debit: 0,
-      credit: amount,
-    },
-  ];
-
-  return {
-    id,
-    date: row.date,
-    source: "expense",
-    description,
-    sourceId: row.id ?? null,
-    lines,
-    balanced: isTransactionBalanced(lines),
-  };
-}
-
-function isTransactionBalanced(lines: JournalLine[]): boolean {
-  const debit = lines.reduce((sum, line) => sum + line.debit, 0);
-  const credit = lines.reduce((sum, line) => sum + line.credit, 0);
-  return Math.abs(debit - credit) < 0.01;
-}
-
-function buildAccountBalances(lines: JournalLine[]): AccountBalance[] {
-  const balances = new Map<string, AccountBalance>();
-
-  lines.forEach((line) => {
-    const current = balances.get(line.account) ?? {
-      account: line.account,
-      debit: 0,
-      credit: 0,
-      balance: 0,
-    };
-    current.debit += line.debit;
-    current.credit += line.credit;
-    current.balance = current.debit - current.credit;
-    balances.set(line.account, current);
-  });
-
-  return Array.from(balances.values()).sort((a, b) => a.account.localeCompare(b.account));
-}
-
 export async function buildFinancialStatement(range?: DateRange): Promise<FinancialStatement> {
   const [allIncomeRows, allExpenseRows] = await Promise.all([listIncome(), listExpenses()]);
   const incomeRows = range ? filterIncomeByDate(allIncomeRows, range) : allIncomeRows;
@@ -194,15 +101,11 @@ export async function buildFinancialStatement(range?: DateRange): Promise<Financ
 
   const incomeEntries = incomeRows.map(incomeToLedger);
   const expenseEntries = expenseRows.map(expenseToLedger);
-  const journalTransactions: JournalTransaction[] = [
-    ...incomeRows.map((row): JournalTransaction => incomeToJournal(row)),
-    ...expenseRows.map((row): JournalTransaction => expenseToJournal(row)),
-  ].sort((a: JournalTransaction, b: JournalTransaction) =>
-    a.date === b.date ? a.id.localeCompare(b.id) : b.date.localeCompare(a.date),
-  );
-  const journalLines: JournalLine[] = journalTransactions.flatMap(
-    (transaction: JournalTransaction): JournalLine[] => transaction.lines,
-  );
+  const journalTransactions = [
+    ...incomeRows.map(incomeToJournal),
+    ...expenseRows.map(expenseToJournal),
+  ].sort((a, b) => (a.date === b.date ? a.id.localeCompare(b.id) : b.date.localeCompare(a.date)));
+  const journalLines = journalTransactions.flatMap((transaction) => transaction.lines);
 
   const entries = [...incomeEntries, ...expenseEntries].sort((a, b) =>
     a.date === b.date ? a.reference.localeCompare(b.reference) : b.date.localeCompare(a.date),

@@ -24,7 +24,6 @@ import { toast } from "sonner";
 import {
   FINANCE_EXPENSE_CATEGORIES,
   currentMonthRange,
-  EMPTY_DATE_RANGE,
   expenseAmount,
   filterExpensesByDate,
   formatCurrency,
@@ -40,7 +39,7 @@ export const Route = createFileRoute("/finance/expenses")({
 function Page() {
   const [rows, setRows] = useState<ExpenseRow[]>([]);
   const [editId, setEditId] = useState<number | null>(null);
-  const [range, setRange] = useState<DateRange>(EMPTY_DATE_RANGE);
+  const [range, setRange] = useState<DateRange>(() => currentMonthRange());
   const [form, setForm] = useState<ExpenseRow>({
     date: "",
     category: "",
