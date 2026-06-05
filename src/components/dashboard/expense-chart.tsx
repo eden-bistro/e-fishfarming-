@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { listExpenses, type ExpenseRow } from "@/lib/platform-clients";
 import {
   currentMonthRange,
-  EMPTY_DATE_RANGE,
   filterExpensesByDate,
   formatCurrency,
   summarizeExpensesByCategory,
@@ -16,15 +15,12 @@ type ExpenseChartProps = {
   title?: string;
 };
 
-export function ExpenseChart({ rows, range, title = "Expenses Breakdown" }: ExpenseChartProps) {
+export function ExpenseChart({
+  rows,
+  range = currentMonthRange(),
+  title = "Expenses Breakdown",
+}: ExpenseChartProps) {
   const [loadedRows, setLoadedRows] = useState<ExpenseRow[]>([]);
-  const [fallbackRange, setFallbackRange] = useState<DateRange>(EMPTY_DATE_RANGE);
-  const effectiveRange = range ?? fallbackRange;
-
-  useEffect(() => {
-    if (range) return;
-    setFallbackRange(currentMonthRange());
-  }, [range]);
 
   useEffect(() => {
     if (rows) return;
@@ -37,8 +33,8 @@ export function ExpenseChart({ rows, range, title = "Expenses Breakdown" }: Expe
   }, [rows]);
 
   const filteredRows = useMemo(
-    () => filterExpensesByDate(rows ?? loadedRows, effectiveRange),
-    [effectiveRange, loadedRows, rows],
+    () => filterExpensesByDate(rows ?? loadedRows, range),
+    [loadedRows, range, rows],
   );
   const summary = useMemo(() => summarizeExpensesByCategory(filteredRows), [filteredRows]);
   const total = summary.reduce((sum, item) => sum + item.amount, 0);
@@ -48,7 +44,7 @@ export function ExpenseChart({ rows, range, title = "Expenses Breakdown" }: Expe
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-base">{title}</CardTitle>
         <span className="text-xs text-muted-foreground">
-          {effectiveRange.startDate} → {effectiveRange.endDate}
+          {range.startDate} → {range.endDate}
         </span>
       </CardHeader>
       <CardContent>
