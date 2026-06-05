@@ -94,6 +94,7 @@ function serverJsonResponse(payload: unknown, status = 200, extraHeaders?: Heade
     },
   });
 }
+
 function noContentResponse(status = 204, extraHeaders?: HeadersInit): Response {
   return new Response(null, { status, headers: extraHeaders });
 }
@@ -163,6 +164,107 @@ async function getGoogleAccessToken(serviceAccountJson: string): Promise<string>
   const tokenBody = (await tokenRes.json()) as { access_token?: string };
   if (!tokenBody.access_token) throw new Error("OAuth response missing access_token.");
   return tokenBody.access_token;
+}
+
+type SupabaseAuthAction = "login" | "register" | "recover" | "refresh";
+
+function normalizeSupabaseAuthAction(action: string): SupabaseAuthAction | null {
+  if (action === "login" || action === "register" || action === "recover" || action === "refresh") {
+    return action;
+  }
+  return null;
+}
+
+function getSupabaseAuthConfig(env: unknown): { url?: string; anonKey?: string } {
+  const envRecord = getEnvRecord(env);
+  return {
+    url: firstDefined([envRecord.VITE_SUPABASE_URL, envRecord.SUPABASE_URL])?.trim(),
+    anonKey: firstDefined([envRecord.VITE_SUPABASE_ANON_KEY, envRecord.SUPABASE_ANON_KEY])?.trim(),
+  };
+}
+
+async function handleSupabaseAuthProxy(
+  request: Request,
+  env: unknown,
+  action: string,
+): Promise<Response> {
+  if (request.method !== "POST") {
+    return jsonResponse({ ok: false, message: "Method not allowed for auth endpoint." }, 405, {
+      allow: "POST",
+    });
+  }
+
+  const authAction = normalizeSupabaseAuthAction(action);
+  if (!authAction) {
+    return jsonResponse({ ok: false, message: "Unknown auth action." }, 404);
+  }
+
+  const { url, anonKey } = getSupabaseAuthConfig(env);
+  const missing = [
+    ["VITE_SUPABASE_URL or SUPABASE_URL", url],
+    ["VITE_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY", anonKey],
+  ]
+    .filter(([, value]) => !value)
+    .map(([name]) => name);
+
+  if (missing.length > 0) {
+    return jsonResponse(
+      {
+        ok: false,
+        message: `Supabase auth is not configured. Missing: ${missing.join(", ")}.`,
+      },
+      500,
+    );
+  }
+
+  let body: Record<string, unknown>;
+  try {
+    body = (await request.json()) as Record<string, unknown>;
+  } catch {
+    return jsonResponse({ ok: false, message: "Body must be valid JSON." }, 400);
+  }
+
+  const pathByAction: Record<SupabaseAuthAction, string> = {
+    login: "token?grant_type=password",
+    register: "signup",
+    recover: "recover",
+    refresh: "token?grant_type=refresh_token",
+  };
+
+  try {
+    const response = await fetch(`${url}/auth/v1/${pathByAction[authAction]}`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        apikey: anonKey!,
+        authorization: `Bearer ${anonKey}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    if (!response.ok) {
+      return jsonResponse(
+        {
+          ok: false,
+          message: String(payload.msg ?? payload.error_description ?? "Authentication failed."),
+        },
+        response.status,
+      );
+    }
+
+    return jsonResponse({ ok: true, payload });
+  } catch (error) {
+    console.error("[auth-proxy] request failed", error);
+    return jsonResponse(
+      {
+        ok: false,
+        message: "Authentication proxy failed.",
+        detail: error instanceof Error ? error.message : String(error),
+      },
+      502,
+    );
+  }
 }
 
 function getSupabaseAuthProxyAction(pathname: string): string | null {
