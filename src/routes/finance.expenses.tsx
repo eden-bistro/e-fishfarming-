@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,6 +21,16 @@ import {
   type ExpenseRow,
 } from "@/lib/platform-clients";
 import { toast } from "sonner";
+import {
+  FINANCE_EXPENSE_CATEGORIES,
+  currentMonthRange,
+  EMPTY_DATE_RANGE,
+  expenseAmount,
+  filterExpensesByDate,
+  formatCurrency,
+  sumExpenses,
+  type DateRange,
+} from "@/services/modules/finance-analytics.service";
 
 export const Route = createFileRoute("/finance/expenses")({
   head: () => ({ meta: [{ title: "Expenses — AquaSmart" }] }),
@@ -30,6 +40,7 @@ export const Route = createFileRoute("/finance/expenses")({
 function Page() {
   const [rows, setRows] = useState<ExpenseRow[]>([]);
   const [editId, setEditId] = useState<number | null>(null);
+  const [range, setRange] = useState<DateRange>(EMPTY_DATE_RANGE);
   const [form, setForm] = useState<ExpenseRow>({
     date: "",
     category: "",
@@ -45,8 +56,23 @@ function Page() {
     }
   }
   useEffect(() => {
+    setRange(currentMonthRange());
     void load();
   }, []);
+
+  const filteredRows = useMemo(() => filterExpensesByDate(rows, range), [range, rows]);
+  const totalExpenses = useMemo(() => sumExpenses(filteredRows), [filteredRows]);
+
+  async function confirmDelete(row: ExpenseRow) {
+    if (!row.id) return;
+    const ok = window.confirm(
+      `Delete ${row.category} expense (${formatCurrency(expenseAmount(row))}) from ${row.date}? This cannot be undone.`,
+    );
+    if (!ok) return;
+    await deleteExpense(row.id);
+    toast.success("Expense record deleted.");
+    await load();
+  }
 
   async function save() {
     const amount = Number(form.amount);
@@ -74,7 +100,10 @@ function Page() {
   }
 
   return (
-    <DashboardLayout title="Expenses" subtitle="Operating costs with full CRUD actions.">
+    <DashboardLayout
+      title="Expenses"
+      subtitle="Operating costs with standard categories, date filters, and guarded deletes."
+    >
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Add / Edit Expense</CardTitle>
@@ -85,11 +114,18 @@ function Page() {
             value={form.date}
             onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
           />
-          <Input
-            placeholder="Category"
+          <select
+            className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
             value={form.category}
             onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-          />
+          >
+            <option value="">Select category</option>
+            {FINANCE_EXPENSE_CATEGORIES.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
           <Input
             placeholder="Description"
             value={form.description}
@@ -105,7 +141,35 @@ function Page() {
         </CardContent>
       </Card>
 
-      <ExpenseChart />
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Expense Controls</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3 md:grid-cols-3 md:items-end">
+          <div>
+            <p className="mb-1 text-xs text-muted-foreground">Start date</p>
+            <Input
+              type="date"
+              value={range.startDate}
+              onChange={(e) => setRange((current) => ({ ...current, startDate: e.target.value }))}
+            />
+          </div>
+          <div>
+            <p className="mb-1 text-xs text-muted-foreground">End date</p>
+            <Input
+              type="date"
+              value={range.endDate}
+              onChange={(e) => setRange((current) => ({ ...current, endDate: e.target.value }))}
+            />
+          </div>
+          <div className="rounded-md border p-3 text-sm">
+            <span className="text-muted-foreground">Filtered total: </span>
+            <span className="font-semibold">{formatCurrency(totalExpenses)}</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      <ExpenseChart rows={rows} range={range} />
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Expense Records</CardTitle>
@@ -122,13 +186,13 @@ function Page() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((e) => (
+              {filteredRows.map((e) => (
                 <TableRow key={`${e.id}-${e.date}`}>
                   <TableCell>{e.date}</TableCell>
                   <TableCell>{e.category}</TableCell>
                   <TableCell>{e.description}</TableCell>
                   <TableCell className="text-right font-medium">
-                    KSh {Number(e.amount).toLocaleString()}
+                    {formatCurrency(expenseAmount(e))}
                   </TableCell>
                   <TableCell className="space-x-2">
                     <Button
@@ -141,11 +205,7 @@ function Page() {
                     >
                       Edit
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => e.id && void deleteExpense(e.id).then(load)}
-                    >
+                    <Button size="sm" variant="destructive" onClick={() => void confirmDelete(e)}>
                       Delete
                     </Button>
                   </TableCell>
