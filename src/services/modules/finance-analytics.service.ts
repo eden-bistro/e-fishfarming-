@@ -25,12 +25,6 @@ export type ExpenseCategorySummary = {
   share: number;
 };
 
-export const EMPTY_DATE_RANGE: DateRange = { startDate: "", endDate: "" };
-
-const currencyFormatter = new Intl.NumberFormat("en-KE", {
-  maximumFractionDigits: 0,
-});
-
 export function currentMonthRange(today = new Date()): DateRange {
   const year = today.getFullYear();
   const month = today.getMonth();
@@ -123,7 +117,7 @@ export function buildDailySeries(
 }
 
 export function formatCurrency(amount: number): string {
-  return `KSh ${currencyFormatter.format(Math.round(amount))}`;
+  return `KSh ${Math.round(amount).toLocaleString()}`;
 }
 
 export function profitMargin(totalIncome: number, netProfit: number): number {
