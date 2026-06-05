@@ -7,6 +7,12 @@ export type SessionUser = {
 
 const SESSION_KEY = "aquasmart_session_v3";
 const REFRESH_WINDOW_MS = 60_000;
+const OFFLINE_AUTH_MESSAGE =
+  "You are offline. Reconnect to the internet before signing in or refreshing your session.";
+const PROXY_AUTH_UNAVAILABLE_MESSAGE =
+  "Authentication service is unavailable. In Cloudflare, configure SUPABASE_URL and SUPABASE_ANON_KEY as Worker variables/secrets, then redeploy.";
+
+let refreshAccessTokenPromise: Promise<string | null> | null = null;
 
 type SessionRecord = {
   access_token: string;
@@ -20,15 +26,25 @@ function isBrowser() {
   return typeof window !== "undefined";
 }
 
+function getSessionStorage() {
+  if (!isBrowser()) return null;
+  try {
+    return window.localStorage;
+  } catch {
+    return window.sessionStorage;
+  }
+}
+
 function setSession(
   access_token: string,
   user: SessionUser,
   refresh_token?: string,
   expires_in?: number,
 ) {
-  if (!isBrowser()) return;
+  const storage = getSessionStorage();
+  if (!storage) return;
   const expires_at = expires_in ? Date.now() + expires_in * 1000 : undefined;
-  window.sessionStorage.setItem(
+  storage.setItem(
     SESSION_KEY,
     JSON.stringify({
       access_token,
@@ -41,12 +57,22 @@ function setSession(
 }
 
 function getSessionRecord(): SessionRecord | null {
-  if (!isBrowser()) return null;
-  const raw = window.sessionStorage.getItem(SESSION_KEY);
+  const storage = getSessionStorage();
+  if (!storage) return null;
+
+  const raw = storage.getItem(SESSION_KEY) ?? window.sessionStorage.getItem(SESSION_KEY);
   if (!raw) return null;
+
+  if (!storage.getItem(SESSION_KEY)) {
+    storage.setItem(SESSION_KEY, raw);
+    window.sessionStorage.removeItem(SESSION_KEY);
+  }
+
   try {
     return JSON.parse(raw) as SessionRecord;
   } catch {
+    storage.removeItem(SESSION_KEY);
+    window.sessionStorage.removeItem(SESSION_KEY);
     return null;
   }
 }
@@ -61,20 +87,21 @@ export async function getAccessToken(): Promise<string | null> {
   if (!session.expires_at || session.expires_at - Date.now() > REFRESH_WINDOW_MS) {
     return session.access_token;
   }
-  if (!session.refresh_token || !hasSupabaseConfig()) return session.access_token;
+  if (!session.refresh_token) return session.access_token;
 
-  const response = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      apikey: supabaseAnonKey,
-      authorization: `Bearer ${supabaseAnonKey}`,
-    },
-    body: JSON.stringify({ refresh_token: session.refresh_token }),
+  refreshAccessTokenPromise ??= refreshAccessToken(session).finally(() => {
+    refreshAccessTokenPromise = null;
   });
 
-  if (!response.ok) return session.access_token;
-  const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+  return refreshAccessTokenPromise;
+}
+
+async function refreshAccessToken(session: SessionRecord): Promise<string | null> {
+  const result = await authRequest("refresh", "token?grant_type=refresh_token", {
+    refresh_token: session.refresh_token,
+  });
+  if (!result.ok) return session.access_token;
+  const payload = result.payload;
   const access_token = String(payload.access_token ?? "");
   const refresh_token = String(payload.refresh_token ?? session.refresh_token ?? "");
   const expires_in = Number(payload.expires_in ?? 0);
@@ -84,11 +111,20 @@ export async function getAccessToken(): Promise<string | null> {
 }
 
 export function logoutUser() {
-  if (!isBrowser()) return;
-  window.sessionStorage.removeItem(SESSION_KEY);
+  const storage = getSessionStorage();
+  storage?.removeItem(SESSION_KEY);
+  if (isBrowser()) window.sessionStorage.removeItem(SESSION_KEY);
 }
 
-async function authRequest(path: string, body: Record<string, unknown>) {
+function canUseDirectSupabaseAuth() {
+  return hasSupabaseConfig();
+}
+
+function isOffline() {
+  return isBrowser() && "onLine" in navigator && !navigator.onLine;
+}
+
+async function directSupabaseAuthRequest(path: string, body: Record<string, unknown>) {
   if (!hasSupabaseConfig()) {
     return { ok: false as const, message: "Supabase auth is not configured." };
   }
@@ -115,8 +151,49 @@ async function authRequest(path: string, body: Record<string, unknown>) {
   return { ok: true as const, payload };
 }
 
+async function authRequest(
+  action: "login" | "register" | "recover" | "refresh",
+  directPath: string,
+  body: Record<string, unknown>,
+) {
+  if (isBrowser() && action === "refresh" && canUseDirectSupabaseAuth()) {
+    return directSupabaseAuthRequest(directPath, body);
+  }
+
+  if (isBrowser()) {
+    try {
+      const response = await fetch(`/api/auth/${action}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (response.status !== 404) {
+        const result = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+        if (!response.ok || result.ok === false) {
+          const message = String(result.message ?? "Authentication failed.");
+          if (
+            hasSupabaseConfig() &&
+            (response.status >= 500 || message.includes("Supabase auth is not configured"))
+          ) {
+            return directSupabaseAuthRequest(directPath, body);
+          }
+          return {
+            ok: false as const,
+            message,
+          };
+        }
+        return { ok: true as const, payload: (result.payload ?? {}) as Record<string, unknown> };
+      }
+    } catch {
+      // Fall back to direct Supabase Auth below for static/local environments.
+    }
+  }
+
+  return directSupabaseAuthRequest(directPath, body);
+}
+
 export async function registerUser(name: string, email: string, password: string) {
-  const result = await authRequest("signup", {
+  const result = await authRequest("register", "signup", {
     email: email.trim().toLowerCase(),
     password,
     data: { full_name: name.trim() },
@@ -146,7 +223,7 @@ export async function registerUser(name: string, email: string, password: string
 }
 
 export async function loginUser(email: string, password: string) {
-  const result = await authRequest("token?grant_type=password", {
+  const result = await authRequest("login", "token?grant_type=password", {
     email: email.trim().toLowerCase(),
     password,
   });
@@ -171,7 +248,7 @@ export async function loginUser(email: string, password: string) {
 }
 
 export async function forgotPassword(email: string) {
-  const result = await authRequest("recover", { email: email.trim().toLowerCase() });
+  const result = await authRequest("recover", "recover", { email: email.trim().toLowerCase() });
   if (!result.ok) return result;
   return { ok: true as const };
 }

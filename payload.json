@@ -1,0 +1,13 @@
+﻿{
+  "deviceId": "ESP32_001",
+  "farmId": "default",
+  "pondId": "default",
+  "temperature": 27.4,
+  "ph": 7.2,
+  "dissolvedOxygen": 6.1,
+  "ammonia": 0.01,
+  "nitrite": 0,
+  "firmware": "manual-curl-test",
+  "rssi": -48,
+  "freeHeap": 177088
+}

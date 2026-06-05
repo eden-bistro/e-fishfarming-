@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { TrendingUp } from "lucide-react";
+import { Download, TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,14 @@ import {
   type IncomeRow,
 } from "@/lib/platform-clients";
 import { toast } from "sonner";
+import {
+  currentMonthRange,
+  filterIncomeByDate,
+  formatCurrency,
+  incomeAmount,
+  sumIncome,
+  type DateRange,
+} from "@/services/modules/finance-analytics.service";
 
 export const Route = createFileRoute("/finance/income")({
   head: () => ({ meta: [{ title: "Income — AquaSmart" }] }),
@@ -30,6 +38,7 @@ export const Route = createFileRoute("/finance/income")({
 function Page() {
   const [rows, setRows] = useState<IncomeRow[]>([]);
   const [editId, setEditId] = useState<number | null>(null);
+  const [range, setRange] = useState<DateRange>(() => currentMonthRange());
   const [form, setForm] = useState<IncomeRow>({
     date: "",
     buyer: "",
@@ -46,10 +55,44 @@ function Page() {
     }
   }
   useEffect(() => {
+    setRange(currentMonthRange());
     void load();
   }, []);
 
-  const total = useMemo(() => rows.reduce((s, r) => s + Number(r.total || 0), 0), [rows]);
+  const filteredRows = useMemo(() => filterIncomeByDate(rows, range), [range, rows]);
+  const total = useMemo(() => sumIncome(filteredRows), [filteredRows]);
+
+  function exportIncomeCsv() {
+    const header = ["Date", "Buyer", "Quantity kg", "Price per kg", "Total"];
+    const body = filteredRows.map((row) => [
+      row.date,
+      row.buyer.replaceAll('"', '""'),
+      String(row.quantity_kg),
+      String(row.price_per_kg),
+      incomeAmount(row).toFixed(2),
+    ]);
+    const csv = [header, ...body]
+      .map((cols) => cols.map((value) => `"${value}"`).join(","))
+      .join("\n");
+    const blob = new Blob([`${csv}\n`], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `income-${range.startDate}-to-${range.endDate}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function confirmDelete(row: IncomeRow) {
+    if (!row.id) return;
+    const ok = window.confirm(
+      `Delete income record for ${row.buyer} on ${row.date}? This cannot be undone.`,
+    );
+    if (!ok) return;
+    await deleteIncome(row.id);
+    toast.success("Income record deleted.");
+    await load();
+  }
 
   async function save() {
     const qty = Number(form.quantity_kg);
@@ -75,7 +118,7 @@ function Page() {
   return (
     <DashboardLayout
       title="Income"
-      subtitle="Sales management with create, update, and delete actions."
+      subtitle="Sales management with validation, date filters, guarded deletes, and exports."
     >
       <Card>
         <CardHeader>
@@ -108,6 +151,34 @@ function Page() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Income Controls</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
+          <div>
+            <p className="mb-1 text-xs text-muted-foreground">Start date</p>
+            <Input
+              type="date"
+              value={range.startDate}
+              onChange={(e) => setRange((current) => ({ ...current, startDate: e.target.value }))}
+            />
+          </div>
+          <div>
+            <p className="mb-1 text-xs text-muted-foreground">End date</p>
+            <Input
+              type="date"
+              value={range.endDate}
+              onChange={(e) => setRange((current) => ({ ...current, endDate: e.target.value }))}
+            />
+          </div>
+          <Button variant="outline" onClick={exportIncomeCsv} disabled={filteredRows.length === 0}>
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardContent className="p-5">
@@ -117,7 +188,7 @@ function Page() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Total recorded</p>
-                <p className="text-xl font-semibold">KSh {total.toLocaleString()}</p>
+                <p className="text-xl font-semibold">{formatCurrency(total)}</p>
               </div>
             </div>
           </CardContent>
@@ -141,14 +212,14 @@ function Page() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((r) => (
+              {filteredRows.map((r) => (
                 <TableRow key={`${r.id}-${r.date}`}>
                   <TableCell>{r.date}</TableCell>
                   <TableCell>{r.buyer}</TableCell>
                   <TableCell>{r.quantity_kg} kg</TableCell>
-                  <TableCell>KSh {r.price_per_kg}</TableCell>
+                  <TableCell>{formatCurrency(Number(r.price_per_kg))}</TableCell>
                   <TableCell className="text-right font-medium">
-                    KSh {Number(r.total).toLocaleString()}
+                    {formatCurrency(incomeAmount(r))}
                   </TableCell>
                   <TableCell className="space-x-2">
                     <Button
@@ -161,11 +232,7 @@ function Page() {
                     >
                       Edit
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => r.id && void deleteIncome(r.id).then(load)}
-                    >
+                    <Button size="sm" variant="destructive" onClick={() => void confirmDelete(r)}>
                       Delete
                     </Button>
                   </TableCell>
