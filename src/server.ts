@@ -94,6 +94,7 @@ function serverJsonResponse(payload: unknown, status = 200, extraHeaders?: Heade
     },
   });
 }
+
 function noContentResponse(status = 204, extraHeaders?: HeadersInit): Response {
   return new Response(null, { status, headers: extraHeaders });
 }
