@@ -18,6 +18,12 @@ type FirebaseWriteAuth =
   | { type: "oauth"; token: string }
   | { type: "none" };
 
+type FirebaseDatabaseConfig = {
+  baseUrl?: string;
+  serviceAccountJson?: string;
+  databaseSecret?: string;
+};
+
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
 function getEnvRecord(env: unknown): Record<string, string | undefined> {
@@ -279,6 +285,55 @@ function isIotIngestPath(pathname: string): boolean {
   return pathname === "/api/iot/ingest" || pathname === "/ingest";
 }
 
+function isIotLatestPath(pathname: string): boolean {
+  return pathname === "/api/iot/latest";
+}
+
+function getFirebaseDatabaseConfig(env: unknown): FirebaseDatabaseConfig {
+  const envRecord = getEnvRecord(env);
+  return {
+    baseUrl: firstDefined([
+      envRecord.VITE_FIREBASE_DATABASE_URL,
+      envRecord.FIREBASE_DATABASE_URL,
+      envRecord.FIREBASE_URL,
+    ])?.replace(/\/+$/, ""),
+    serviceAccountJson: envRecord.FIREBASE_SERVICE_ACCOUNT,
+    databaseSecret: firstDefined([
+      envRecord.FIREBASE_DATABASE_SECRET,
+      envRecord.FIREBASE_AUTH_TOKEN,
+    ]),
+  };
+}
+
+function getDefaultFarmId(env: unknown): string {
+  return firstDefined([getEnvRecord(env).VITE_DEFAULT_FARM_ID]) ?? "farmer_001";
+}
+
+function getDefaultPondId(env: unknown): string {
+  return firstDefined([getEnvRecord(env).VITE_DEFAULT_POND_ID]) ?? "cage_001";
+}
+
+async function getFirebaseDatabaseAuth(config: FirebaseDatabaseConfig): Promise<FirebaseWriteAuth> {
+  if (config.databaseSecret) {
+    return { type: "database-secret", token: config.databaseSecret };
+  }
+  if (config.serviceAccountJson) {
+    return { type: "oauth", token: await getGoogleAccessToken(config.serviceAccountJson) };
+  }
+  return { type: "none" };
+}
+
+function firebaseDatabaseUrl(baseUrl: string, path: string, auth: FirebaseWriteAuth): string {
+  const url = `${baseUrl}/${path}.json`;
+  if (auth.type !== "database-secret") return url;
+  return `${url}?auth=${encodeURIComponent(auth.token)}`;
+}
+
+function firebaseDatabaseHeaders(auth: FirebaseWriteAuth): Record<string, string> {
+  if (auth.type === "oauth") return { authorization: `Bearer ${auth.token}` };
+  return {};
+}
+
 function faviconResponse(): Response {
   return new Response(
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
@@ -313,12 +368,8 @@ function iotIngestInfoResponse(): Response {
 async function handleIotIngest(request: Request, env: unknown): Promise<Response> {
   const envRecord = getEnvRecord(env);
   const expectedToken = envRecord.IOT_INGEST_TOKEN;
-  const firebaseBaseUrl = firstDefined([
-    envRecord.VITE_FIREBASE_DATABASE_URL,
-    envRecord.FIREBASE_DATABASE_URL,
-    envRecord.FIREBASE_URL,
-  ]);
-  const serviceAccountJson = envRecord.FIREBASE_SERVICE_ACCOUNT;
+  const firebaseConfig = getFirebaseDatabaseConfig(env);
+  const firebaseBaseUrl = firebaseConfig.baseUrl;
 
   if (!expectedToken) {
     return serverJsonResponse({ ok: false, message: "IOT_INGEST_TOKEN is not configured." }, 500);
@@ -341,28 +392,21 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     return serverJsonResponse({ ok: false, message: "Unauthorized ingest token." }, 401);
   }
 
-  const firebaseDatabaseSecret = firstDefined([
-    envRecord.FIREBASE_DATABASE_SECRET,
-    envRecord.FIREBASE_AUTH_TOKEN,
-  ]);
+  let firebaseWriteAuth: FirebaseWriteAuth;
+  try {
+    firebaseWriteAuth = await getFirebaseDatabaseAuth(firebaseConfig);
+  } catch (error) {
+    return jsonResponse(
+      {
+        ok: false,
+        message: "Firebase service account authentication failed.",
+        detail: error instanceof Error ? error.message : String(error),
+      },
+      500,
+    );
+  }
 
-  let firebaseWriteAuth: FirebaseWriteAuth = { type: "none" };
-  if (firebaseDatabaseSecret) {
-    firebaseWriteAuth = { type: "database-secret", token: firebaseDatabaseSecret };
-  } else if (serviceAccountJson) {
-    try {
-      firebaseWriteAuth = { type: "oauth", token: await getGoogleAccessToken(serviceAccountJson) };
-    } catch (error) {
-      return jsonResponse(
-        {
-          ok: false,
-          message: "Firebase service account authentication failed.",
-          detail: error instanceof Error ? error.message : String(error),
-        },
-        500,
-      );
-    }
-  } else {
+  if (firebaseWriteAuth.type === "none") {
     return jsonResponse(
       {
         ok: false,
@@ -396,12 +440,7 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     );
   }
 
-  const basePath = `${firebaseBaseUrl}/farms/${encodeURIComponent(farmId)}/ponds/${encodeURIComponent(pondId)}`;
-  const withAuth = (url: string) => {
-    if (firebaseWriteAuth.type !== "database-secret") return url;
-    const separator = url.includes("?") ? "&" : "?";
-    return `${url}${separator}auth=${encodeURIComponent(firebaseWriteAuth.token)}`;
-  };
+  const basePath = `farms/${encodeURIComponent(farmId)}/ponds/${encodeURIComponent(pondId)}`;
 
   const write = async (
     path: string,
@@ -409,11 +448,11 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     method: "PUT" | "POST" = "PUT",
     allowFailure = false,
   ) => {
-    const url = withAuth(`${basePath}/${path}.json`);
-    const headers: Record<string, string> = { "content-type": "application/json" };
-    if (firebaseWriteAuth.type === "oauth") {
-      headers.authorization = `Bearer ${firebaseWriteAuth.token}`;
-    }
+    const url = firebaseDatabaseUrl(firebaseBaseUrl, `${basePath}/${path}`, firebaseWriteAuth);
+    const headers: Record<string, string> = {
+      "content-type": "application/json",
+      ...firebaseDatabaseHeaders(firebaseWriteAuth),
+    };
 
     const res = await fetch(url, {
       method,
@@ -530,6 +569,95 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
       deviceStatus: `/farms/${farmId}/ponds/${pondId}/devices/status/${deviceId}`,
     },
   });
+}
+
+async function handleIotLatest(request: Request, env: unknown): Promise<Response> {
+  if (request.method === "OPTIONS") {
+    return noContentResponse(204, {
+      allow: "GET, HEAD, OPTIONS",
+      "access-control-allow-methods": "GET, HEAD, OPTIONS",
+      "access-control-allow-headers": "content-type",
+    });
+  }
+
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    return jsonResponse({ ok: false, message: "Method not allowed for IoT latest." }, 405, {
+      allow: "GET, HEAD, OPTIONS",
+    });
+  }
+
+  const firebaseConfig = getFirebaseDatabaseConfig(env);
+  if (!firebaseConfig.baseUrl) {
+    return serverJsonResponse(
+      {
+        ok: false,
+        message:
+          "Firebase URL is not configured. Set VITE_FIREBASE_DATABASE_URL or FIREBASE_DATABASE_URL (FIREBASE_URL alias supported).",
+      },
+      500,
+      { "cache-control": "no-store" },
+    );
+  }
+
+  let firebaseReadAuth: FirebaseWriteAuth;
+  try {
+    firebaseReadAuth = await getFirebaseDatabaseAuth(firebaseConfig);
+  } catch (error) {
+    return serverJsonResponse(
+      {
+        ok: false,
+        message: "Firebase service account authentication failed.",
+        detail: error instanceof Error ? error.message : String(error),
+      },
+      500,
+      { "cache-control": "no-store" },
+    );
+  }
+
+  if (firebaseReadAuth.type === "none") {
+    return serverJsonResponse(
+      {
+        ok: false,
+        message:
+          "Firebase read authentication is not configured. Set FIREBASE_SERVICE_ACCOUNT or FIREBASE_DATABASE_SECRET/FIREBASE_AUTH_TOKEN.",
+      },
+      500,
+      { "cache-control": "no-store" },
+    );
+  }
+
+  const url = new URL(request.url);
+  const farmId = (url.searchParams.get("farmId") || getDefaultFarmId(env)).trim();
+  const pondId = (url.searchParams.get("pondId") || getDefaultPondId(env)).trim();
+  if (!farmId || !pondId) {
+    return serverJsonResponse({ ok: false, message: "farmId and pondId are required." }, 400, {
+      "cache-control": "no-store",
+    });
+  }
+
+  const path = `farms/${encodeURIComponent(farmId)}/ponds/${encodeURIComponent(pondId)}/water/latest`;
+  const readUrl = firebaseDatabaseUrl(firebaseConfig.baseUrl, path, firebaseReadAuth);
+  const response = await fetch(readUrl, {
+    method: "GET",
+    headers: firebaseDatabaseHeaders(firebaseReadAuth),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    return serverJsonResponse(
+      {
+        ok: false,
+        message: "Failed to read latest water telemetry.",
+        status: response.status,
+        detail: detail.slice(0, 200),
+      },
+      response.status === 404 ? 404 : 502,
+      { "cache-control": "no-store" },
+    );
+  }
+
+  const payload = await response.json().catch(() => null);
+  return serverJsonResponse(payload, 200, { "cache-control": "no-store" });
 }
 
 async function getServerEntry(): Promise<ServerEntry> {
