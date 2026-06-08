@@ -1,13 +1,15 @@
-﻿{
+{
   "deviceId": "ESP32_001",
-  "farmId": "default",
-  "pondId": "default",
+  "farmId": "farmer_001",
+  "pondId": "cage_001",
+  "farmerId": "farmer_001",
+  "cageId": "cage_001",
   "temperature": 27.4,
   "ph": 7.2,
   "dissolvedOxygen": 6.1,
   "ammonia": 0.01,
   "nitrite": 0,
-  "firmware": "manual-curl-test",
+  "firmware": "v3.1-fixedwifi",
   "rssi": -48,
   "freeHeap": 177088
 }
