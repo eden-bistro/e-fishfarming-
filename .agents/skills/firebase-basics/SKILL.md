@@ -41,8 +41,8 @@ Complete these setup steps before proceeding:
 
 2.  **Authentication:** Ensure you are logged in to Firebase so that commands
     have the correct permissions. Run `npx -y firebase-tools@latest login`. For
-    environments without a browser (e.g., remote shells), use `npx -y
-firebase-tools@latest login --no-localhost`.
+    environments without a browser (e.g., remote shells), use
+    `npx -y firebase-tools@latest login --no-localhost`.
     - The command should output the current user.
     - If you are not logged in, follow the interactive instructions from this
       command to authenticate.
