@@ -37,6 +37,7 @@ import { Route as AuthRegisterRouteImport } from './routes/auth.register'
 import { Route as AuthLoginRouteImport } from './routes/auth.login'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth.forgot-password'
 import { Route as AiInsightsRouteImport } from './routes/ai.insights'
+import { Route as ApiIotLatestRouteImport } from './routes/api.iot.latest'
 import { Route as ApiAuthActionRouteImport } from './routes/api.auth.$action'
 
 const IndexRoute = IndexRouteImport.update({
@@ -179,6 +180,11 @@ const AiInsightsRoute = AiInsightsRouteImport.update({
   path: '/ai/insights',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiIotLatestRoute = ApiIotLatestRouteImport.update({
+  id: '/api/iot/latest',
+  path: '/api/iot/latest',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthActionRoute = ApiAuthActionRouteImport.update({
   id: '/api/auth/$action',
   path: '/api/auth/$action',
@@ -215,6 +221,7 @@ export interface FileRoutesByFullPath {
   '/production/': typeof ProductionIndexRoute
   '/reports/': typeof ReportsIndexRoute
   '/api/auth/$action': typeof ApiAuthActionRoute
+  '/api/iot/latest': typeof ApiIotLatestRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -246,6 +253,7 @@ export interface FileRoutesByTo {
   '/production': typeof ProductionIndexRoute
   '/reports': typeof ReportsIndexRoute
   '/api/auth/$action': typeof ApiAuthActionRoute
+  '/api/iot/latest': typeof ApiIotLatestRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -278,6 +286,7 @@ export interface FileRoutesById {
   '/production/': typeof ProductionIndexRoute
   '/reports/': typeof ReportsIndexRoute
   '/api/auth/$action': typeof ApiAuthActionRoute
+  '/api/iot/latest': typeof ApiIotLatestRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -311,6 +320,7 @@ export interface FileRouteTypes {
     | '/production/'
     | '/reports/'
     | '/api/auth/$action'
+    | '/api/iot/latest'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -342,6 +352,7 @@ export interface FileRouteTypes {
     | '/production'
     | '/reports'
     | '/api/auth/$action'
+    | '/api/iot/latest'
   id:
     | '__root__'
     | '/'
@@ -373,6 +384,7 @@ export interface FileRouteTypes {
     | '/production/'
     | '/reports/'
     | '/api/auth/$action'
+    | '/api/iot/latest'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -405,6 +417,7 @@ export interface RootRouteChildren {
   ProductionIndexRoute: typeof ProductionIndexRoute
   ReportsIndexRoute: typeof ReportsIndexRoute
   ApiAuthActionRoute: typeof ApiAuthActionRoute
+  ApiIotLatestRoute: typeof ApiIotLatestRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -605,6 +618,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AiInsightsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/iot/latest': {
+      id: '/api/iot/latest'
+      path: '/api/iot/latest'
+      fullPath: '/api/iot/latest'
+      preLoaderRoute: typeof ApiIotLatestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$action': {
       id: '/api/auth/$action'
       path: '/api/auth/$action'
@@ -645,6 +665,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProductionIndexRoute: ProductionIndexRoute,
   ReportsIndexRoute: ReportsIndexRoute,
   ApiAuthActionRoute: ApiAuthActionRoute,
+  ApiIotLatestRoute: ApiIotLatestRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
