@@ -493,7 +493,7 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     );
   };
 
-  const waterReading = {
+  const waterReading: WaterReadingPayload = {
     timestamp,
     pondId,
     deviceId,
@@ -516,6 +516,8 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
   } catch (error) {
     return fail("water/history", error);
   }
+
+  const supabaseMirror = await mirrorWaterReadingToSupabase(env, farmId, pondId, waterReading);
 
   try {
     await write(`devices/status/${encodeURIComponent(deviceId)}`, {
@@ -568,7 +570,97 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
       history: `/farms/${farmId}/ponds/${pondId}/water/history`,
       deviceStatus: `/farms/${farmId}/ponds/${pondId}/devices/status/${deviceId}`,
     },
+    supabase: supabaseMirror,
   });
+}
+
+async function handleIotLatest(request: Request, env: unknown): Promise<Response> {
+  if (request.method === "OPTIONS") {
+    return noContentResponse(204, {
+      allow: "GET, HEAD, OPTIONS",
+      "access-control-allow-methods": "GET, HEAD, OPTIONS",
+      "access-control-allow-headers": "content-type",
+    });
+  }
+
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    return jsonResponse({ ok: false, message: "Method not allowed for IoT latest." }, 405, {
+      allow: "GET, HEAD, OPTIONS",
+    });
+  }
+
+  const firebaseConfig = getFirebaseDatabaseConfig(env);
+  if (!firebaseConfig.baseUrl) {
+    return serverJsonResponse(
+      {
+        ok: false,
+        message:
+          "Firebase URL is not configured. Set VITE_FIREBASE_DATABASE_URL or FIREBASE_DATABASE_URL (FIREBASE_URL alias supported).",
+      },
+      500,
+      { "cache-control": "no-store" },
+    );
+  }
+
+  let firebaseReadAuth: FirebaseWriteAuth;
+  try {
+    firebaseReadAuth = await getFirebaseDatabaseAuth(firebaseConfig);
+  } catch (error) {
+    return serverJsonResponse(
+      {
+        ok: false,
+        message: "Firebase service account authentication failed.",
+        detail: error instanceof Error ? error.message : String(error),
+      },
+      500,
+      { "cache-control": "no-store" },
+    );
+  }
+
+  if (firebaseReadAuth.type === "none") {
+    return serverJsonResponse(
+      {
+        ok: false,
+        message:
+          "Firebase read authentication is not configured. Set FIREBASE_SERVICE_ACCOUNT or FIREBASE_DATABASE_SECRET/FIREBASE_AUTH_TOKEN.",
+      },
+      500,
+      { "cache-control": "no-store" },
+    );
+  }
+
+  const url = new URL(request.url);
+  const farmId = (url.searchParams.get("farmId") || getDefaultFarmId(env)).trim();
+  const pondId = (url.searchParams.get("pondId") || getDefaultPondId(env)).trim();
+  if (!farmId || !pondId) {
+    return serverJsonResponse({ ok: false, message: "farmId and pondId are required." }, 400, {
+      "cache-control": "no-store",
+    });
+  }
+
+  const path = `farms/${encodeURIComponent(farmId)}/ponds/${encodeURIComponent(pondId)}/water/latest`;
+  const readUrl = firebaseDatabaseUrl(firebaseConfig.baseUrl, path, firebaseReadAuth);
+  const response = await fetch(readUrl, {
+    method: "GET",
+    headers: firebaseDatabaseHeaders(firebaseReadAuth),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    return serverJsonResponse(
+      {
+        ok: false,
+        message: "Failed to read latest water telemetry.",
+        status: response.status,
+        detail: detail.slice(0, 200),
+      },
+      response.status === 404 ? 404 : 502,
+      { "cache-control": "no-store" },
+    );
+  }
+
+  const payload = await response.json().catch(() => null);
+  return serverJsonResponse(payload, 200, { "cache-control": "no-store" });
 }
 
 async function handleIotLatest(request: Request, env: unknown): Promise<Response> {
