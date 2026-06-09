@@ -5,8 +5,8 @@ const ACTIVE_POND_KEY = "aquasmart_active_pond_id";
 
 const env = import.meta.env as Record<string, string | undefined>;
 
-export const DEFAULT_FARM_ID = env.VITE_DEFAULT_FARM_ID ?? "default";
-export const DEFAULT_POND_ID = env.VITE_DEFAULT_POND_ID ?? "pond-a";
+export const DEFAULT_FARM_ID = env.VITE_DEFAULT_FARM_ID ?? "farmer_001";
+export const DEFAULT_POND_ID = env.VITE_DEFAULT_POND_ID ?? "cage_001";
 
 function isBrowser() {
   return typeof window !== "undefined";
