@@ -1,4 +1,5 @@
 import { pondPath } from "@/firebase/paths";
+import { getActiveFarmId, getActivePondId } from "@/lib/tenant";
 
 const env = import.meta.env as Record<string, string | undefined>;
 const firebaseBaseUrl = env.VITE_FIREBASE_DATABASE_URL ?? env.FIREBASE_DATABASE_URL;
@@ -22,8 +23,29 @@ export type FeedingCommand = {
   status: "queued" | "ack" | "done" | "failed";
 };
 
-export async function listDeviceStatuses(): Promise<DeviceStatus[]> {
-  if (!firebaseBaseUrl) return [];
+export async function listDeviceStatuses(
+  farmId = getActiveFarmId(),
+  pondId = getActivePondId(),
+): Promise<DeviceStatus[]> {
+  const params = new URLSearchParams({ farmId, pondId });
+  let shouldTryDirectFirebaseFallback = false;
+
+  try {
+    const response = await fetch(`/api/iot/devices?${params.toString()}`, {
+      headers: { accept: "application/json" },
+    });
+    const contentType = response.headers.get("content-type") ?? "";
+    if (response.ok && contentType.includes("application/json")) {
+      const payload = (await response.json()) as { devices?: DeviceStatus[] };
+      return Array.isArray(payload.devices) ? payload.devices : [];
+    }
+    shouldTryDirectFirebaseFallback =
+      response.status === 404 || !contentType.includes("application/json");
+  } catch {
+    shouldTryDirectFirebaseFallback = true;
+  }
+
+  if (!shouldTryDirectFirebaseFallback || !firebaseBaseUrl) return [];
   const response = await fetch(`${firebaseBaseUrl}/${pondPath("devices", "status")}.json`);
   if (!response.ok) return [];
   const raw = (await response.json()) as Record<string, Omit<DeviceStatus, "deviceId">> | null;
