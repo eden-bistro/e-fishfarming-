@@ -11,20 +11,28 @@
 #include <math.h>
 #include "secrets.h"
 
-const char* WIFI_SSID = "YOUR_WIFI";
-const char* WIFI_PASSWORD = "YOUR_PASSWORD";
-const char* INGEST_URL = "https://your-worker-domain.com/api/iot/ingest";
-const char* IOT_INGEST_TOKEN = "YOUR_INGEST_TOKEN";
-const char* FARM_ID = "default";
-const char* POND_ID = "default";
-const char* FIRMWARE_VERSION = "v3.0-prod";
+#ifndef FARMER_ID
+#define FARMER_ID "farmer_001"
+#endif
+
+#ifndef CAGE_ID
+#define CAGE_ID "cage_001"
+#endif
+
+#ifndef DEVICE_ID
+#define DEVICE_ID "ESP32_001"
+#endif
+
+#ifndef FIRMWARE_VERSION
+#define FIRMWARE_VERSION "v3.1-fixedwifi"
+#endif
+
+#ifndef FARM_ID
+#define FARM_ID FARMER_ID
+#endif
 
 #ifndef POND_ID
-#ifdef CAGE_ID
 #define POND_ID CAGE_ID
-#else
-#define POND_ID "default"
-#endif
 #endif
 
 // =========================
@@ -292,33 +300,35 @@ void readSensors() {
     tempC = smooth(t, tempC);
   }
 
-  const String deviceId = "ESP32_001";
-  const float temperature = 27.4;
-  const float ph = 7.2;
-  const float dissolvedOxygen = 6.1;
-  const float ammonia = 0.03;
-  const float nitrite = 0.00;
+  // TODO: replace these defaults with calibrated analog conversion formulas
+  // for your pH, dissolved oxygen, and ammonia probes.
+  phValue = smooth(7.2f, phValue);
+  doValue = smooth(6.1f, doValue);
+  nh3Value = smooth(0.03f, nh3Value);
+}
 
-  String body = "{";
-  body += "\"deviceId\":\"" + deviceId + "\",";
-  body += "\"farmId\":\"" + String(FARM_ID) + "\",";
-  body += "\"pondId\":\"" + String(POND_ID) + "\",";
-  body += "\"firmware\":\"" + String(FIRMWARE_VERSION) + "\",";
-  body += "\"rssi\":" + String(WiFi.RSSI()) + ",";
-  body += "\"freeHeap\":" + String(ESP.getFreeHeap()) + ",";
-  body += "\"temperature\":" + String(temperature, 2) + ",";
-  body += "\"ph\":" + String(ph, 2) + ",";
-  body += "\"dissolvedOxygen\":" + String(dissolvedOxygen, 2) + ",";
-  body += "\"ammonia\":" + String(ammonia, 4) + ",";
-  body += "\"nitrite\":" + String(nitrite, 4);
-  body += "}";
+bool isWaterSafe() {
+  return finiteNum(tempC) &&
+         finiteNum(phValue) &&
+         finiteNum(doValue) &&
+         finiteNum(nh3Value) &&
+         tempC >= TEMP_MIN &&
+         tempC <= TEMP_MAX &&
+         phValue >= PH_MIN &&
+         phValue <= PH_MAX &&
+         doValue >= DO_MIN &&
+         nh3Value <= NH3_MAX;
+}
 
-#ifdef FARMER_ID
+String buildPayload() {
+  StaticJsonDocument<768> doc;
+
+  doc["deviceId"] = DEVICE_ID;
+  doc["farmId"] = FARM_ID;
+  doc["pondId"] = POND_ID;
   doc["farmerId"] = FARMER_ID;
-#endif
-#ifdef CAGE_ID
   doc["cageId"] = CAGE_ID;
-#endif
+  doc["firmware"] = FIRMWARE_VERSION;
 
   if (finiteNum(tempC)) doc["temperature"] = tempC;
   if (finiteNum(phValue)) doc["ph"] = phValue;
@@ -332,6 +342,10 @@ void readSensors() {
   doc["uptimeMs"] = millis();
   doc["freeHeap"] = ESP.getFreeHeap();
   doc["readingId"] = String(DEVICE_ID) + "_" + String((unsigned long)time(nullptr)) + "_" + String(sampleCounter++);
+
+  if (doc.overflowed()) {
+    Serial.println("Payload JSON document overflowed");
+  }
 
   String body;
   serializeJson(doc, body);
