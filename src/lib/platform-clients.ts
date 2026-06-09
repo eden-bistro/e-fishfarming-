@@ -101,26 +101,7 @@ async function supabaseRequest(path: string, init: RequestInit) {
 }
 
 export async function getLatestWaterReading(): Promise<WaterReading | null> {
-  const farmId = getActiveFarmId();
-  const pondId = getActivePondId();
-  const params = new URLSearchParams({ farmId, pondId });
-
-  let shouldTryDirectFirebaseFallback = false;
-  try {
-    const response = await fetch(`/api/iot/latest?${params.toString()}`, {
-      headers: { accept: "application/json" },
-    });
-    const contentType = response.headers.get("content-type") ?? "";
-    if (response.ok && contentType.includes("application/json")) {
-      return (await response.json()) as WaterReading | null;
-    }
-    shouldTryDirectFirebaseFallback =
-      response.status === 404 || !contentType.includes("application/json");
-  } catch {
-    shouldTryDirectFirebaseFallback = true;
-  }
-
-  if (!shouldTryDirectFirebaseFallback || !firebaseBaseUrl) return null;
+  if (!firebaseBaseUrl) return null;
   try {
     const response = await fetch(`${firebaseBaseUrl}/${pondPath("water", "latest")}.json`);
     if (!response.ok) return null;
