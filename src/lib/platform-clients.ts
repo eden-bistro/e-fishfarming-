@@ -100,27 +100,24 @@ async function supabaseRequest(path: string, init: RequestInit) {
   return response.json();
 }
 
+function explicitPondPath(farmId: string, pondId: string, ...parts: string[]) {
+  return ["farms", farmId, "ponds", pondId, ...parts].map(encodeURIComponent).join("/");
+}
+
+function latestWaterTenantPairs() {
+  const active = { farmId: getActiveFarmId(), pondId: getActivePondId() };
+  const fallback = { farmId: DEFAULT_FARM_ID, pondId: DEFAULT_POND_ID };
+  const seen = new Set<string>();
+  return [active, fallback].filter(({ farmId, pondId }) => {
+    const key = `${farmId}/${pondId}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 export async function getLatestWaterReading(): Promise<WaterReading | null> {
-  const farmId = getActiveFarmId();
-  const pondId = getActivePondId();
-  const params = new URLSearchParams({ farmId, pondId });
-
-  let shouldTryDirectFirebaseFallback = false;
-  try {
-    const response = await fetch(`/api/iot/latest?${params.toString()}`, {
-      headers: { accept: "application/json" },
-    });
-    const contentType = response.headers.get("content-type") ?? "";
-    if (response.ok && contentType.includes("application/json")) {
-      return (await response.json()) as WaterReading | null;
-    }
-    shouldTryDirectFirebaseFallback =
-      response.status === 404 || !contentType.includes("application/json");
-  } catch {
-    shouldTryDirectFirebaseFallback = true;
-  }
-
-  if (!shouldTryDirectFirebaseFallback || !firebaseBaseUrl) return null;
+  if (!firebaseBaseUrl) return null;
   try {
     const response = await fetch(`${firebaseBaseUrl}/${pondPath("water", "latest")}.json`);
     if (!response.ok) return null;
