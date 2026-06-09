@@ -23,7 +23,6 @@ import {
 import { toast } from "sonner";
 import {
   currentMonthRange,
-  EMPTY_DATE_RANGE,
   filterIncomeByDate,
   formatCurrency,
   incomeAmount,
@@ -39,7 +38,7 @@ export const Route = createFileRoute("/finance/income")({
 function Page() {
   const [rows, setRows] = useState<IncomeRow[]>([]);
   const [editId, setEditId] = useState<number | null>(null);
-  const [range, setRange] = useState<DateRange>(EMPTY_DATE_RANGE);
+  const [range, setRange] = useState<DateRange>(() => currentMonthRange());
   const [form, setForm] = useState<IncomeRow>({
     date: "",
     buyer: "",

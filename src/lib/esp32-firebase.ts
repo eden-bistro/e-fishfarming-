@@ -23,11 +23,8 @@ export type FeedingCommand = {
   status: "queued" | "ack" | "done" | "failed";
 };
 
-export async function listDeviceStatuses(
-  farmId = getActiveFarmId(),
-  pondId = getActivePondId(),
-): Promise<DeviceStatus[]> {
-  const params = new URLSearchParams({ farmId, pondId });
+export async function listDeviceStatuses(): Promise<DeviceStatus[]> {
+  const params = new URLSearchParams({ farmId: getActiveFarmId(), pondId: getActivePondId() });
   let shouldTryDirectFirebaseFallback = false;
 
   try {
