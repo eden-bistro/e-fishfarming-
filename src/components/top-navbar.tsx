@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Calendar, ChevronDown } from "lucide-react";
 import { getSessionUser, logoutUser } from "@/lib/auth";
 import { useNavigate } from "@tanstack/react-router";
@@ -16,11 +17,17 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 export function TopNavbar() {
   const navigate = useNavigate();
   const session = getSessionUser();
-  const today = new Date().toLocaleDateString("en-KE", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  const [today, setToday] = useState("Today");
+
+  useEffect(() => {
+    setToday(
+      new Date().toLocaleDateString("en-KE", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }),
+    );
+  }, []);
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur md:px-6">

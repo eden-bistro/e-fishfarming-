@@ -41,8 +41,10 @@ Required JSON fields:
 ```json
 {
   "deviceId": "ESP32_001",
-  "farmId": "default",
-  "pondId": "default",
+  "farmId": "farmer_001",
+  "pondId": "cage_001",
+  "farmerId": "farmer_001",
+  "cageId": "cage_001",
   "temperature": 27.4,
   "ph": 7.2,
   "dissolvedOxygen": 6.1,
@@ -56,7 +58,7 @@ Recommended optional fields:
 ```json
 {
   "timestamp": "2026-05-21T11:00:00.000Z",
-  "firmware": "v3.0-prod",
+  "firmware": "v3.1-fixedwifi",
   "rssi": -57,
   "freeHeap": 188000,
   "turbidity": 0
@@ -80,7 +82,7 @@ For each command under `feeding/commands`:
 {
   "action": "dispense_feed",
   "amountKg": 2.5,
-  "targetPondId": "pond-a",
+  "targetPondId": "cage_001",
   "requestedBy": "operator@farm",
   "requestedAt": "2026-05-21T11:00:00.000Z",
   "status": "queued|ack|done|failed"
@@ -100,7 +102,7 @@ The backend writes device status from ingest payload telemetry:
 
 ```json
 {
-  "firmware": "v3.0-prod",
+  "firmware": "v3.1-fixedwifi",
   "online": true,
   "rssi": -57,
   "freeHeap": 188000,
@@ -112,6 +114,7 @@ The backend writes device status from ingest payload telemetry:
 
 - `IOT_INGEST_TOKEN` must match the ESP32 bearer token.
 - `FIREBASE_DATABASE_URL` or `VITE_FIREBASE_DATABASE_URL` must point to the Realtime Database root URL.
+- The app default Firebase read path now uses `farmer_001` / `cage_001`, matching the firmware `FARMER_ID` / `CAGE_ID` values.
 - One Firebase write-auth option is required:
   - preferred: `FIREBASE_SERVICE_ACCOUNT` containing the service account JSON, or
   - legacy: `FIREBASE_DATABASE_SECRET` / `FIREBASE_AUTH_TOKEN`.
