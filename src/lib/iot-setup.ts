@@ -1,0 +1,266 @@
+import {
+  encodedFarmPondPath,
+  firstDefined,
+  getDefaultDeviceId,
+  getDefaultFarmId,
+  getDefaultPondId,
+  getEnvRecord,
+  jsonResponse,
+  noContentResponse,
+  resolveFirebaseDatabase,
+  type FirebaseDatabaseAuth,
+  writeFirebaseJson,
+} from "@/lib/iot-firebase";
+
+function bearerToken(request: Request): string {
+  const header = request.headers.get("authorization") ?? "";
+  return header.replace(/^Bearer\s+/i, "").trim();
+}
+
+function requireSetupToken(request: Request, env: unknown): Response | null {
+  const expected = firstDefined([
+    getEnvRecord(env).IOT_SETUP_TOKEN,
+    getEnvRecord(env).IOT_INGEST_TOKEN,
+  ]);
+  if (!expected) {
+    return jsonResponse(
+      {
+        ok: false,
+        message: "IoT setup token is not configured. Set IOT_SETUP_TOKEN or IOT_INGEST_TOKEN.",
+      },
+      500,
+      { "cache-control": "no-store" },
+    );
+  }
+
+  if (bearerToken(request) !== expected) {
+    return jsonResponse({ ok: false, message: "Unauthorized." }, 401, {
+      "cache-control": "no-store",
+    });
+  }
+  return null;
+}
+
+const SETUP_PAYLOAD_KEYS = [
+  "farmId",
+  "pondId",
+  "cageId",
+  "deviceId",
+  "farmName",
+  "cageName",
+  "pondName",
+  "firmware",
+] as const;
+
+type SetupPayload = Partial<Record<(typeof SETUP_PAYLOAD_KEYS)[number], string>> &
+  Record<string, unknown>;
+
+function setupParamsToRecord(params: URLSearchParams): SetupPayload {
+  const record: SetupPayload = {};
+  for (const key of SETUP_PAYLOAD_KEYS) {
+    const value = params.get(key);
+    if (value !== null) record[key] = value;
+  }
+  return record;
+}
+
+function hasSetupPayloadValues(payload: SetupPayload): boolean {
+  return SETUP_PAYLOAD_KEYS.some((key) => typeof payload[key] === "string" && payload[key].trim());
+}
+
+function mergeSetupPayload(query: SetupPayload, body: SetupPayload): SetupPayload {
+  return { ...query, ...body };
+}
+
+async function readSetupPayload(
+  request: Request,
+): Promise<{ body: SetupPayload } | { response: Response }> {
+  const queryPayload = setupParamsToRecord(new URL(request.url).searchParams);
+  let rawBody = "";
+
+  try {
+    rawBody = await request.text();
+  } catch {
+    return {
+      response: jsonResponse({ ok: false, message: "Unable to read request body." }, 400, {
+        "cache-control": "no-store",
+      }),
+    };
+  }
+
+  const trimmedBody = rawBody.replace(/^\uFEFF/, "").trim();
+  if (!trimmedBody) return { body: queryPayload };
+
+  try {
+    const parsed = JSON.parse(trimmedBody) as unknown;
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return { body: mergeSetupPayload(queryPayload, parsed as SetupPayload) };
+    }
+  } catch {
+    // Fall through and try form/urlencoded parsing for command-line clients.
+  }
+
+  const formPayload = setupParamsToRecord(new URLSearchParams(trimmedBody));
+  if (hasSetupPayloadValues(formPayload)) {
+    return { body: mergeSetupPayload(queryPayload, formPayload) };
+  }
+
+  if (hasSetupPayloadValues(queryPayload)) return { body: queryPayload };
+
+  return {
+    response: jsonResponse(
+      {
+        ok: false,
+        message:
+          "Body must be valid JSON, URL-encoded form data, or setup fields in the query string.",
+      },
+      400,
+      { "cache-control": "no-store" },
+    ),
+  };
+}
+
+async function writeRequired(
+  baseUrl: string,
+  path: string,
+  auth: FirebaseDatabaseAuth,
+  payload: unknown,
+  method: "PUT" | "PATCH" = "PATCH",
+) {
+  const response = await writeFirebaseJson(baseUrl, path, auth, payload, method);
+  if (response.ok) return;
+  const detail = await response.text().catch(() => "");
+  throw new Error(`write failed for ${path} (${response.status}): ${detail.slice(0, 200)}`);
+}
+
+export async function handleIotSetup(request: Request, env: unknown): Promise<Response> {
+  if (request.method === "OPTIONS") {
+    return noContentResponse(204, {
+      allow: "POST, OPTIONS",
+      "access-control-allow-methods": "POST, OPTIONS",
+      "access-control-allow-headers": "authorization, content-type",
+    });
+  }
+
+  if (request.method !== "POST") {
+    return jsonResponse({ ok: false, message: "Method not allowed for IoT setup." }, 405, {
+      allow: "POST, OPTIONS",
+    });
+  }
+
+  const unauthorized = requireSetupToken(request, env);
+  if (unauthorized) return unauthorized;
+
+  const firebase = await resolveFirebaseDatabase(env);
+  if (!firebase.ok) return firebase.response;
+
+  const setupPayload = await readSetupPayload(request);
+  if ("response" in setupPayload) return setupPayload.response;
+
+  const body = setupPayload.body;
+  const now = new Date().toISOString();
+  const farmId = String(body.farmId ?? getDefaultFarmId(env)).trim();
+  const pondId = String(body.pondId ?? body.cageId ?? getDefaultPondId(env)).trim();
+  const deviceId = String(body.deviceId ?? getDefaultDeviceId(env)).trim();
+  const farmName = String(body.farmName ?? "Default Farm").trim();
+  const cageName = String(body.cageName ?? body.pondName ?? pondId).trim();
+  const firmware = String(body.firmware ?? "unknown").trim();
+
+  if (!farmId || !pondId || !deviceId) {
+    return jsonResponse(
+      { ok: false, message: "farmId, pondId/cageId and deviceId are required." },
+      400,
+      {
+        "cache-control": "no-store",
+      },
+    );
+  }
+
+  const basePath = encodedFarmPondPath(farmId, pondId);
+  try {
+    await writeRequired(
+      firebase.baseUrl,
+      `farms/${encodeURIComponent(farmId)}/metadata`,
+      firebase.auth,
+      {
+        farmId,
+        name: farmName,
+        updatedAt: now,
+      },
+    );
+    await writeRequired(firebase.baseUrl, `${basePath}/metadata`, firebase.auth, {
+      pondId,
+      cageId: pondId,
+      name: cageName,
+      status: "active",
+      updatedAt: now,
+      deviceIds: { [deviceId]: true },
+    });
+    await writeRequired(
+      firebase.baseUrl,
+      `${basePath}/devices/registry/${encodeURIComponent(deviceId)}`,
+      firebase.auth,
+      {
+        deviceId,
+        farmId,
+        pondId,
+        cageId: pondId,
+        firmware,
+        status: "assigned",
+        updatedAt: now,
+      },
+    );
+    await writeRequired(
+      firebase.baseUrl,
+      `${basePath}/devices/status/${encodeURIComponent(deviceId)}`,
+      firebase.auth,
+      {
+        firmware,
+        online: false,
+        updatedAt: now,
+      },
+    );
+    await writeRequired(
+      firebase.baseUrl,
+      `farms/${encodeURIComponent(farmId)}/devices/${encodeURIComponent(deviceId)}`,
+      firebase.auth,
+      {
+        deviceId,
+        pondId,
+        cageId: pondId,
+        firmware,
+        status: "assigned",
+        updatedAt: now,
+      },
+    );
+  } catch (error) {
+    return jsonResponse(
+      {
+        ok: false,
+        message: "Failed to create farm/cage/device metadata.",
+        detail: error instanceof Error ? error.message : String(error),
+      },
+      502,
+      { "cache-control": "no-store" },
+    );
+  }
+
+  return jsonResponse(
+    {
+      ok: true,
+      farmId,
+      pondId,
+      cageId: pondId,
+      deviceId,
+      paths: {
+        farm: `/farms/${farmId}/metadata`,
+        cage: `/farms/${farmId}/ponds/${pondId}/metadata`,
+        deviceRegistry: `/farms/${farmId}/ponds/${pondId}/devices/registry/${deviceId}`,
+        deviceStatus: `/farms/${farmId}/ponds/${pondId}/devices/status/${deviceId}`,
+        latestWater: `/farms/${farmId}/ponds/${pondId}/water/latest`,
+      },
+    },
+    200,
+    { "cache-control": "no-store" },
+  );
+}
