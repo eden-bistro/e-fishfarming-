@@ -1,5 +1,5 @@
 import { pondPath } from "@/firebase/paths";
-import { DEFAULT_FARM_ID, DEFAULT_POND_ID, getActiveFarmId, getActivePondId } from "@/lib/tenant";
+import { getActiveFarmId, getActivePondId } from "@/lib/tenant";
 import { getAccessToken } from "@/services/auth.service";
 const env = import.meta.env as Record<string, string | undefined>;
 
@@ -117,43 +117,14 @@ function latestWaterTenantPairs() {
 }
 
 export async function getLatestWaterReading(): Promise<WaterReading | null> {
-  const tenantPairs = latestWaterTenantPairs();
-  let shouldTryDirectFirebaseFallback = false;
-
-  for (const { farmId, pondId } of tenantPairs) {
-    const params = new URLSearchParams({ farmId, pondId });
-    try {
-      const response = await fetch(`/api/iot/latest?${params.toString()}`, {
-        headers: { accept: "application/json" },
-      });
-      const contentType = response.headers.get("content-type") ?? "";
-      if (response.ok && contentType.includes("application/json")) {
-        const reading = (await response.json()) as WaterReading | null;
-        if (reading) return reading;
-      }
-      shouldTryDirectFirebaseFallback =
-        shouldTryDirectFirebaseFallback ||
-        response.status === 404 ||
-        !contentType.includes("application/json");
-    } catch {
-      shouldTryDirectFirebaseFallback = true;
-    }
+  if (!firebaseBaseUrl) return null;
+  try {
+    const response = await fetch(`${firebaseBaseUrl}/${pondPath("water", "latest")}.json`);
+    if (!response.ok) return null;
+    return (await response.json()) as WaterReading | null;
+  } catch {
+    return null;
   }
-
-  if (!shouldTryDirectFirebaseFallback || !firebaseBaseUrl) return null;
-  for (const { farmId, pondId } of tenantPairs) {
-    try {
-      const response = await fetch(
-        `${firebaseBaseUrl}/${explicitPondPath(farmId, pondId, "water", "latest")}.json`,
-      );
-      if (!response.ok) continue;
-      const reading = (await response.json()) as WaterReading | null;
-      if (reading) return reading;
-    } catch {
-      // Try the next tenant pair.
-    }
-  }
-  return null;
 }
 
 export async function listWaterAlerts(limit = 20): Promise<WaterAlert[]> {
