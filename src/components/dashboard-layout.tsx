@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { TopNavbar } from "@/components/top-navbar";
@@ -7,6 +7,19 @@ import { getSessionUser } from "@/lib/auth";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+
+function AuthLoadingShell() {
+  return (
+    <div className="flex min-h-screen items-center justify-center p-6">
+      <div className="max-w-md text-center">
+        <h1 className="text-2xl font-semibold">Loading dashboard…</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Checking your browser session before loading farm data.
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export function DashboardLayout({
   title,
@@ -19,8 +32,18 @@ export function DashboardLayout({
   actions?: ReactNode;
   children: ReactNode;
 }) {
-  const session = getSessionUser();
+  const [hydrated, setHydrated] = useState(false);
+  const [session, setSession] = useState<ReturnType<typeof getSessionUser>>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setSession(getSessionUser());
+    setHydrated(true);
+  }, []);
+
+  if (!hydrated) {
+    return <AuthLoadingShell />;
+  }
 
   if (!session) {
     return (
