@@ -203,20 +203,26 @@ export async function listWaterAlerts(limit = 20): Promise<WaterAlert[]> {
 }
 
 export async function pushManualFeedingEvent(amountKg: number): Promise<void> {
-  if (!firebaseBaseUrl) return;
+  const farmId = getActiveFarmId();
+  const pondId = getActivePondId();
   const payload = {
     timestamp: new Date().toISOString(),
-    pondId: getActivePondId(),
+    pondId,
     mode: "manual",
     amountKg,
     status: "completed",
   };
 
-  await fetch(`${firebaseBaseUrl}/${pondPath("feeding", "events")}.json`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  if (firebaseBaseUrl) {
+    await fetch(
+      `${firebaseBaseUrl}/${explicitPondPath(farmId, pondId, "feeding", "events")}.json`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      },
+    );
+  }
 
   await supabaseRequest("feeding_events", {
     method: "POST",
@@ -228,6 +234,7 @@ export async function pushManualFeedingEvent(amountKg: number): Promise<void> {
         mode: payload.mode,
         amount_kg: payload.amountKg,
         status: payload.status,
+        farm_id: farmId,
       },
     ]),
   });
