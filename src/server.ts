@@ -100,6 +100,7 @@ function serverJsonResponse(payload: unknown, status = 200, extraHeaders?: Heade
     },
   });
 }
+
 function noContentResponse(status = 204, extraHeaders?: HeadersInit): Response {
   return new Response(null, { status, headers: extraHeaders });
 }
@@ -727,10 +728,6 @@ export default {
     const authProxyAction = getSupabaseAuthProxyAction(url.pathname);
     if (authProxyAction) {
       return handleSupabaseAuthProxy(request, env, authProxyAction);
-    }
-
-    if (isIotLatestPath(url.pathname)) {
-      return handleIotLatest(request, env);
     }
 
     if (isIotIngestPath(url.pathname)) {
