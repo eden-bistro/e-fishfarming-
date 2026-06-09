@@ -41,7 +41,7 @@ function Page() {
     const pondId = form.pondId.trim();
     setActiveFarmId(farmId);
     setActivePondId(pondId);
-    const data = await listDeviceStatuses();
+    const data = await listDeviceStatuses(farmId, pondId);
     setRows(data);
     setIsLoading(false);
   }
@@ -53,7 +53,7 @@ function Page() {
       const pondId = form.pondId.trim();
       setActiveFarmId(farmId);
       setActivePondId(pondId);
-      const data = await listDeviceStatuses();
+      const data = await listDeviceStatuses(farmId, pondId);
       if (mounted) {
         setRows(data);
         setIsLoading(false);
