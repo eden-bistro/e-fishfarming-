@@ -100,6 +100,22 @@ async function supabaseRequest(path: string, init: RequestInit) {
   return response.json();
 }
 
+function explicitPondPath(farmId: string, pondId: string, ...parts: string[]) {
+  return ["farms", farmId, "ponds", pondId, ...parts].map(encodeURIComponent).join("/");
+}
+
+function latestWaterTenantPairs() {
+  const active = { farmId: getActiveFarmId(), pondId: getActivePondId() };
+  const fallback = { farmId: DEFAULT_FARM_ID, pondId: DEFAULT_POND_ID };
+  const seen = new Set<string>();
+  return [active, fallback].filter(({ farmId, pondId }) => {
+    const key = `${farmId}/${pondId}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 export async function getLatestWaterReading(): Promise<WaterReading | null> {
   if (!firebaseBaseUrl) return null;
   try {
