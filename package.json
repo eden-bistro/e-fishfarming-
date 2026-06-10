@@ -15,7 +15,9 @@
     "typecheck": "tsc --noEmit",
     "test": "npm run check:exports && npm run lint",
     "ci:full": "npm run lint && npm run test && npm run build",
-    "test:build": "npm run build"
+    "test:build": "npm run build",
+    "generate:routes": "node scripts/generate-route-tree.mjs",
+    "pretypecheck": "npm run generate:routes"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",
