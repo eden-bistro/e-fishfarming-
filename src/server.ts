@@ -1,4 +1,4 @@
-import "./lib/error-capture";
+﻿import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
@@ -24,6 +24,23 @@ type FirebaseDatabaseConfig = {
   databaseSecret?: string;
 };
 
+
+type WaterReadingPayload = {
+  timestamp: string;
+  pondId: string;
+  deviceId: string;
+  temperature: number;
+  ph: number;
+  dissolvedOxygen: number;
+  turbidity: number;
+  ammonia: number;
+  nitrite: number;
+};
+
+type SupabaseMirrorResult =
+  | { mirrored: true; table: string }
+  | { mirrored: false; skipped: true; reason: string }
+  | { mirrored: false; skipped: false; table: string; error: string };
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
 function getEnvRecord(env: unknown): Record<string, string | undefined> {
@@ -365,6 +382,64 @@ function iotIngestInfoResponse(): Response {
   });
 }
 
+
+async function mirrorWaterReadingToSupabase(
+  env: unknown,
+  farmId: string,
+  pondId: string,
+  reading: WaterReadingPayload,
+): Promise<SupabaseMirrorResult> {
+  const { url, key, readingsTable } = getSupabaseDataConfig(env);
+  if (!url || !key) {
+    return {
+      mirrored: false,
+      skipped: true,
+      reason:
+        "Supabase data API is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
+    };
+  }
+
+  const row = {
+    timestamp: reading.timestamp,
+    pond_id: pondId,
+    temperature: reading.temperature,
+    ph: reading.ph,
+    dissolved_oxygen: reading.dissolvedOxygen,
+    turbidity: reading.turbidity,
+    ammonia: reading.ammonia,
+    nitrite: reading.nitrite,
+    farm_id: farmId,
+    raw_payload: reading,
+  };
+
+  try {
+    const response = await fetch(`${url.replace(/\/+$/, "")}/rest/v1/${readingsTable}`, {
+      method: "POST",
+      headers: {
+        apikey: key,
+        authorization: `Bearer ${key}`,
+        "content-type": "application/json",
+        prefer: "return=minimal",
+      },
+      body: JSON.stringify(row),
+    });
+
+    if (response.ok) return { mirrored: true, table: readingsTable };
+
+    const responseBody = await response.text();
+    const error = `Supabase insert failed (${response.status}): ${responseBody.slice(0, 200)}`;
+    console.warn("[iot-ingest] supabase mirror failed", {
+      table: readingsTable,
+      status: response.status,
+      responseBody,
+    });
+    return { mirrored: false, skipped: false, table: readingsTable, error };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn("[iot-ingest] supabase mirror request failed", { table: readingsTable, error });
+    return { mirrored: false, skipped: false, table: readingsTable, error: message };
+  }
+}
 async function handleIotIngest(request: Request, env: unknown): Promise<Response> {
   const envRecord = getEnvRecord(env);
   const expectedToken = envRecord.IOT_INGEST_TOKEN;
@@ -574,94 +649,7 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
   });
 }
 
-async function handleIotLatest(request: Request, env: unknown): Promise<Response> {
-  if (request.method === "OPTIONS") {
-    return noContentResponse(204, {
-      allow: "GET, HEAD, OPTIONS",
-      "access-control-allow-methods": "GET, HEAD, OPTIONS",
-      "access-control-allow-headers": "content-type",
-    });
-  }
 
-  if (request.method !== "GET" && request.method !== "HEAD") {
-    return jsonResponse({ ok: false, message: "Method not allowed for IoT latest." }, 405, {
-      allow: "GET, HEAD, OPTIONS",
-    });
-  }
-
-  const firebaseConfig = getFirebaseDatabaseConfig(env);
-  if (!firebaseConfig.baseUrl) {
-    return serverJsonResponse(
-      {
-        ok: false,
-        message:
-          "Firebase URL is not configured. Set VITE_FIREBASE_DATABASE_URL or FIREBASE_DATABASE_URL (FIREBASE_URL alias supported).",
-      },
-      500,
-      { "cache-control": "no-store" },
-    );
-  }
-
-  let firebaseReadAuth: FirebaseWriteAuth;
-  try {
-    firebaseReadAuth = await getFirebaseDatabaseAuth(firebaseConfig);
-  } catch (error) {
-    return serverJsonResponse(
-      {
-        ok: false,
-        message: "Firebase service account authentication failed.",
-        detail: error instanceof Error ? error.message : String(error),
-      },
-      500,
-      { "cache-control": "no-store" },
-    );
-  }
-
-  if (firebaseReadAuth.type === "none") {
-    return serverJsonResponse(
-      {
-        ok: false,
-        message:
-          "Firebase read authentication is not configured. Set FIREBASE_SERVICE_ACCOUNT or FIREBASE_DATABASE_SECRET/FIREBASE_AUTH_TOKEN.",
-      },
-      500,
-      { "cache-control": "no-store" },
-    );
-  }
-
-  const url = new URL(request.url);
-  const farmId = (url.searchParams.get("farmId") || getDefaultFarmId(env)).trim();
-  const pondId = (url.searchParams.get("pondId") || getDefaultPondId(env)).trim();
-  if (!farmId || !pondId) {
-    return serverJsonResponse({ ok: false, message: "farmId and pondId are required." }, 400, {
-      "cache-control": "no-store",
-    });
-  }
-
-  const path = `farms/${encodeURIComponent(farmId)}/ponds/${encodeURIComponent(pondId)}/water/latest`;
-  const readUrl = firebaseDatabaseUrl(firebaseConfig.baseUrl, path, firebaseReadAuth);
-  const response = await fetch(readUrl, {
-    method: "GET",
-    headers: firebaseDatabaseHeaders(firebaseReadAuth),
-  });
-
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    return serverJsonResponse(
-      {
-        ok: false,
-        message: "Failed to read latest water telemetry.",
-        status: response.status,
-        detail: detail.slice(0, 200),
-      },
-      response.status === 404 ? 404 : 502,
-      { "cache-control": "no-store" },
-    );
-  }
-
-  const payload = await response.json().catch(() => null);
-  return serverJsonResponse(payload, 200, { "cache-control": "no-store" });
-}
 
 async function handleIotLatest(request: Request, env: unknown): Promise<Response> {
   if (request.method === "OPTIONS") {
@@ -851,3 +839,5 @@ export default {
     }
   },
 };
+
+
