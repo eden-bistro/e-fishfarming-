@@ -3,6 +3,19 @@ import { getActiveFarmId, getActivePondId } from "@/lib/tenant";
 
 const env = import.meta.env as Record<string, string | undefined>;
 const firebaseBaseUrl = env.VITE_FIREBASE_DATABASE_URL ?? env.FIREBASE_DATABASE_URL;
+const DEVICE_OFFLINE_AFTER_MS = 5 * 60 * 1000;
+
+function isFreshHeartbeat(updatedAt: string): boolean {
+  const timestamp = new Date(updatedAt).getTime();
+  return Number.isFinite(timestamp) && Date.now() - timestamp <= DEVICE_OFFLINE_AFTER_MS;
+}
+
+function normalizeDeviceStatus(status: DeviceStatus): DeviceStatus {
+  return {
+    ...status,
+    online: Boolean(status.online) && isFreshHeartbeat(status.updatedAt),
+  };
+}
 
 export type DeviceStatus = {
   deviceId: string;
@@ -48,7 +61,7 @@ export async function listDeviceStatuses(): Promise<DeviceStatus[]> {
   const raw = (await response.json()) as Record<string, Omit<DeviceStatus, "deviceId">> | null;
   if (!raw || typeof raw !== "object") return [];
   return Object.entries(raw)
-    .map(([deviceId, value]) => ({ deviceId, ...value }))
+    .map(([deviceId, value]) => normalizeDeviceStatus({ deviceId, ...value }))
     .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
 }
 
