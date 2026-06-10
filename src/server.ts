@@ -2,7 +2,6 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
-import { handleSupabaseAuthProxy, jsonResponse } from "./lib/supabase-auth-proxy";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -18,6 +17,35 @@ type FirebaseWriteAuth =
   | { type: "database-secret"; token: string }
   | { type: "oauth"; token: string }
   | { type: "none" };
+
+type FirebaseDatabaseConfig = {
+  baseUrl?: string;
+  serviceAccountJson?: string;
+  databaseSecret?: string;
+};
+
+type SupabaseDataConfig = {
+  url?: string;
+  key?: string;
+  readingsTable: string;
+};
+
+type WaterReadingPayload = {
+  timestamp: string;
+  pondId: string;
+  deviceId: string;
+  temperature: number;
+  ph: number;
+  dissolvedOxygen: number;
+  turbidity: number;
+  ammonia: number;
+  nitrite: number;
+};
+
+type SupabaseMirrorResult =
+  | { mirrored: true; table: string }
+  | { mirrored: false; skipped: true; reason: string }
+  | { mirrored: false; skipped: false; table: string; error: string };
 
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
@@ -99,14 +127,6 @@ function noContentResponse(status = 204, extraHeaders?: HeadersInit): Response {
   return new Response(null, { status, headers: extraHeaders });
 }
 
-function noContentResponse(status = 204, extraHeaders?: HeadersInit): Response {
-  return new Response(null, { status, headers: extraHeaders });
-}
-
-function noContentResponse(status = 204, extraHeaders?: HeadersInit): Response {
-  return new Response(null, { status, headers: extraHeaders });
-}
-
 function b64url(input: Uint8Array | string): string {
   const bytes = typeof input === "string" ? new TextEncoder().encode(input) : input;
   let str = "";
@@ -174,8 +194,243 @@ async function getGoogleAccessToken(serviceAccountJson: string): Promise<string>
   return tokenBody.access_token;
 }
 
+type SupabaseAuthAction = "login" | "register" | "recover" | "refresh";
+
+function normalizeSupabaseAuthAction(action: string): SupabaseAuthAction | null {
+  if (action === "login" || action === "register" || action === "recover" || action === "refresh") {
+    return action;
+  }
+  return null;
+}
+
+function getSupabaseAuthConfig(env: unknown): { url?: string; anonKey?: string } {
+  const envRecord = getEnvRecord(env);
+  return {
+    url: firstDefined([envRecord.VITE_SUPABASE_URL, envRecord.SUPABASE_URL])?.trim(),
+    anonKey: firstDefined([envRecord.VITE_SUPABASE_ANON_KEY, envRecord.SUPABASE_ANON_KEY])?.trim(),
+  };
+}
+
+function normalizeSupabaseTableName(value: string | undefined): string {
+  const tableName = (value ?? "water_readings").trim() || "water_readings";
+  return /^[a-zA-Z0-9_]+$/.test(tableName) ? tableName : "water_readings";
+}
+
+function getSupabaseDataConfig(env: unknown): SupabaseDataConfig {
+  const envRecord = getEnvRecord(env);
+  return {
+    url: firstDefined([envRecord.SUPABASE_URL, envRecord.VITE_SUPABASE_URL])?.trim(),
+    key: firstDefined([
+      envRecord.SUPABASE_SERVICE_ROLE_KEY,
+      envRecord.SUPABASE_SERVICE_KEY,
+      envRecord.SUPABASE_ANON_KEY,
+      envRecord.VITE_SUPABASE_ANON_KEY,
+    ])?.trim(),
+    readingsTable: normalizeSupabaseTableName(envRecord.SUPABASE_SENSOR_READINGS_TABLE),
+  };
+}
+
+async function mirrorWaterReadingToSupabase(
+  env: unknown,
+  farmId: string,
+  pondId: string,
+  reading: WaterReadingPayload,
+): Promise<SupabaseMirrorResult> {
+  const { url, key, readingsTable } = getSupabaseDataConfig(env);
+  if (!url || !key) {
+    return {
+      mirrored: false,
+      skipped: true,
+      reason:
+        "Supabase data API is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
+    };
+  }
+
+  const row = {
+    timestamp: reading.timestamp,
+    pond_id: pondId,
+    temperature: reading.temperature,
+    ph: reading.ph,
+    dissolved_oxygen: reading.dissolvedOxygen,
+    turbidity: reading.turbidity,
+    ammonia: reading.ammonia,
+    nitrite: reading.nitrite,
+    farm_id: farmId,
+    raw_payload: reading,
+  };
+
+  try {
+    const response = await fetch(`${url.replace(/\/+$/, "")}/rest/v1/${readingsTable}`, {
+      method: "POST",
+      headers: {
+        apikey: key,
+        authorization: `Bearer ${key}`,
+        "content-type": "application/json",
+        prefer: "return=minimal",
+      },
+      body: JSON.stringify(row),
+    });
+
+    if (response.ok) return { mirrored: true, table: readingsTable };
+
+    const responseBody = await response.text();
+    const error = `Supabase insert failed (${response.status}): ${responseBody.slice(0, 200)}`;
+    console.warn("[iot-ingest] supabase mirror failed", {
+      table: readingsTable,
+      status: response.status,
+      responseBody,
+    });
+    return { mirrored: false, skipped: false, table: readingsTable, error };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn("[iot-ingest] supabase mirror request failed", { table: readingsTable, error });
+    return { mirrored: false, skipped: false, table: readingsTable, error: message };
+  }
+}
+
+async function handleSupabaseAuthProxy(
+  request: Request,
+  env: unknown,
+  action: string,
+): Promise<Response> {
+  if (request.method !== "POST") {
+    return jsonResponse({ ok: false, message: "Method not allowed for auth endpoint." }, 405, {
+      allow: "POST",
+    });
+  }
+
+  const authAction = normalizeSupabaseAuthAction(action);
+  if (!authAction) {
+    return jsonResponse({ ok: false, message: "Unknown auth action." }, 404);
+  }
+
+  const { url, anonKey } = getSupabaseAuthConfig(env);
+  const missing = [
+    ["VITE_SUPABASE_URL or SUPABASE_URL", url],
+    ["VITE_SUPABASE_ANON_KEY or SUPABASE_ANON_KEY", anonKey],
+  ]
+    .filter(([, value]) => !value)
+    .map(([name]) => name);
+
+  if (missing.length > 0) {
+    return jsonResponse(
+      {
+        ok: false,
+        message: `Supabase auth is not configured. Missing: ${missing.join(", ")}.`,
+      },
+      500,
+    );
+  }
+
+  let body: Record<string, unknown>;
+  try {
+    body = (await request.json()) as Record<string, unknown>;
+  } catch {
+    return jsonResponse({ ok: false, message: "Body must be valid JSON." }, 400);
+  }
+
+  const pathByAction: Record<SupabaseAuthAction, string> = {
+    login: "token?grant_type=password",
+    register: "signup",
+    recover: "recover",
+    refresh: "token?grant_type=refresh_token",
+  };
+
+  try {
+    const response = await fetch(`${url}/auth/v1/${pathByAction[authAction]}`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        apikey: anonKey!,
+        authorization: `Bearer ${anonKey}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    if (!response.ok) {
+      return jsonResponse(
+        {
+          ok: false,
+          message: String(payload.msg ?? payload.error_description ?? "Authentication failed."),
+        },
+        response.status,
+      );
+    }
+
+    return jsonResponse({ ok: true, payload });
+  } catch (error) {
+    console.error("[auth-proxy] request failed", error);
+    return jsonResponse(
+      {
+        ok: false,
+        message: "Authentication proxy failed.",
+        detail: error instanceof Error ? error.message : String(error),
+      },
+      502,
+    );
+  }
+}
+
+function getSupabaseAuthProxyAction(pathname: string): string | null {
+  const prefix = "/api/auth/";
+  if (!pathname.startsWith(prefix)) return null;
+
+  const action = pathname.slice(prefix.length);
+  return action && !action.includes("/") ? action : null;
+}
+
 function isIotIngestPath(pathname: string): boolean {
   return pathname === "/api/iot/ingest" || pathname === "/ingest";
+}
+
+function isIotLatestPath(pathname: string): boolean {
+  return pathname === "/api/iot/latest";
+}
+
+function getFirebaseDatabaseConfig(env: unknown): FirebaseDatabaseConfig {
+  const envRecord = getEnvRecord(env);
+  return {
+    baseUrl: firstDefined([
+      envRecord.VITE_FIREBASE_DATABASE_URL,
+      envRecord.FIREBASE_DATABASE_URL,
+      envRecord.FIREBASE_URL,
+    ])?.replace(/\/+$/, ""),
+    serviceAccountJson: envRecord.FIREBASE_SERVICE_ACCOUNT,
+    databaseSecret: firstDefined([
+      envRecord.FIREBASE_DATABASE_SECRET,
+      envRecord.FIREBASE_AUTH_TOKEN,
+    ]),
+  };
+}
+
+function getDefaultFarmId(env: unknown): string {
+  return firstDefined([getEnvRecord(env).VITE_DEFAULT_FARM_ID]) ?? "farmer_001";
+}
+
+function getDefaultPondId(env: unknown): string {
+  return firstDefined([getEnvRecord(env).VITE_DEFAULT_POND_ID]) ?? "cage_001";
+}
+
+async function getFirebaseDatabaseAuth(config: FirebaseDatabaseConfig): Promise<FirebaseWriteAuth> {
+  if (config.databaseSecret) {
+    return { type: "database-secret", token: config.databaseSecret };
+  }
+  if (config.serviceAccountJson) {
+    return { type: "oauth", token: await getGoogleAccessToken(config.serviceAccountJson) };
+  }
+  return { type: "none" };
+}
+
+function firebaseDatabaseUrl(baseUrl: string, path: string, auth: FirebaseWriteAuth): string {
+  const url = `${baseUrl}/${path}.json`;
+  if (auth.type !== "database-secret") return url;
+  return `${url}?auth=${encodeURIComponent(auth.token)}`;
+}
+
+function firebaseDatabaseHeaders(auth: FirebaseWriteAuth): Record<string, string> {
+  if (auth.type === "oauth") return { authorization: `Bearer ${auth.token}` };
+  return {};
 }
 
 function faviconResponse(): Response {
@@ -212,12 +467,8 @@ function iotIngestInfoResponse(): Response {
 async function handleIotIngest(request: Request, env: unknown): Promise<Response> {
   const envRecord = getEnvRecord(env);
   const expectedToken = envRecord.IOT_INGEST_TOKEN;
-  const firebaseBaseUrl = firstDefined([
-    envRecord.VITE_FIREBASE_DATABASE_URL,
-    envRecord.FIREBASE_DATABASE_URL,
-    envRecord.FIREBASE_URL,
-  ]);
-  const serviceAccountJson = envRecord.FIREBASE_SERVICE_ACCOUNT;
+  const firebaseConfig = getFirebaseDatabaseConfig(env);
+  const firebaseBaseUrl = firebaseConfig.baseUrl;
 
   if (!expectedToken) {
     return serverJsonResponse({ ok: false, message: "IOT_INGEST_TOKEN is not configured." }, 500);
@@ -240,28 +491,21 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     return serverJsonResponse({ ok: false, message: "Unauthorized ingest token." }, 401);
   }
 
-  const firebaseDatabaseSecret = firstDefined([
-    envRecord.FIREBASE_DATABASE_SECRET,
-    envRecord.FIREBASE_AUTH_TOKEN,
-  ]);
+  let firebaseWriteAuth: FirebaseWriteAuth;
+  try {
+    firebaseWriteAuth = await getFirebaseDatabaseAuth(firebaseConfig);
+  } catch (error) {
+    return jsonResponse(
+      {
+        ok: false,
+        message: "Firebase service account authentication failed.",
+        detail: error instanceof Error ? error.message : String(error),
+      },
+      500,
+    );
+  }
 
-  let firebaseWriteAuth: FirebaseWriteAuth = { type: "none" };
-  if (firebaseDatabaseSecret) {
-    firebaseWriteAuth = { type: "database-secret", token: firebaseDatabaseSecret };
-  } else if (serviceAccountJson) {
-    try {
-      firebaseWriteAuth = { type: "oauth", token: await getGoogleAccessToken(serviceAccountJson) };
-    } catch (error) {
-      return jsonResponse(
-        {
-          ok: false,
-          message: "Firebase service account authentication failed.",
-          detail: error instanceof Error ? error.message : String(error),
-        },
-        500,
-      );
-    }
-  } else {
+  if (firebaseWriteAuth.type === "none") {
     return jsonResponse(
       {
         ok: false,
@@ -295,12 +539,7 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     );
   }
 
-  const basePath = `${firebaseBaseUrl}/farms/${encodeURIComponent(farmId)}/ponds/${encodeURIComponent(pondId)}`;
-  const withAuth = (url: string) => {
-    if (firebaseWriteAuth.type !== "database-secret") return url;
-    const separator = url.includes("?") ? "&" : "?";
-    return `${url}${separator}auth=${encodeURIComponent(firebaseWriteAuth.token)}`;
-  };
+  const basePath = `farms/${encodeURIComponent(farmId)}/ponds/${encodeURIComponent(pondId)}`;
 
   const write = async (
     path: string,
@@ -308,11 +547,11 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     method: "PUT" | "POST" = "PUT",
     allowFailure = false,
   ) => {
-    const url = withAuth(`${basePath}/${path}.json`);
-    const headers: Record<string, string> = { "content-type": "application/json" };
-    if (firebaseWriteAuth.type === "oauth") {
-      headers.authorization = `Bearer ${firebaseWriteAuth.token}`;
-    }
+    const url = firebaseDatabaseUrl(firebaseBaseUrl, `${basePath}/${path}`, firebaseWriteAuth);
+    const headers: Record<string, string> = {
+      "content-type": "application/json",
+      ...firebaseDatabaseHeaders(firebaseWriteAuth),
+    };
 
     const res = await fetch(url, {
       method,
@@ -353,7 +592,7 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     );
   };
 
-  const waterReading = {
+  const waterReading: WaterReadingPayload = {
     timestamp,
     pondId,
     deviceId,
@@ -376,6 +615,8 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
   } catch (error) {
     return fail("water/history", error);
   }
+
+  const supabaseMirror = await mirrorWaterReadingToSupabase(env, farmId, pondId, waterReading);
 
   try {
     await write(`devices/status/${encodeURIComponent(deviceId)}`, {
@@ -428,7 +669,97 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
       history: `/farms/${farmId}/ponds/${pondId}/water/history`,
       deviceStatus: `/farms/${farmId}/ponds/${pondId}/devices/status/${deviceId}`,
     },
+    supabase: supabaseMirror,
   });
+}
+
+async function handleIotLatest(request: Request, env: unknown): Promise<Response> {
+  if (request.method === "OPTIONS") {
+    return noContentResponse(204, {
+      allow: "GET, HEAD, OPTIONS",
+      "access-control-allow-methods": "GET, HEAD, OPTIONS",
+      "access-control-allow-headers": "content-type",
+    });
+  }
+
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    return jsonResponse({ ok: false, message: "Method not allowed for IoT latest." }, 405, {
+      allow: "GET, HEAD, OPTIONS",
+    });
+  }
+
+  const firebaseConfig = getFirebaseDatabaseConfig(env);
+  if (!firebaseConfig.baseUrl) {
+    return serverJsonResponse(
+      {
+        ok: false,
+        message:
+          "Firebase URL is not configured. Set VITE_FIREBASE_DATABASE_URL or FIREBASE_DATABASE_URL (FIREBASE_URL alias supported).",
+      },
+      500,
+      { "cache-control": "no-store" },
+    );
+  }
+
+  let firebaseReadAuth: FirebaseWriteAuth;
+  try {
+    firebaseReadAuth = await getFirebaseDatabaseAuth(firebaseConfig);
+  } catch (error) {
+    return serverJsonResponse(
+      {
+        ok: false,
+        message: "Firebase service account authentication failed.",
+        detail: error instanceof Error ? error.message : String(error),
+      },
+      500,
+      { "cache-control": "no-store" },
+    );
+  }
+
+  if (firebaseReadAuth.type === "none") {
+    return serverJsonResponse(
+      {
+        ok: false,
+        message:
+          "Firebase read authentication is not configured. Set FIREBASE_SERVICE_ACCOUNT or FIREBASE_DATABASE_SECRET/FIREBASE_AUTH_TOKEN.",
+      },
+      500,
+      { "cache-control": "no-store" },
+    );
+  }
+
+  const url = new URL(request.url);
+  const farmId = (url.searchParams.get("farmId") || getDefaultFarmId(env)).trim();
+  const pondId = (url.searchParams.get("pondId") || getDefaultPondId(env)).trim();
+  if (!farmId || !pondId) {
+    return serverJsonResponse({ ok: false, message: "farmId and pondId are required." }, 400, {
+      "cache-control": "no-store",
+    });
+  }
+
+  const path = `farms/${encodeURIComponent(farmId)}/ponds/${encodeURIComponent(pondId)}/water/latest`;
+  const readUrl = firebaseDatabaseUrl(firebaseConfig.baseUrl, path, firebaseReadAuth);
+  const response = await fetch(readUrl, {
+    method: "GET",
+    headers: firebaseDatabaseHeaders(firebaseReadAuth),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    return serverJsonResponse(
+      {
+        ok: false,
+        message: "Failed to read latest water telemetry.",
+        status: response.status,
+        detail: detail.slice(0, 200),
+      },
+      response.status === 404 ? 404 : 502,
+      { "cache-control": "no-store" },
+    );
+  }
+
+  const payload = await response.json().catch(() => null);
+  return serverJsonResponse(payload, 200, { "cache-control": "no-store" });
 }
 
 async function getServerEntry(): Promise<ServerEntry> {
@@ -495,6 +826,16 @@ export default {
     if (url.pathname === "/api/health/env") {
       return envHealthResponse(env);
     }
+
+    const authProxyAction = getSupabaseAuthProxyAction(url.pathname);
+    if (authProxyAction) {
+      return handleSupabaseAuthProxy(request, env, authProxyAction);
+    }
+
+    if (isIotLatestPath(url.pathname)) {
+      return handleIotLatest(request, env);
+    }
+
     if (isIotIngestPath(url.pathname)) {
       if (request.method === "OPTIONS") {
         return noContentResponse(204, {

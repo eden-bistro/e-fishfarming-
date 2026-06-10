@@ -1,0 +1,9 @@
+{
+  "farmId": "farmer_001",
+  "pondId": "cage_001",
+  "cageId": "cage_001",
+  "deviceId": "ESP32_001",
+  "farmName": "Default Farm",
+  "cageName": "Cage 001",
+  "firmware": "v3.1-fixedwifi"
+}

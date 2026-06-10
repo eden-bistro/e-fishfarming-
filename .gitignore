@@ -37,3 +37,10 @@ firmware/secrets.h
 .env
 firmware/secret.h
 *.bak
+
+# Local API smoke-test artifacts
+/body*.txt
+/headers*.txt
+/iot-setup.json
+/iot-setup.local
+/local-debug-backup/

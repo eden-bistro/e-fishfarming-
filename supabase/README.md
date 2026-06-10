@@ -32,6 +32,8 @@ This directory contains the database definition for creating a fresh Supabase pr
    VITE_SUPABASE_ANON_KEY=<project-anon-key>
    SUPABASE_URL=<project-api-url>
    SUPABASE_ANON_KEY=<project-anon-key>
+   SUPABASE_SERVICE_ROLE_KEY=<project-service-role-key>
+   SUPABASE_SENSOR_READINGS_TABLE=water_readings
    ```
 
 7. In Supabase Auth, disable email confirmation for demo/instant registration or configure email SMTP and confirmation redirects for production.
@@ -53,4 +55,5 @@ The initial migration creates:
 - `supabase/schema.sql` and `supabase/rls-policies.sql` are kept as readable source files.
 - `supabase/migrations/20260529103000_initial_aquasmart_schema.sql` is the migration file used by the Supabase CLI for a fresh project.
 - The finance and IoT tables use `farm_id` policies based on the `app_metadata.farm_id` JWT claim.
+- The IoT ingest endpoint mirrors each accepted water reading into Supabase through the REST API when `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are configured. Keep the service-role key server-only.
 - The enterprise module tables use `tenant_id = auth.uid()::text`, matching `src/services/modules/backend-store.ts`.
