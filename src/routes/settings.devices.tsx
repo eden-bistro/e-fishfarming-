@@ -1,4 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Activity, AlertCircle, CheckCircle2, Lock, RefreshCw, Wifi, WifiOff } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { AccessDenied } from "@/components/access-denied";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -20,6 +23,7 @@ type SetupStatus = {
 };
 
 function Page() {
+  const canProvisionDevices = userHasRole(["super_admin"]);
   const [rows, setRows] = useState<DeviceStatus[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -143,7 +147,7 @@ function Page() {
   return (
     <DashboardLayout
       title="Devices"
-      subtitle="IoT hardware connected to your farm (Firebase realtime)."
+      subtitle="Simple device status for farmers, with admin-only setup for ESP32 hardware."
     >
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
         <Card>
