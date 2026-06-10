@@ -24,6 +24,11 @@ type FirebaseDatabaseConfig = {
   databaseSecret?: string;
 };
 
+type SupabaseDataConfig = {
+  url?: string;
+  key?: string;
+  readingsTable: string;
+};
 
 type WaterReadingPayload = {
   timestamp: string;
@@ -41,6 +46,7 @@ type SupabaseMirrorResult =
   | { mirrored: true; table: string }
   | { mirrored: false; skipped: true; reason: string }
   | { mirrored: false; skipped: false; table: string; error: string };
+
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
 function getEnvRecord(env: unknown): Record<string, string | undefined> {
@@ -204,6 +210,83 @@ function getSupabaseAuthConfig(env: unknown): { url?: string; anonKey?: string }
     url: firstDefined([envRecord.VITE_SUPABASE_URL, envRecord.SUPABASE_URL])?.trim(),
     anonKey: firstDefined([envRecord.VITE_SUPABASE_ANON_KEY, envRecord.SUPABASE_ANON_KEY])?.trim(),
   };
+}
+
+function normalizeSupabaseTableName(value: string | undefined): string {
+  const tableName = (value ?? "water_readings").trim() || "water_readings";
+  return /^[a-zA-Z0-9_]+$/.test(tableName) ? tableName : "water_readings";
+}
+
+function getSupabaseDataConfig(env: unknown): SupabaseDataConfig {
+  const envRecord = getEnvRecord(env);
+  return {
+    url: firstDefined([envRecord.SUPABASE_URL, envRecord.VITE_SUPABASE_URL])?.trim(),
+    key: firstDefined([
+      envRecord.SUPABASE_SERVICE_ROLE_KEY,
+      envRecord.SUPABASE_SERVICE_KEY,
+      envRecord.SUPABASE_ANON_KEY,
+      envRecord.VITE_SUPABASE_ANON_KEY,
+    ])?.trim(),
+    readingsTable: normalizeSupabaseTableName(envRecord.SUPABASE_SENSOR_READINGS_TABLE),
+  };
+}
+
+async function mirrorWaterReadingToSupabase(
+  env: unknown,
+  farmId: string,
+  pondId: string,
+  reading: WaterReadingPayload,
+): Promise<SupabaseMirrorResult> {
+  const { url, key, readingsTable } = getSupabaseDataConfig(env);
+  if (!url || !key) {
+    return {
+      mirrored: false,
+      skipped: true,
+      reason:
+        "Supabase data API is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
+    };
+  }
+
+  const row = {
+    timestamp: reading.timestamp,
+    pond_id: pondId,
+    temperature: reading.temperature,
+    ph: reading.ph,
+    dissolved_oxygen: reading.dissolvedOxygen,
+    turbidity: reading.turbidity,
+    ammonia: reading.ammonia,
+    nitrite: reading.nitrite,
+    farm_id: farmId,
+    raw_payload: reading,
+  };
+
+  try {
+    const response = await fetch(`${url.replace(/\/+$/, "")}/rest/v1/${readingsTable}`, {
+      method: "POST",
+      headers: {
+        apikey: key,
+        authorization: `Bearer ${key}`,
+        "content-type": "application/json",
+        prefer: "return=minimal",
+      },
+      body: JSON.stringify(row),
+    });
+
+    if (response.ok) return { mirrored: true, table: readingsTable };
+
+    const responseBody = await response.text();
+    const error = `Supabase insert failed (${response.status}): ${responseBody.slice(0, 200)}`;
+    console.warn("[iot-ingest] supabase mirror failed", {
+      table: readingsTable,
+      status: response.status,
+      responseBody,
+    });
+    return { mirrored: false, skipped: false, table: readingsTable, error };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn("[iot-ingest] supabase mirror request failed", { table: readingsTable, error });
+    return { mirrored: false, skipped: false, table: readingsTable, error: message };
+  }
 }
 
 async function handleSupabaseAuthProxy(
@@ -382,64 +465,6 @@ function iotIngestInfoResponse(): Response {
   });
 }
 
-
-async function mirrorWaterReadingToSupabase(
-  env: unknown,
-  farmId: string,
-  pondId: string,
-  reading: WaterReadingPayload,
-): Promise<SupabaseMirrorResult> {
-  const { url, key, readingsTable } = getSupabaseDataConfig(env);
-  if (!url || !key) {
-    return {
-      mirrored: false,
-      skipped: true,
-      reason:
-        "Supabase data API is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
-    };
-  }
-
-  const row = {
-    timestamp: reading.timestamp,
-    pond_id: pondId,
-    temperature: reading.temperature,
-    ph: reading.ph,
-    dissolved_oxygen: reading.dissolvedOxygen,
-    turbidity: reading.turbidity,
-    ammonia: reading.ammonia,
-    nitrite: reading.nitrite,
-    farm_id: farmId,
-    raw_payload: reading,
-  };
-
-  try {
-    const response = await fetch(`${url.replace(/\/+$/, "")}/rest/v1/${readingsTable}`, {
-      method: "POST",
-      headers: {
-        apikey: key,
-        authorization: `Bearer ${key}`,
-        "content-type": "application/json",
-        prefer: "return=minimal",
-      },
-      body: JSON.stringify(row),
-    });
-
-    if (response.ok) return { mirrored: true, table: readingsTable };
-
-    const responseBody = await response.text();
-    const error = `Supabase insert failed (${response.status}): ${responseBody.slice(0, 200)}`;
-    console.warn("[iot-ingest] supabase mirror failed", {
-      table: readingsTable,
-      status: response.status,
-      responseBody,
-    });
-    return { mirrored: false, skipped: false, table: readingsTable, error };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.warn("[iot-ingest] supabase mirror request failed", { table: readingsTable, error });
-    return { mirrored: false, skipped: false, table: readingsTable, error: message };
-  }
-}
 async function handleIotIngest(request: Request, env: unknown): Promise<Response> {
   const envRecord = getEnvRecord(env);
   const expectedToken = envRecord.IOT_INGEST_TOKEN;
@@ -649,8 +674,6 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
   });
 }
 
-
-
 async function handleIotLatest(request: Request, env: unknown): Promise<Response> {
   if (request.method === "OPTIONS") {
     return noContentResponse(204, {
@@ -810,6 +833,10 @@ export default {
       return handleSupabaseAuthProxy(request, env, authProxyAction);
     }
 
+    if (isIotLatestPath(url.pathname)) {
+      return handleIotLatest(request, env);
+    }
+
     if (isIotIngestPath(url.pathname)) {
       if (request.method === "OPTIONS") {
         return noContentResponse(204, {
@@ -839,5 +866,3 @@ export default {
     }
   },
 };
-
-
