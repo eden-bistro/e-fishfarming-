@@ -6,7 +6,6 @@ import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import {
   buildDailySeries,
   currentMonthRange,
-  EMPTY_DATE_RANGE,
   filterExpensesByDate,
   filterIncomeByDate,
   formatCurrency,
@@ -77,14 +76,13 @@ function StatBlock({
 export function FinanceSection() {
   const [incomeRows, setIncomeRows] = useState<IncomeRow[]>([]);
   const [expenseRows, setExpenseRows] = useState<ExpenseRow[]>([]);
-  const [range, setRange] = useState<DateRange>(EMPTY_DATE_RANGE);
+  const [range, setRange] = useState<DateRange>(() => currentMonthRange());
 
   useEffect(() => {
     async function load() {
       const [income, expenses] = await Promise.all([listIncome(), listExpenses()]);
       setIncomeRows(income);
       setExpenseRows(expenses);
-      setRange(currentMonthRange());
     }
     void load();
   }, []);

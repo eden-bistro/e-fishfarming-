@@ -1,3 +1,4 @@
+import { pondPath } from "@/firebase/paths";
 import { getActiveFarmId, getActivePondId } from "@/lib/tenant";
 import { getAccessToken } from "@/services/auth.service";
 const env = import.meta.env as Record<string, string | undefined>;
@@ -5,8 +6,6 @@ const env = import.meta.env as Record<string, string | undefined>;
 const firebaseBaseUrl = (env.VITE_FIREBASE_DATABASE_URL ?? env.FIREBASE_DATABASE_URL)?.trim();
 const supabaseUrl = (env.VITE_SUPABASE_URL ?? env.SUPABASE_URL)?.trim();
 const supabaseAnonKey = (env.VITE_SUPABASE_ANON_KEY ?? env.SUPABASE_ANON_KEY)?.trim();
-const fallbackFarmId = env.VITE_DEFAULT_FARM_ID?.trim() || "farmer_001";
-const fallbackPondId = env.VITE_DEFAULT_POND_ID?.trim() || "cage_001";
 
 export type WaterReading = {
   timestamp: string;
@@ -107,7 +106,7 @@ function explicitPondPath(farmId: string, pondId: string, ...parts: string[]) {
 
 function latestWaterTenantPairs() {
   const active = { farmId: getActiveFarmId(), pondId: getActivePondId() };
-  const fallback = { farmId: fallbackFarmId, pondId: fallbackPondId };
+  const fallback = { farmId: DEFAULT_FARM_ID, pondId: DEFAULT_POND_ID };
   const seen = new Set<string>();
   return [active, fallback].filter(({ farmId, pondId }) => {
     const key = `${farmId}/${pondId}`;
@@ -118,72 +117,37 @@ function latestWaterTenantPairs() {
 }
 
 export async function getLatestWaterReading(): Promise<WaterReading | null> {
-  const tenantPairs = latestWaterTenantPairs();
-  let shouldTryDirectFirebaseFallback = false;
-
-  for (const { farmId, pondId } of tenantPairs) {
-    const params = new URLSearchParams({ farmId, pondId });
-    try {
-      const response = await fetch(`/api/iot/latest?${params.toString()}`, {
-        headers: { accept: "application/json" },
-      });
-      const contentType = response.headers.get("content-type") ?? "";
-      if (response.ok && contentType.includes("application/json")) {
-        const reading = (await response.json()) as WaterReading | null;
-        if (reading) return reading;
-      }
-      shouldTryDirectFirebaseFallback =
-        shouldTryDirectFirebaseFallback ||
-        response.status === 404 ||
-        !contentType.includes("application/json");
-    } catch {
-      shouldTryDirectFirebaseFallback = true;
-    }
+  if (!firebaseBaseUrl) return null;
+  try {
+    const response = await fetch(`${firebaseBaseUrl}/${pondPath("water", "latest")}.json`);
+    if (!response.ok) return null;
+    return (await response.json()) as WaterReading | null;
+  } catch {
+    return null;
   }
-
-  if (!shouldTryDirectFirebaseFallback || !firebaseBaseUrl) return null;
-  for (const { farmId, pondId } of tenantPairs) {
-    try {
-      const response = await fetch(
-        `${firebaseBaseUrl}/${explicitPondPath(farmId, pondId, "water", "latest")}.json`,
-      );
-      if (!response.ok) continue;
-      const reading = (await response.json()) as WaterReading | null;
-      if (reading) return reading;
-    } catch {
-      // Try the next tenant pair.
-    }
-  }
-  return null;
 }
 
 export async function listWaterAlerts(limit = 20): Promise<WaterAlert[]> {
-  if (firebaseBaseUrl) {
-    for (const { farmId, pondId } of latestWaterTenantPairs()) {
-      try {
-        const response = await fetch(
-          `${firebaseBaseUrl}/${explicitPondPath(
-            farmId,
-            pondId,
-            "alerts",
-          )}.json?orderBy="$key"&limitToLast=${limit}`,
-        );
+  if (!firebaseBaseUrl) return [];
 
-        if (response.ok) {
-          const raw = (await response.json()) as Record<
-            string,
-            Omit<WaterAlert, "id" | "source">
-          > | null;
-          if (raw && typeof raw === "object") {
-            return Object.entries(raw)
-              .map(([id, value]) => ({ id, ...value, source: "firebase" as const }))
-              .sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
-          }
-        }
-      } catch {
-        // Try the next tenant pair, then fall back to derived alerts below.
+  try {
+    const response = await fetch(
+      `${firebaseBaseUrl}/${pondPath("alerts")}.json?orderBy="$key"&limitToLast=${limit}`,
+    );
+
+    if (response.ok) {
+      const raw = (await response.json()) as Record<
+        string,
+        Omit<WaterAlert, "id" | "source">
+      > | null;
+      if (raw && typeof raw === "object") {
+        return Object.entries(raw)
+          .map(([id, value]) => ({ id, ...value, source: "firebase" as const }))
+          .sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
       }
     }
+  } catch {
+    // Fall back to derived alerts below.
   }
 
   const latest = await getLatestWaterReading();

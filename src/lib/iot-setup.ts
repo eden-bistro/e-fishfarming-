@@ -41,85 +41,6 @@ function requireSetupToken(request: Request, env: unknown): Response | null {
   return null;
 }
 
-const SETUP_PAYLOAD_KEYS = [
-  "farmId",
-  "pondId",
-  "cageId",
-  "deviceId",
-  "farmName",
-  "cageName",
-  "pondName",
-  "firmware",
-] as const;
-
-type SetupPayload = Partial<Record<(typeof SETUP_PAYLOAD_KEYS)[number], string>> &
-  Record<string, unknown>;
-
-function setupParamsToRecord(params: URLSearchParams): SetupPayload {
-  const record: SetupPayload = {};
-  for (const key of SETUP_PAYLOAD_KEYS) {
-    const value = params.get(key);
-    if (value !== null) record[key] = value;
-  }
-  return record;
-}
-
-function hasSetupPayloadValues(payload: SetupPayload): boolean {
-  return SETUP_PAYLOAD_KEYS.some((key) => typeof payload[key] === "string" && payload[key].trim());
-}
-
-function mergeSetupPayload(query: SetupPayload, body: SetupPayload): SetupPayload {
-  return { ...query, ...body };
-}
-
-async function readSetupPayload(
-  request: Request,
-): Promise<{ body: SetupPayload } | { response: Response }> {
-  const queryPayload = setupParamsToRecord(new URL(request.url).searchParams);
-  let rawBody = "";
-
-  try {
-    rawBody = await request.text();
-  } catch {
-    return {
-      response: jsonResponse({ ok: false, message: "Unable to read request body." }, 400, {
-        "cache-control": "no-store",
-      }),
-    };
-  }
-
-  const trimmedBody = rawBody.replace(/^\uFEFF/, "").trim();
-  if (!trimmedBody) return { body: queryPayload };
-
-  try {
-    const parsed = JSON.parse(trimmedBody) as unknown;
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      return { body: mergeSetupPayload(queryPayload, parsed as SetupPayload) };
-    }
-  } catch {
-    // Fall through and try form/urlencoded parsing for command-line clients.
-  }
-
-  const formPayload = setupParamsToRecord(new URLSearchParams(trimmedBody));
-  if (hasSetupPayloadValues(formPayload)) {
-    return { body: mergeSetupPayload(queryPayload, formPayload) };
-  }
-
-  if (hasSetupPayloadValues(queryPayload)) return { body: queryPayload };
-
-  return {
-    response: jsonResponse(
-      {
-        ok: false,
-        message:
-          "Body must be valid JSON, URL-encoded form data, or setup fields in the query string.",
-      },
-      400,
-      { "cache-control": "no-store" },
-    ),
-  };
-}
-
 async function writeRequired(
   baseUrl: string,
   path: string,
@@ -154,10 +75,15 @@ export async function handleIotSetup(request: Request, env: unknown): Promise<Re
   const firebase = await resolveFirebaseDatabase(env);
   if (!firebase.ok) return firebase.response;
 
-  const setupPayload = await readSetupPayload(request);
-  if ("response" in setupPayload) return setupPayload.response;
+  let body: Record<string, unknown>;
+  try {
+    body = (await request.json()) as Record<string, unknown>;
+  } catch {
+    return jsonResponse({ ok: false, message: "Body must be valid JSON." }, 400, {
+      "cache-control": "no-store",
+    });
+  }
 
-  const body = setupPayload.body;
   const now = new Date().toISOString();
   const farmId = String(body.farmId ?? getDefaultFarmId(env)).trim();
   const pondId = String(body.pondId ?? body.cageId ?? getDefaultPondId(env)).trim();
