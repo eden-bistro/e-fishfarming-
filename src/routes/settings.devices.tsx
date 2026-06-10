@@ -107,12 +107,93 @@ function Page() {
       }
     }
     void load();
-    const timer = setInterval(() => void load(), 10000);
+    const timer = setInterval(() => void load(), DEVICE_STATUS_POLL_MS);
     return () => {
       mounted = false;
       clearInterval(timer);
     };
   }, [form.farmId, form.pondId]);
+
+  async function setupFarmDevice() {
+    const farmId = form.farmId.trim();
+    const pondId = form.pondId.trim();
+    const deviceId = form.deviceId.trim();
+    const setupToken = form.setupToken.trim();
+
+    if (!canProvisionDevices) {
+      setSetupStatus({
+        type: "error",
+        message: "Only a system administrator can add or reconnect farm devices.",
+      });
+      return;
+    }
+
+    if (!farmId || !pondId || !deviceId) {
+      setSetupStatus({
+        type: "error",
+        message: "Farm ID, cage/pond ID and device ID are required.",
+      });
+      return;
+    }
+    if (!setupToken) {
+      setSetupStatus({ type: "error", message: "Enter the admin setup token first." });
+      return;
+    }
+
+    setActiveFarmId(farmId);
+    setActivePondId(pondId);
+
+    setIsSubmitting(true);
+    setSetupStatus({ type: "idle", message: "" });
+
+    const payload = {
+      farmId,
+      pondId,
+      cageId: form.cageId.trim() || pondId,
+      deviceId,
+      farmName: form.farmName.trim() || "Default Farm",
+      cageName: form.cageName.trim() || pondId,
+      firmware: form.firmware.trim() || "unknown",
+    };
+
+    try {
+      const response = await fetch("/api/iot/setup", {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${setupToken}`,
+          "content-type": "application/json; charset=utf-8",
+        },
+        body: JSON.stringify(payload),
+      });
+      const result = (await response.json().catch(() => null)) as {
+        ok?: boolean;
+        message?: string;
+        detail?: string;
+      } | null;
+
+      if (!response.ok || !result?.ok) {
+        const message = result?.message || `Setup failed with HTTP ${response.status}.`;
+        setSetupStatus({
+          type: "error",
+          message: result?.detail ? `${message} ${result.detail}` : message,
+        });
+        return;
+      }
+
+      setSetupStatus({
+        type: "success",
+        message: `${deviceId} is linked to ${farmId} / ${pondId}. Ask the farmer to power the device and wait for the Online badge.`,
+      });
+      await loadDevices();
+    } catch (error) {
+      setSetupStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Setup request failed.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   async function setupFarmDevice() {
     const farmId = form.farmId.trim();
