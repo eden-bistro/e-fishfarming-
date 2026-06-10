@@ -1,9 +1,7 @@
-import "./lib/error-capture";
+﻿import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
-import { handleIotDevices } from "./lib/iot-devices";
-import { handleIotSetup } from "./lib/iot-setup";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -125,6 +123,7 @@ function serverJsonResponse(payload: unknown, status = 200, extraHeaders?: Heade
     },
   });
 }
+
 function noContentResponse(status = 204, extraHeaders?: HeadersInit): Response {
   return new Response(null, { status, headers: extraHeaders });
 }
@@ -388,14 +387,6 @@ function isIotIngestPath(pathname: string): boolean {
 
 function isIotLatestPath(pathname: string): boolean {
   return pathname === "/api/iot/latest";
-}
-
-function isIotDevicesPath(pathname: string): boolean {
-  return pathname === "/api/iot/devices";
-}
-
-function isIotSetupPath(pathname: string): boolean {
-  return pathname === "/api/iot/setup";
 }
 
 function getFirebaseDatabaseConfig(env: unknown): FirebaseDatabaseConfig {
@@ -681,6 +672,23 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     },
     supabase: supabaseMirror,
   });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    return serverJsonResponse(
+      {
+        ok: false,
+        message: "Failed to read latest water telemetry.",
+        status: response.status,
+        detail: detail.slice(0, 200),
+      },
+      response.status === 404 ? 404 : 502,
+      { "cache-control": "no-store" },
+    );
+  }
+
+  const payload = await response.json().catch(() => null);
+  return serverJsonResponse(payload, 200, { "cache-control": "no-store" });
 }
 
 async function handleIotLatest(request: Request, env: unknown): Promise<Response> {
@@ -844,14 +852,6 @@ export default {
 
     if (isIotLatestPath(url.pathname)) {
       return handleIotLatest(request, env);
-    }
-
-    if (isIotDevicesPath(url.pathname)) {
-      return handleIotDevices(request, env);
-    }
-
-    if (isIotSetupPath(url.pathname)) {
-      return handleIotSetup(request, env);
     }
 
     if (isIotIngestPath(url.pathname)) {

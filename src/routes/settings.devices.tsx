@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+﻿import { createFileRoute } from "@tanstack/react-router";
 import { Activity, AlertCircle, CheckCircle2, Lock, RefreshCw, Wifi, WifiOff } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AccessDenied } from "@/components/access-denied";
@@ -10,13 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { userHasRole } from "@/contexts/rbac";
-import {
-  deviceOfflineCountdown,
-  formatHeartbeatAge,
-  isFreshHeartbeat,
-  listDeviceStatuses,
-  type DeviceStatus,
-} from "@/lib/esp32-firebase";
+import { listDeviceStatuses, type DeviceStatus } from "@/lib/esp32-firebase";
 import { DEFAULT_FARM_ID, DEFAULT_POND_ID, setActiveFarmId, setActivePondId } from "@/lib/tenant";
 
 export const Route = createFileRoute("/settings/devices")({
@@ -29,27 +23,37 @@ type SetupStatus = {
   message: string;
 };
 
-const DEVICE_STATUS_POLL_MS = 5 * 1000;
-const DEVICE_STATUS_TICK_MS = 1000;
+const DEVICE_OFFLINE_AFTER_MS = 5 * 60 * 1000;
 
-function isDeviceOnline(row: DeviceStatus, now: number): boolean {
-  return Boolean(row.online) && isFreshHeartbeat(row.updatedAt, now);
+function heartbeatAge(updatedAt: string): string {
+  const timestamp = new Date(updatedAt).getTime();
+  if (!Number.isFinite(timestamp)) return "unknown";
+
+  const ageMs = Math.max(Date.now() - timestamp, 0);
+  const minutes = Math.floor(ageMs / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes} min ago`;
+
+  const hours = Math.floor(minutes / 60);
+  return `${hours} hr${hours === 1 ? "" : "s"} ago`;
 }
 
-function deviceStatusText(row: DeviceStatus, now: number): string {
-  return isDeviceOnline(row, now) ? "Online" : "Offline";
+function isDeviceOnline(row: DeviceStatus): boolean {
+  const timestamp = new Date(row.updatedAt).getTime();
+  return (
+    Boolean(row.online) &&
+    Number.isFinite(timestamp) &&
+    Date.now() - timestamp <= DEVICE_OFFLINE_AFTER_MS
+  );
 }
 
-function deviceStatusHelp(row: DeviceStatus, now: number): string {
+function deviceStatusText(row: DeviceStatus): string {
+  return isDeviceOnline(row) ? "Online" : "Offline";
+}
+
+function deviceStatusHelp(row: DeviceStatus): string {
+  if (isDeviceOnline(row)) return "Connected and sending heartbeat data.";
   if (!row.updatedAt) return "No heartbeat has been received yet.";
-
-  const offlineIn = deviceOfflineCountdown(row.updatedAt, now);
-  if (isDeviceOnline(row, now)) {
-    return offlineIn
-      ? `Connected now. If no new heartbeat arrives, this device will show Offline in ${offlineIn}.`
-      : "Connected and sending heartbeat data.";
-  }
-
   return "No recent heartbeat. Check device power, Wi-Fi, token, and firmware.";
 }
 
@@ -58,7 +62,6 @@ function Page() {
   const [rows, setRows] = useState<DeviceStatus[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [now, setNow] = useState(() => Date.now());
   const [setupStatus, setSetupStatus] = useState<SetupStatus>({ type: "idle", message: "" });
   const [form, setForm] = useState({
     farmId: DEFAULT_FARM_ID,
@@ -72,9 +75,9 @@ function Page() {
   });
 
   const deviceSummary = useMemo(() => {
-    const online = rows.filter((row) => isDeviceOnline(row, now)).length;
+    const online = rows.filter(isDeviceOnline).length;
     return { online, offline: rows.length - online, total: rows.length };
-  }, [now, rows]);
+  }, [rows]);
 
   async function loadDevices() {
     setIsLoading(true);
@@ -111,10 +114,248 @@ function Page() {
     };
   }, [form.farmId, form.pondId]);
 
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), DEVICE_STATUS_TICK_MS);
-    return () => clearInterval(timer);
-  }, []);
+  async function setupFarmDevice() {
+    const farmId = form.farmId.trim();
+    const pondId = form.pondId.trim();
+    const deviceId = form.deviceId.trim();
+    const setupToken = form.setupToken.trim();
+
+    if (!canProvisionDevices) {
+      setSetupStatus({
+        type: "error",
+        message: "Only a system administrator can add or reconnect farm devices.",
+      });
+      return;
+    }
+
+    if (!farmId || !pondId || !deviceId) {
+      setSetupStatus({
+        type: "error",
+        message: "Farm ID, cage/pond ID and device ID are required.",
+      });
+      return;
+    }
+    if (!setupToken) {
+      setSetupStatus({ type: "error", message: "Enter the admin setup token first." });
+      return;
+    }
+
+    setActiveFarmId(farmId);
+    setActivePondId(pondId);
+
+    setIsSubmitting(true);
+    setSetupStatus({ type: "idle", message: "" });
+
+    const payload = {
+      farmId,
+      pondId,
+      cageId: form.cageId.trim() || pondId,
+      deviceId,
+      farmName: form.farmName.trim() || "Default Farm",
+      cageName: form.cageName.trim() || pondId,
+      firmware: form.firmware.trim() || "unknown",
+    };
+
+    try {
+      const response = await fetch("/api/iot/setup", {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${setupToken}`,
+          "content-type": "application/json; charset=utf-8",
+        },
+        body: JSON.stringify(payload),
+      });
+      const result = (await response.json().catch(() => null)) as {
+        ok?: boolean;
+        message?: string;
+        detail?: string;
+      } | null;
+
+      if (!response.ok || !result?.ok) {
+        const message = result?.message || `Setup failed with HTTP ${response.status}.`;
+        setSetupStatus({
+          type: "error",
+          message: result?.detail ? `${message} ${result.detail}` : message,
+        });
+        return;
+      }
+
+      setSetupStatus({
+        type: "success",
+        message: `${deviceId} is linked to ${farmId} / ${pondId}. Ask the farmer to power the device and wait for the Online badge.`,
+      });
+      await loadDevices();
+    } catch (error) {
+      setSetupStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Setup request failed.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function setupFarmDevice() {
+    const farmId = form.farmId.trim();
+    const pondId = form.pondId.trim();
+    const deviceId = form.deviceId.trim();
+    const setupToken = form.setupToken.trim();
+
+    if (!canProvisionDevices) {
+      setSetupStatus({
+        type: "error",
+        message: "Only a system administrator can add or reconnect farm devices.",
+      });
+      return;
+    }
+
+    if (!farmId || !pondId || !deviceId) {
+      setSetupStatus({
+        type: "error",
+        message: "Farm ID, cage/pond ID and device ID are required.",
+      });
+      return;
+    }
+    if (!setupToken) {
+      setSetupStatus({ type: "error", message: "Enter the admin setup token first." });
+      return;
+    }
+
+    setActiveFarmId(farmId);
+    setActivePondId(pondId);
+
+    setIsSubmitting(true);
+    setSetupStatus({ type: "idle", message: "" });
+
+    const payload = {
+      farmId,
+      pondId,
+      cageId: form.cageId.trim() || pondId,
+      deviceId,
+      farmName: form.farmName.trim() || "Default Farm",
+      cageName: form.cageName.trim() || pondId,
+      firmware: form.firmware.trim() || "unknown",
+    };
+
+    try {
+      const response = await fetch("/api/iot/setup", {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${setupToken}`,
+          "content-type": "application/json; charset=utf-8",
+        },
+        body: JSON.stringify(payload),
+      });
+      const result = (await response.json().catch(() => null)) as {
+        ok?: boolean;
+        message?: string;
+        detail?: string;
+      } | null;
+
+      if (!response.ok || !result?.ok) {
+        const message = result?.message || `Setup failed with HTTP ${response.status}.`;
+        setSetupStatus({
+          type: "error",
+          message: result?.detail ? `${message} ${result.detail}` : message,
+        });
+        return;
+      }
+
+      setSetupStatus({
+        type: "success",
+        message: `${deviceId} is linked to ${farmId} / ${pondId}. Ask the farmer to power the device and wait for the Online badge.`,
+      });
+      await loadDevices();
+    } catch (error) {
+      setSetupStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Setup request failed.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function setupFarmDevice() {
+    const farmId = form.farmId.trim();
+    const pondId = form.pondId.trim();
+    const deviceId = form.deviceId.trim();
+    const setupToken = form.setupToken.trim();
+
+    if (!canProvisionDevices) {
+      setSetupStatus({
+        type: "error",
+        message: "Only a system administrator can add or reconnect farm devices.",
+      });
+      return;
+    }
+
+    if (!farmId || !pondId || !deviceId) {
+      setSetupStatus({
+        type: "error",
+        message: "Farm ID, cage/pond ID and device ID are required.",
+      });
+      return;
+    }
+    if (!setupToken) {
+      setSetupStatus({ type: "error", message: "Enter the admin setup token first." });
+      return;
+    }
+
+    setActiveFarmId(farmId);
+    setActivePondId(pondId);
+
+    setIsSubmitting(true);
+    setSetupStatus({ type: "idle", message: "" });
+
+    const payload = {
+      farmId,
+      pondId,
+      cageId: form.cageId.trim() || pondId,
+      deviceId,
+      farmName: form.farmName.trim() || "Default Farm",
+      cageName: form.cageName.trim() || pondId,
+      firmware: form.firmware.trim() || "unknown",
+    };
+
+    try {
+      const response = await fetch("/api/iot/setup", {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${setupToken}`,
+          "content-type": "application/json; charset=utf-8",
+        },
+        body: JSON.stringify(payload),
+      });
+      const result = (await response.json().catch(() => null)) as {
+        ok?: boolean;
+        message?: string;
+        detail?: string;
+      } | null;
+
+      if (!response.ok || !result?.ok) {
+        const message = result?.message || `Setup failed with HTTP ${response.status}.`;
+        setSetupStatus({
+          type: "error",
+          message: result?.detail ? `${message} ${result.detail}` : message,
+        });
+        return;
+      }
+
+      setSetupStatus({
+        type: "success",
+        message: `${deviceId} is linked to ${farmId} / ${pondId}. Ask the farmer to power the device and wait for the Online badge.`,
+      });
+      await loadDevices();
+    } catch (error) {
+      setSetupStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Setup request failed.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   async function setupFarmDevice() {
     const farmId = form.farmId.trim();
@@ -233,7 +474,7 @@ function Page() {
           <CardContent>
             <div className="text-2xl font-semibold text-destructive">{deviceSummary.offline}</div>
             <p className="text-xs text-muted-foreground">
-              Needs power, Wi‑Fi, token, or firmware check.
+              Needs power, Wi-Fi, token, or firmware check.
             </p>
           </CardContent>
         </Card>
@@ -267,14 +508,14 @@ function Page() {
               </div>
             ) : (
               rows.map((row) => {
-                const online = isDeviceOnline(row, now);
+                const online = isDeviceOnline(row);
                 return (
                   <div key={row.deviceId} className="rounded-lg border p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <p className="font-medium">{row.deviceId}</p>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          Last seen {formatHeartbeatAge(row.updatedAt, now)} · Firmware{" "}
+                          Last seen {heartbeatAge(row.updatedAt)} · Firmware{" "}
                           {row.firmware || "unknown"}
                         </p>
                       </div>
@@ -284,7 +525,7 @@ function Page() {
                         ) : (
                           <WifiOff className="mr-1 h-3 w-3" />
                         )}
-                        {deviceStatusText(row, now)}
+                        {deviceStatusText(row)}
                       </Badge>
                     </div>
                     <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
@@ -296,7 +537,7 @@ function Page() {
                       </span>
                     </div>
                     <p className="mt-3 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
-                      {deviceStatusHelp(row, now)}
+                      {deviceStatusHelp(row)}
                     </p>
                   </div>
                 );
