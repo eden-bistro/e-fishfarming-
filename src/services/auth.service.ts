@@ -12,6 +12,8 @@ const OFFLINE_AUTH_MESSAGE =
 const PROXY_AUTH_UNAVAILABLE_MESSAGE =
   "Authentication service is unavailable. In Cloudflare, configure SUPABASE_URL and SUPABASE_ANON_KEY as Worker variables/secrets, then redeploy.";
 
+let refreshAccessTokenPromise: Promise<string | null> | null = null;
+
 type SessionRecord = {
   access_token: string;
   refresh_token?: string;
@@ -87,6 +89,14 @@ export async function getAccessToken(): Promise<string | null> {
   }
   if (!session.refresh_token) return session.access_token;
 
+  refreshAccessTokenPromise ??= refreshAccessToken(session).finally(() => {
+    refreshAccessTokenPromise = null;
+  });
+
+  return refreshAccessTokenPromise;
+}
+
+async function refreshAccessToken(session: SessionRecord): Promise<string | null> {
   const result = await authRequest("refresh", "token?grant_type=refresh_token", {
     refresh_token: session.refresh_token,
   });
@@ -146,6 +156,10 @@ async function authRequest(
   directPath: string,
   body: Record<string, unknown>,
 ) {
+  if (isBrowser() && action === "refresh" && canUseDirectSupabaseAuth()) {
+    return directSupabaseAuthRequest(directPath, body);
+  }
+
   if (isBrowser()) {
     try {
       const response = await fetch(`/api/auth/${action}`, {
@@ -157,7 +171,10 @@ async function authRequest(
         const result = (await response.json().catch(() => ({}))) as Record<string, unknown>;
         if (!response.ok || result.ok === false) {
           const message = String(result.message ?? "Authentication failed.");
-          if (message.includes("Supabase auth is not configured") && hasSupabaseConfig()) {
+          if (
+            hasSupabaseConfig() &&
+            (response.status >= 500 || message.includes("Supabase auth is not configured"))
+          ) {
             return directSupabaseAuthRequest(directPath, body);
           }
           return {
