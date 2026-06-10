@@ -1,19 +1,16 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Activity, AlertCircle, CheckCircle2, Lock, RefreshCw, Wifi, WifiOff } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { AccessDenied } from "@/components/access-denied";
+﻿import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useEffect, useState } from "react";
 import { listDeviceStatuses, type DeviceStatus } from "@/lib/esp32-firebase";
 import { DEFAULT_FARM_ID, DEFAULT_POND_ID, setActiveFarmId, setActivePondId } from "@/lib/tenant";
 
 export const Route = createFileRoute("/settings/devices")({
-  head: () => ({ meta: [{ title: "Devices — AquaSmart" }] }),
+  head: () => ({ meta: [{ title: "Devices â€” AquaSmart" }] }),
   component: Page,
 });
 
@@ -156,7 +153,7 @@ function Page() {
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             {isLoading ? (
-              <p className="text-muted-foreground">Loading device heartbeat data…</p>
+              <p className="text-muted-foreground">Loading device heartbeat dataâ€¦</p>
             ) : rows.length === 0 ? (
               <p className="text-muted-foreground">No device heartbeat data available.</p>
             ) : (
@@ -164,8 +161,8 @@ function Page() {
                 <div key={row.deviceId} className="rounded border p-3">
                   <p className="font-medium">{row.deviceId}</p>
                   <p className="text-xs text-muted-foreground">
-                    Firmware: {row.firmware} · Online: {row.online ? "Yes" : "No"} · RSSI:{" "}
-                    {row.rssi} · Heap: {row.freeHeap} · Updated:{" "}
+                    Firmware: {row.firmware} Â· Online: {row.online ? "Yes" : "No"} Â· RSSI:{" "}
+                    {row.rssi} Â· Heap: {row.freeHeap} Â· Updated:{" "}
                     {new Date(row.updatedAt).toLocaleString()}
                   </p>
                 </div>
@@ -274,7 +271,7 @@ function Page() {
 
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button onClick={() => void setupFarmDevice()} disabled={isSubmitting}>
-                {isSubmitting ? "Creating…" : "Create / Link Device"}
+                {isSubmitting ? "Creatingâ€¦" : "Create / Link Device"}
               </Button>
               <Button variant="outline" onClick={() => void loadDevices()} disabled={isSubmitting}>
                 Refresh devices
@@ -286,3 +283,42 @@ function Page() {
     </DashboardLayout>
   );
 }
+function userHasRole(arg0: string[]) {
+  // Try to read roles from a few common places (global user object or session storage).
+  try {
+    const expected = arg0 || [];
+    const w = typeof window !== "undefined" ? (window as any) : undefined;
+
+    let currentRoles: string[] = [];
+    if (w) {
+      if (Array.isArray(w.__user?.roles)) currentRoles = w.__user.roles;
+      else if (w.__USER__ && Array.isArray(w.__USER__.roles)) currentRoles = w.__USER__.roles;
+    }
+
+    if (currentRoles.length === 0) {
+      const raw = typeof sessionStorage !== "undefined" ? sessionStorage.getItem("roles") : null;
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) currentRoles = parsed;
+        } catch {}
+      }
+    }
+
+    // Fallback: look for a stored user object
+    if (currentRoles.length === 0) {
+      const rawUser = typeof sessionStorage !== "undefined" ? sessionStorage.getItem("user") : null;
+      if (rawUser) {
+        try {
+          const parsed = JSON.parse(rawUser);
+          if (Array.isArray(parsed?.roles)) currentRoles = parsed.roles;
+        } catch {}
+      }
+    }
+
+    return expected.some((r) => currentRoles.includes(r));
+  } catch (_e) {
+    return false;
+  }
+}
+
