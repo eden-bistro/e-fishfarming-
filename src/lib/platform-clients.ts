@@ -1,4 +1,4 @@
-import { getActiveFarmId, getActivePondId } from "@/lib/tenant";
+﻿import { getActiveFarmId, getActivePondId } from "@/lib/tenant";
 import { getAccessToken } from "@/services/auth.service";
 const env = import.meta.env as Record<string, string | undefined>;
 
@@ -217,7 +217,7 @@ export async function listWaterAlerts(limit = 20): Promise<WaterAlert[]> {
       id: `derived-temp-${latest.timestamp}`,
       type: "high_temperature",
       severity: latest.temperature > 33 ? "critical" : "warning",
-      message: `Water temperature is high (${latest.temperature} °C).`,
+      message: `Water temperature is high (${latest.temperature} Â°C).`,
       pond_id: latest.pondId,
       created_at: latest.timestamp,
       source: "derived",

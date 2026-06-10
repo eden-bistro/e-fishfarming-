@@ -17,24 +17,6 @@ export type IotDeviceStatus = {
   updatedAt: string;
 };
 
-const DEVICE_OFFLINE_AFTER_MS = 5 * 60 * 1000;
-
-function isFreshHeartbeat(updatedAt: string): boolean {
-  const timestamp = new Date(updatedAt).getTime();
-  return Number.isFinite(timestamp) && Date.now() - timestamp <= DEVICE_OFFLINE_AFTER_MS;
-}
-
-function normalizeDeviceStatus(
-  deviceId: string,
-  value: Omit<IotDeviceStatus, "deviceId">,
-): IotDeviceStatus {
-  return {
-    ...value,
-    deviceId,
-    online: Boolean(value.online) && isFreshHeartbeat(value.updatedAt),
-  };
-}
-
 export async function handleIotDevices(request: Request, env: unknown): Promise<Response> {
   if (request.method === "OPTIONS") {
     return noContentResponse(204, {
@@ -84,7 +66,7 @@ export async function handleIotDevices(request: Request, env: unknown): Promise<
   > | null;
   const devices =
     raw && typeof raw === "object"
-      ? Object.entries(raw).map(([deviceId, value]) => normalizeDeviceStatus(deviceId, value))
+      ? Object.entries(raw).map(([deviceId, value]) => ({ deviceId, ...value }))
       : [];
   devices.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
   return jsonResponse({ ok: true, farmId, pondId, devices }, 200, { "cache-control": "no-store" });

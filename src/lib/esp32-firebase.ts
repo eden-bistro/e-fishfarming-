@@ -36,11 +36,8 @@ export type FeedingCommand = {
   status: "queued" | "ack" | "done" | "failed";
 };
 
-export async function listDeviceStatuses(
-  farmId = getActiveFarmId(),
-  pondId = getActivePondId(),
-): Promise<DeviceStatus[]> {
-  const params = new URLSearchParams({ farmId, pondId });
+export async function listDeviceStatuses(): Promise<DeviceStatus[]> {
+  const params = new URLSearchParams({ farmId: getActiveFarmId(), pondId: getActivePondId() });
   let shouldTryDirectFirebaseFallback = false;
 
   try {
@@ -50,7 +47,7 @@ export async function listDeviceStatuses(
     const contentType = response.headers.get("content-type") ?? "";
     if (response.ok && contentType.includes("application/json")) {
       const payload = (await response.json()) as { devices?: DeviceStatus[] };
-      return Array.isArray(payload.devices) ? payload.devices.map(normalizeDeviceStatus) : [];
+      return Array.isArray(payload.devices) ? payload.devices : [];
     }
     shouldTryDirectFirebaseFallback =
       response.status === 404 || !contentType.includes("application/json");
