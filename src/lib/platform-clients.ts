@@ -333,7 +333,37 @@ export async function updateExpense(id: number, row: ExpenseRow): Promise<void> 
 }
 export async function deleteExpense(id: number): Promise<void> {
   await supabaseRequest(`finance_expenses?id=eq.${id}`, {
-    method: "DELETE",
+    method: "DELETE"export async function listDeviceStatuses(
+  farmId = getActiveFarmId(),
+  pondId = getActivePondId(),
+): Promise<DeviceStatus[]> {
+  const params = new URLSearchParams({ farmId, pondId });
+  let shouldTryDirectFirebaseFallback = false;
+
+  try {
+    const response = await fetch(`/api/iot/devices?${params.toString()}`, {
+      headers: { accept: "application/json" },
+    });
+    const contentType = response.headers.get("content-type") ?? "";
+    if (response.ok && contentType.includes("application/json")) {
+      const payload = (await response.json()) as { devices?: DeviceStatus[] };
+      return Array.isArray(payload.devices) ? payload.devices.map(normalizeDeviceStatus) : [];
+    }
+    shouldTryDirectFirebaseFallback =
+      response.status === 404 || !contentType.includes("application/json");
+  } catch {
+    shouldTryDirectFirebaseFallback = true;
+  }
+
+  if (!shouldTryDirectFirebaseFallback || !firebaseBaseUrl) return [];
+  const response = await fetch(`${firebaseBaseUrl}/${pondPath("devices", "status")}.json`);
+  if (!response.ok) return [];
+  const raw = (await response.json()) as Record<string, Omit<DeviceStatus, "deviceId">> | null;
+  if (!raw || typeof raw !== "object") return [];
+  return Object.entries(raw)
+    .map(([deviceId, value]) => normalizeDeviceStatus({ deviceId, ...value }))
+    .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
+},
     headers: { Prefer: "return=minimal" },
   });
 }
