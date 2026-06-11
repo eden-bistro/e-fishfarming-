@@ -117,6 +117,12 @@ export function AppSidebar() {
             <span className="text-[11px] text-sidebar-foreground/60">Smart Fish Farm</span>
           </div>
         </div>
+        <div className="mx-2 rounded-lg border border-sidebar-border/80 bg-sidebar-accent/40 p-3 text-xs text-sidebar-foreground/75 group-data-[collapsible=icon]:hidden">
+          <p className="font-medium text-sidebar-foreground">Start here</p>
+          <p className="mt-1 leading-relaxed">
+            Use the menu to check water, feeding, finance and device health. No coding needed.
+          </p>
+        </div>
       </SidebarHeader>
 
       <SidebarContent>
