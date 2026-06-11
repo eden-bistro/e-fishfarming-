@@ -106,27 +106,6 @@ export function TopNavbar() {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              className="relative h-10 w-10"
-              aria-label="Open help notifications"
-            >
-              <Bell className="h-4 w-4 icon-emphasis" />
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-warning" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-72">
-            <DropdownMenuLabel>Need help?</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <div className="px-2 py-1.5 text-sm text-muted-foreground">
-              If a device is offline, check power and Wi-Fi first.
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
             <button
               className="flex min-h-10 items-center gap-2 rounded-md p-1 pl-1 pr-2 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-label="Open account menu"
