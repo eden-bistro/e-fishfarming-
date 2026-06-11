@@ -14,6 +14,7 @@ export type FarmProfile = {
   currency: string;
   totalPonds: number | null;
   totalStockKg: number | null;
+  cageNames?: string[];
 };
 
 export type AuthUser = {

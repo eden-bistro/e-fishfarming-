@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
-import { getLatestWaterReading, type WaterReading } from "@/lib/platform-clients";
+import { getLatestOnlineWaterReading, type WaterReading } from "@/lib/platform-clients";
 
 function SensorCard({ label, value, unit }: { label: string; value: string; unit?: string }) {
   return (
@@ -23,7 +23,7 @@ export function WaterMonitoring() {
   useEffect(() => {
     let mounted = true;
     async function load() {
-      const latest = await getLatestWaterReading();
+      const latest = await getLatestOnlineWaterReading();
       if (mounted) setReading(latest);
     }
     void load();
@@ -53,7 +53,8 @@ export function WaterMonitoring() {
       <CardContent>
         {!reading ? (
           <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-            No live telemetry available. Connect Firebase stream to view real-time water metrics.
+            No online device is currently streaming water data. Check power and Wi-Fi, then ask an
+            admin to verify device assignment.
           </div>
         ) : (
           <>

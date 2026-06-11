@@ -10,11 +10,20 @@ function isFreshHeartbeat(updatedAt: string): boolean {
   return Number.isFinite(timestamp) && Date.now() - timestamp <= DEVICE_OFFLINE_AFTER_MS;
 }
 
-function normalizeDeviceStatus(status: DeviceStatus): DeviceStatus {
+function normalizeDeviceStatus(status: Partial<DeviceStatus> & { deviceId: string }): DeviceStatus {
+  const updatedAt = String(status.updatedAt ?? "");
   return {
-    ...status,
-    online: Boolean(status.online) && isFreshHeartbeat(status.updatedAt),
+    deviceId: String(status.deviceId),
+    firmware: String(status.firmware ?? "unknown"),
+    online: Boolean(status.online) && isFreshHeartbeat(updatedAt),
+    rssi: Number(status.rssi ?? 0) || 0,
+    freeHeap: Number(status.freeHeap ?? 0) || 0,
+    updatedAt,
   };
+}
+
+function explicitPondPath(farmId: string, pondId: string, ...parts: string[]) {
+  return ["farms", farmId, "ponds", pondId, ...parts].map(encodeURIComponent).join("/");
 }
 
 export type DeviceStatus = {
@@ -36,8 +45,11 @@ export type FeedingCommand = {
   status: "queued" | "ack" | "done" | "failed";
 };
 
-export async function listDeviceStatuses(): Promise<DeviceStatus[]> {
-  const params = new URLSearchParams({ farmId: getActiveFarmId(), pondId: getActivePondId() });
+export async function listDeviceStatuses(
+  farmId = getActiveFarmId(),
+  pondId = getActivePondId(),
+): Promise<DeviceStatus[]> {
+  const params = new URLSearchParams({ farmId, pondId });
   let shouldTryDirectFirebaseFallback = false;
 
   try {
@@ -56,38 +68,74 @@ export async function listDeviceStatuses(): Promise<DeviceStatus[]> {
   }
 
   if (!shouldTryDirectFirebaseFallback || !firebaseBaseUrl) return [];
-  const response = await fetch(`${firebaseBaseUrl}/${pondPath("devices", "status")}.json`);
-  if (!response.ok) return [];
-  const raw = (await response.json()) as Record<string, Omit<DeviceStatus, "deviceId">> | null;
-  if (!raw || typeof raw !== "object") return [];
-  return Object.entries(raw)
-    .map(([deviceId, value]) => normalizeDeviceStatus({ deviceId, ...value }))
-    .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
+
+  try {
+    const response = await fetch(
+      `${firebaseBaseUrl}/${explicitPondPath(farmId, pondId, "devices", "status")}.json`,
+    );
+    if (!response.ok) return [];
+    const raw = (await response.json()) as Record<
+      string,
+      Partial<Omit<DeviceStatus, "deviceId">>
+    > | null;
+    if (!raw || typeof raw !== "object") return [];
+    return Object.entries(raw)
+      .map(([deviceId, value]) => normalizeDeviceStatus({ deviceId, ...value }))
+      .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
+  } catch {
+    return [];
+  }
 }
 
 export async function queueFeedingCommand(
   input: Omit<FeedingCommand, "id" | "requestedAt" | "status">,
 ) {
-  if (!firebaseBaseUrl) throw new Error("Firebase is not configured.");
-  const payload = {
-    ...input,
-    requestedAt: new Date().toISOString(),
-    status: "queued",
-  };
-
-  const response = await fetch(`${firebaseBaseUrl}/${pondPath("feeding", "commands")}.json`, {
+  const farmId = getActiveFarmId();
+  const pondId = getActivePondId();
+  const params = new URLSearchParams({ farmId, pondId });
+  const response = await fetch(`/api/iot/feeding-command?${params.toString()}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(input),
   });
 
-  if (!response.ok) throw new Error(`Failed to queue feeding command: ${response.status}`);
+  const result = (await response.json().catch(() => null)) as {
+    ok?: boolean;
+    id?: string;
+    message?: string;
+    detail?: string;
+  } | null;
 
-  const body = (await response.json()) as { name?: string };
-  return String(body.name ?? "");
+  if (!response.ok || !result?.ok) {
+    const detail = result?.detail ? ` ${result.detail}` : "";
+    throw new Error(
+      result?.message
+        ? `${result.message}${detail}`
+        : `Failed to queue feeding command: ${response.status}`,
+    );
+  }
+
+  return String(result.id ?? "");
 }
 
 export async function listFeedingCommands(limit = 20): Promise<FeedingCommand[]> {
+  const farmId = getActiveFarmId();
+  const pondId = getActivePondId();
+  const params = new URLSearchParams({ farmId, pondId, limit: String(limit) });
+
+  try {
+    const response = await fetch(`/api/iot/feeding-command?${params.toString()}`, {
+      headers: { accept: "application/json" },
+    });
+    const contentType = response.headers.get("content-type") ?? "";
+    if (response.ok && contentType.includes("application/json")) {
+      const payload = (await response.json()) as { commands?: FeedingCommand[] };
+      return Array.isArray(payload.commands) ? payload.commands : [];
+    }
+  } catch {
+    // Fall through to direct Firebase only for local/static fallback environments.
+  }
+
   if (!firebaseBaseUrl) return [];
   const response = await fetch(
     `${firebaseBaseUrl}/${pondPath("feeding", "commands")}.json?orderBy="$key"&limitToLast=${limit}`,
