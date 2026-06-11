@@ -241,6 +241,15 @@ function Page() {
       title="Devices"
       subtitle="Simple device status for farmers, with admin-only setup for ESP32 hardware."
     >
+      <Alert className="border-info/40 bg-info/10">
+        <CheckCircle2 className="h-4 w-4" />
+        <AlertTitle>Quick farmer view</AlertTitle>
+        <AlertDescription>
+          Green means the ESP32 is talking to the platform. Red means the last heartbeat is old;
+          first check power, Wi-Fi and the device box before changing farm records.
+        </AlertDescription>
+      </Alert>
+
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -280,7 +289,7 @@ function Page() {
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(340px,440px)]">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-3">
             <div>
@@ -373,12 +382,20 @@ function Page() {
             <CardContent className="space-y-4 text-sm">
               <Alert>
                 <CheckCircle2 className="h-4 w-4" />
-                <AlertTitle>Safe for farmers</AlertTitle>
+                <AlertTitle>Admin setup checklist</AlertTitle>
                 <AlertDescription>
-                  This setup links a device to a farm/cage. Farmers do not need to see tokens or
-                  device credentials; they only see Online/Offline status and sensor readings.
+                  1) Match the printed ESP32 device label. 2) Confirm the farm and cage names. 3)
+                  Enter the one-time setup token. Farmers will only see safe Online/Offline status.
                 </AlertDescription>
               </Alert>
+
+              <div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
+                <p className="font-medium text-foreground">Currently selected</p>
+                <p className="mt-1">
+                  Farm <span className="font-medium text-foreground">{activeFarmId}</span> ·
+                  Cage/Pond <span className="font-medium text-foreground">{activePondId}</span>
+                </p>
+              </div>
 
               {setupStatus.type !== "idle" && (
                 <Alert variant={setupStatus.type === "error" ? "destructive" : "default"}>
@@ -398,7 +415,11 @@ function Page() {
                       setForm((previous) => ({ ...previous, farmId: event.target.value }))
                     }
                     placeholder="farmer_001"
+                    autoComplete="off"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Use the farm code assigned by your company or system administrator.
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -413,7 +434,11 @@ function Page() {
                       }))
                     }
                     placeholder="cage_001"
+                    autoComplete="off"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    This must match the cage/pond where the ESP32 sensors are installed.
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -424,7 +449,11 @@ function Page() {
                       setForm((previous) => ({ ...previous, deviceId: event.target.value }))
                     }
                     placeholder="ESP32_001"
+                    autoComplete="off"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Usually printed on the device box or written on the installation label.
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -435,7 +464,11 @@ function Page() {
                       setForm((previous) => ({ ...previous, firmware: event.target.value }))
                     }
                     placeholder="v3.1-fixedwifi"
+                    autoComplete="off"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Leave the default if you are not sure; live heartbeats will still verify status.
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -446,7 +479,11 @@ function Page() {
                       setForm((previous) => ({ ...previous, farmName: event.target.value }))
                     }
                     placeholder="Main farm"
+                    autoComplete="organization"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Friendly name shown in records and reports.
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -457,7 +494,11 @@ function Page() {
                       setForm((previous) => ({ ...previous, cageName: event.target.value }))
                     }
                     placeholder="Cage 001"
+                    autoComplete="off"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Friendly name farmers recognize on the farm.
+                  </p>
                 </div>
               </div>
 
@@ -470,13 +511,14 @@ function Page() {
                   }
                   type="password"
                   placeholder="Provided by system administrator"
+                  autoComplete="one-time-code"
                 />
                 <p className="text-xs text-muted-foreground">
                   Token is used once for this request and is never stored in the browser.
                 </p>
               </div>
 
-              <Button onClick={setupFarmDevice} disabled={isSubmitting} className="w-full">
+              <Button onClick={setupFarmDevice} disabled={isSubmitting} className="min-h-11 w-full">
                 {isSubmitting ? "Linking device…" : "Link Device to Farm"}
               </Button>
             </CardContent>

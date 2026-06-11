@@ -1,10 +1,11 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   ChevronDown,
   Cpu,
   Droplets,
   Fish,
   LayoutDashboard,
+  LifeBuoy,
   LineChart,
   LogOut,
   Settings,
@@ -19,18 +20,31 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
+import { logoutUser } from "@/lib/auth";
 
 const navItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Cage Management", url: "/cages", icon: Cpu },
-  { title: "Hatchery", url: "/hatchery", icon: Fish },
-  { title: "Production", url: "/production", icon: Fish },
-  { title: "Inventory", url: "/inventory", icon: Wallet },
-  { title: "AI Insights", url: "/ai/insights", icon: Cpu },
+  {
+    title: "Dashboard",
+    url: "/",
+    icon: LayoutDashboard,
+    description: "Daily farm overview",
+  },
+  {
+    title: "Cage Management",
+    url: "/cages",
+    icon: Cpu,
+    description: "Cages and ponds",
+  },
+  { title: "Hatchery", url: "/hatchery", icon: Fish, description: "Fingerlings and stock" },
+  { title: "Production", url: "/production", icon: Fish, description: "Growth and harvests" },
+  { title: "Inventory", url: "/inventory", icon: Wallet, description: "Feed and supplies" },
+  { title: "AI Insights", url: "/ai/insights", icon: Cpu, description: "Smart recommendations" },
   {
     title: "Feeding System",
     icon: Fish,
+    description: "Schedules and feeding records",
     children: [
       { title: "Feeding Schedule", url: "/feeding/schedule" },
       { title: "Manual Feeding", url: "/feeding/manual" },
@@ -41,6 +55,7 @@ const navItems = [
   {
     title: "Water Quality",
     icon: Droplets,
+    description: "Live water health and alerts",
     children: [
       { title: "Live Monitoring", url: "/water/live" },
       { title: "Water History", url: "/water/history" },
@@ -50,6 +65,7 @@ const navItems = [
   {
     title: "Financial",
     icon: Wallet,
+    description: "Income, expenses and reports",
     children: [
       { title: "Income", url: "/finance/income" },
       { title: "Expenses", url: "/finance/expenses" },
@@ -60,6 +76,7 @@ const navItems = [
   {
     title: "Settings",
     icon: Settings,
+    description: "Users, farm and devices",
     children: [
       { title: "Farm Settings", url: "/settings/farm" },
       { title: "Users & Roles", url: "/settings/users-and-roles" },
@@ -69,7 +86,9 @@ const navItems = [
 ] as const;
 
 export function AppSidebar() {
+  const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const { isMobile, setOpenMobile } = useSidebar();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     Production:
       path.startsWith("/production") ||
@@ -81,6 +100,10 @@ export function AppSidebar() {
     Financial: path.startsWith("/finance"),
     Settings: path.startsWith("/settings"),
   });
+
+  const closeMobileSidebar = () => {
+    if (isMobile) setOpenMobile(false);
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -94,6 +117,12 @@ export function AppSidebar() {
             <span className="text-[11px] text-sidebar-foreground/60">Smart Fish Farm</span>
           </div>
         </div>
+        <div className="mx-2 rounded-lg border border-sidebar-border/80 bg-sidebar-accent/40 p-3 text-xs text-sidebar-foreground/75 group-data-[collapsible=icon]:hidden">
+          <p className="font-medium text-sidebar-foreground">Start here</p>
+          <p className="mt-1 leading-relaxed">
+            Use the menu to check water, feeding, finance and device health. No coding needed.
+          </p>
+        </div>
       </SidebarHeader>
 
       <SidebarContent>
@@ -102,10 +131,21 @@ export function AppSidebar() {
             if (!("children" in item)) {
               return (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={path === item.url} tooltip={item.title}>
-                    <Link to={item.url as never}>
+                  <SidebarMenuButton
+                    asChild
+                    size="lg"
+                    isActive={path === item.url}
+                    tooltip={item.title}
+                    className="min-h-12"
+                  >
+                    <Link to={item.url as never} onClick={closeMobileSidebar}>
                       <item.icon className="h-4 w-4 icon-emphasis" />
-                      <span>{item.title}</span>
+                      <span className="flex min-w-0 flex-col leading-tight">
+                        <span className="truncate">{item.title}</span>
+                        <span className="truncate text-[11px] font-normal text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden">
+                          {item.description}
+                        </span>
+                      </span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -118,12 +158,20 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     tooltip={item.title}
+                    size="lg"
+                    className="min-h-12"
+                    aria-expanded={isOpen}
                     onClick={() =>
                       setOpenSections((prev) => ({ ...prev, [item.title]: !prev[item.title] }))
                     }
                   >
                     <item.icon className="h-4 w-4 icon-emphasis" />
-                    <span>{item.title}</span>
+                    <span className="flex min-w-0 flex-col leading-tight">
+                      <span className="truncate">{item.title}</span>
+                      <span className="truncate text-[11px] font-normal text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden">
+                        {item.description}
+                      </span>
+                    </span>
                     <ChevronDown
                       className={`ml-auto h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
                     />
@@ -137,8 +185,9 @@ export function AppSidebar() {
                           asChild
                           isActive={path === child.url}
                           tooltip={child.title}
+                          className="min-h-10"
                         >
-                          <Link to={child.url as never}>
+                          <Link to={child.url as never} onClick={closeMobileSidebar}>
                             <LineChart className="h-3.5 w-3.5 opacity-80 icon-emphasis" />
                             <span>{child.title}</span>
                           </Link>
@@ -154,9 +203,25 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
+        <div className="mx-2 rounded-lg border border-sidebar-border/80 bg-sidebar-accent/30 p-3 text-xs text-sidebar-foreground/75 group-data-[collapsible=icon]:hidden">
+          <div className="flex items-center gap-2 font-medium text-sidebar-foreground">
+            <LifeBuoy className="h-4 w-4 icon-emphasis" /> Need help?
+          </div>
+          <p className="mt-1 leading-relaxed">
+            If a device is offline, check power and Wi-Fi first.
+          </p>
+        </div>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Log out">
+            <SidebarMenuButton
+              tooltip="Log out"
+              className="min-h-10"
+              onClick={() => {
+                logoutUser();
+                closeMobileSidebar();
+                navigate({ to: "/auth/login" });
+              }}
+            >
               <LogOut className="h-4 w-4 icon-emphasis" />
               <span>Log Out</span>
             </SidebarMenuButton>
