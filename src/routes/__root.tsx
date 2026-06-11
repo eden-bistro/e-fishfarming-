@@ -8,6 +8,8 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 
+import { DownloadAppPrompt } from "@/components/download-app-prompt";
+
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
@@ -139,6 +141,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
+      <DownloadAppPrompt />
     </QueryClientProvider>
   );
 }
