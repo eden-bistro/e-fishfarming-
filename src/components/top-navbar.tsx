@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Bell, Calendar, ChevronDown } from "lucide-react";
-import { getSessionUser, logoutUser } from "@/lib/auth";
+import { getCurrentUserRecord, getSessionUser, logoutUser } from "@/lib/auth";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -53,6 +53,7 @@ export function TopNavbar() {
   const session = getSessionUser();
   const [today, setToday] = useState("Today");
   const pageTitle = titleForPath(pathname);
+  const farmName = getCurrentUserRecord()?.farm?.name?.trim() || "My Farm";
 
   useEffect(() => {
     setToday(
@@ -94,13 +95,36 @@ export function TopNavbar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="hidden gap-2 md:inline-flex">
-              My Farm
+              <span className="max-w-36 truncate">{farmName}</span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Switch farm</DropdownMenuLabel>
-            <DropdownMenuItem>My Farm</DropdownMenuItem>
+            <DropdownMenuLabel>Current farm</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => navigate({ to: "/settings/farm" })}>
+              {farmName}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="relative h-10 w-10"
+              aria-label="Open device notifications"
+            >
+              <Bell className="h-4 w-4 icon-emphasis" />
+              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-warning" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-72">
+            <DropdownMenuLabel>Device alerts</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <div className="px-2 py-1.5 text-sm text-muted-foreground">
+              Open Devices to review connection status and cage assignment.
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
 

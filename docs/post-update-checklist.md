@@ -16,7 +16,7 @@ If `git status --short` prints nothing, the repo is clean.
 
 Never delete or reset these communication files without reviewing their diffs first:
 
-- `src/lib/esp32-firebase.ts`
+- `src/lib/device-firebase.ts`
 - `src/lib/platform-clients.ts`
 - `src/server.ts`
 - `src/lib/iot-firebase.ts`
@@ -31,7 +31,7 @@ Never delete or reset these communication files without reviewing their diffs fi
 Review local code changes with:
 
 ```powershell
-git diff src/lib/esp32-firebase.ts
+git diff src/lib/device-firebase.ts
 git diff src/lib/platform-clients.ts
 git diff src/routeTree.gen.ts
 ```
