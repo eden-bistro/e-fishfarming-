@@ -5,7 +5,6 @@ import {
   Droplets,
   Fish,
   LayoutDashboard,
-  LifeBuoy,
   LineChart,
   LogOut,
   Settings,
@@ -197,14 +196,6 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="mx-2 rounded-lg border border-sidebar-border/80 bg-sidebar-accent/30 p-3 text-xs text-sidebar-foreground/75 group-data-[collapsible=icon]:hidden">
-          <div className="flex items-center gap-2 font-medium text-sidebar-foreground">
-            <LifeBuoy className="h-4 w-4 icon-emphasis" /> Need help?
-          </div>
-          <p className="mt-1 leading-relaxed">
-            If a device is offline, check power and Wi-Fi first.
-          </p>
-        </div>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton

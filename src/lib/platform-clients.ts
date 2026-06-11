@@ -1,4 +1,8 @@
-﻿import { getActiveFarmId, getActivePondId } from "@/lib/tenant";
+import {
+  listDeviceStatuses as listFirebaseDeviceStatuses,
+  type DeviceStatus as FirebaseDeviceStatus,
+} from "@/lib/device-firebase";
+import { getActiveFarmId, getActivePondId } from "@/lib/tenant";
 import { getAccessToken } from "@/services/auth.service";
 const env = import.meta.env as Record<string, string | undefined>;
 
@@ -11,6 +15,7 @@ const fallbackPondId = env.VITE_DEFAULT_POND_ID?.trim() || "cage_001";
 export type WaterReading = {
   timestamp: string;
   pondId: string;
+  deviceId?: string;
   temperature: number;
   ph: number;
   dissolvedOxygen: number;
@@ -155,6 +160,24 @@ export async function getLatestWaterReading(): Promise<WaterReading | null> {
     }
   }
   return null;
+}
+
+export type DeviceStatus = FirebaseDeviceStatus;
+
+export const listDeviceStatuses = listFirebaseDeviceStatuses;
+
+export async function getLatestOnlineWaterReading(): Promise<WaterReading | null> {
+  const latest = await getLatestWaterReading();
+  if (!latest) return null;
+
+  const deviceStatuses = await listDeviceStatuses(getActiveFarmId(), latest.pondId);
+  const onlineDevices = deviceStatuses.filter((device) => device.online);
+
+  if (latest.deviceId) {
+    return onlineDevices.some((device) => device.deviceId === latest.deviceId) ? latest : null;
+  }
+
+  return onlineDevices.length > 0 ? latest : null;
 }
 
 export async function listWaterAlerts(limit = 20): Promise<WaterAlert[]> {
