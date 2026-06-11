@@ -10,11 +10,20 @@ function isFreshHeartbeat(updatedAt: string): boolean {
   return Number.isFinite(timestamp) && Date.now() - timestamp <= DEVICE_OFFLINE_AFTER_MS;
 }
 
-function normalizeDeviceStatus(status: DeviceStatus): DeviceStatus {
+function normalizeDeviceStatus(status: Partial<DeviceStatus> & { deviceId: string }): DeviceStatus {
+  const updatedAt = String(status.updatedAt ?? "");
   return {
-    ...status,
-    online: Boolean(status.online) && isFreshHeartbeat(status.updatedAt),
+    deviceId: String(status.deviceId),
+    firmware: String(status.firmware ?? "unknown"),
+    online: Boolean(status.online) && isFreshHeartbeat(updatedAt),
+    rssi: Number(status.rssi ?? 0) || 0,
+    freeHeap: Number(status.freeHeap ?? 0) || 0,
+    updatedAt,
   };
+}
+
+function explicitPondPath(farmId: string, pondId: string, ...parts: string[]) {
+  return ["farms", farmId, "ponds", pondId, ...parts].map(encodeURIComponent).join("/");
 }
 
 export type DeviceStatus = {
@@ -36,8 +45,11 @@ export type FeedingCommand = {
   status: "queued" | "ack" | "done" | "failed";
 };
 
-export async function listDeviceStatuses(): Promise<DeviceStatus[]> {
-  const params = new URLSearchParams({ farmId: getActiveFarmId(), pondId: getActivePondId() });
+export async function listDeviceStatuses(
+  farmId = getActiveFarmId(),
+  pondId = getActivePondId(),
+): Promise<DeviceStatus[]> {
+  const params = new URLSearchParams({ farmId, pondId });
   let shouldTryDirectFirebaseFallback = false;
 
   try {
@@ -56,13 +68,23 @@ export async function listDeviceStatuses(): Promise<DeviceStatus[]> {
   }
 
   if (!shouldTryDirectFirebaseFallback || !firebaseBaseUrl) return [];
-  const response = await fetch(`${firebaseBaseUrl}/${pondPath("devices", "status")}.json`);
-  if (!response.ok) return [];
-  const raw = (await response.json()) as Record<string, Omit<DeviceStatus, "deviceId">> | null;
-  if (!raw || typeof raw !== "object") return [];
-  return Object.entries(raw)
-    .map(([deviceId, value]) => normalizeDeviceStatus({ deviceId, ...value }))
-    .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
+
+  try {
+    const response = await fetch(
+      `${firebaseBaseUrl}/${explicitPondPath(farmId, pondId, "devices", "status")}.json`,
+    );
+    if (!response.ok) return [];
+    const raw = (await response.json()) as Record<
+      string,
+      Partial<Omit<DeviceStatus, "deviceId">>
+    > | null;
+    if (!raw || typeof raw !== "object") return [];
+    return Object.entries(raw)
+      .map(([deviceId, value]) => normalizeDeviceStatus({ deviceId, ...value }))
+      .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
+  } catch {
+    return [];
+  }
 }
 
 export async function queueFeedingCommand(
