@@ -13,6 +13,7 @@ const DEVICE_OFFLINE_AFTER_MS = 5 * 60 * 1000;
 export type WaterReading = {
   timestamp: string;
   pondId: string;
+  deviceId?: string;
   temperature: number;
   ph: number;
   dissolvedOxygen: number;
@@ -183,6 +184,23 @@ export async function getLatestWaterReading(): Promise<WaterReading | null> {
     }
   }
   return null;
+}
+
+export async function getLatestOnlineWaterReading(): Promise<WaterReading | null> {
+  const farmId = getActiveFarmId();
+  const pondId = getActivePondId();
+  const [reading, devices] = await Promise.all([
+    getLatestWaterReading(),
+    listDeviceStatuses(farmId, pondId),
+  ]);
+  const onlineDevices = devices.filter((device) => device.online);
+  if (!reading || onlineDevices.length === 0) return null;
+
+  if (reading.deviceId) {
+    return onlineDevices.some((device) => device.deviceId === reading.deviceId) ? reading : null;
+  }
+
+  return reading;
 }
 
 export async function listWaterAlerts(limit = 20): Promise<WaterAlert[]> {

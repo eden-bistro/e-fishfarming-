@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Calendar, ChevronDown } from "lucide-react";
+import { Bell, Calendar, ChevronDown } from "lucide-react";
 import { getSessionUser, logoutUser } from "@/lib/auth";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { SidebarTrigger } from "@/components/ui/sidebar";

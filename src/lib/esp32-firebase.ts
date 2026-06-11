@@ -90,26 +90,52 @@ export async function listDeviceStatuses(
 export async function queueFeedingCommand(
   input: Omit<FeedingCommand, "id" | "requestedAt" | "status">,
 ) {
-  if (!firebaseBaseUrl) throw new Error("Firebase is not configured.");
-  const payload = {
-    ...input,
-    requestedAt: new Date().toISOString(),
-    status: "queued",
-  };
-
-  const response = await fetch(`${firebaseBaseUrl}/${pondPath("feeding", "commands")}.json`, {
+  const farmId = getActiveFarmId();
+  const pondId = getActivePondId();
+  const params = new URLSearchParams({ farmId, pondId });
+  const response = await fetch(`/api/iot/feeding-command?${params.toString()}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(input),
   });
 
-  if (!response.ok) throw new Error(`Failed to queue feeding command: ${response.status}`);
+  const result = (await response.json().catch(() => null)) as {
+    ok?: boolean;
+    id?: string;
+    message?: string;
+    detail?: string;
+  } | null;
 
-  const body = (await response.json()) as { name?: string };
-  return String(body.name ?? "");
+  if (!response.ok || !result?.ok) {
+    const detail = result?.detail ? ` ${result.detail}` : "";
+    throw new Error(
+      result?.message
+        ? `${result.message}${detail}`
+        : `Failed to queue feeding command: ${response.status}`,
+    );
+  }
+
+  return String(result.id ?? "");
 }
 
 export async function listFeedingCommands(limit = 20): Promise<FeedingCommand[]> {
+  const farmId = getActiveFarmId();
+  const pondId = getActivePondId();
+  const params = new URLSearchParams({ farmId, pondId, limit: String(limit) });
+
+  try {
+    const response = await fetch(`/api/iot/feeding-command?${params.toString()}`, {
+      headers: { accept: "application/json" },
+    });
+    const contentType = response.headers.get("content-type") ?? "";
+    if (response.ok && contentType.includes("application/json")) {
+      const payload = (await response.json()) as { commands?: FeedingCommand[] };
+      return Array.isArray(payload.commands) ? payload.commands : [];
+    }
+  } catch {
+    // Fall through to direct Firebase only for local/static fallback environments.
+  }
+
   if (!firebaseBaseUrl) return [];
   const response = await fetch(
     `${firebaseBaseUrl}/${pondPath("feeding", "commands")}.json?orderBy="$key"&limitToLast=${limit}`,
