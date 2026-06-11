@@ -142,7 +142,7 @@ export function getDefaultPondId(env: unknown): string {
 }
 
 export function getDefaultDeviceId(env: unknown): string {
-  return firstDefined([getEnvRecord(env).VITE_DEFAULT_DEVICE_ID]) ?? "ESP32_001";
+  return firstDefined([getEnvRecord(env).VITE_DEFAULT_DEVICE_ID]) ?? "DEVICE_001";
 }
 
 export async function getFirebaseDatabaseAuth(

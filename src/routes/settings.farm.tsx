@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle2, Fish, Info, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/settings/farm")({
@@ -25,7 +24,6 @@ function Page() {
     currency: currentFarm?.currency ?? "",
     totalPonds: currentFarm?.totalPonds?.toString() ?? "",
     totalStockKg: currentFarm?.totalStockKg?.toString() ?? "",
-    cageNames: currentFarm?.cageNames?.join("\n") ?? "",
   });
   const [message, setMessage] = useState("");
   const [saved, setSaved] = useState(false);
@@ -40,17 +38,12 @@ function Page() {
     const totalPonds = form.totalPonds ? Number(form.totalPonds) : null;
     const totalStockKg = form.totalStockKg ? Number(form.totalStockKg) : null;
     if (
-      (totalPonds !== null && (Number.isNaN(totalPonds) || totalPonds < 0)) ||
-      (totalStockKg !== null && (Number.isNaN(totalStockKg) || totalStockKg < 0))
+      (totalPonds !== null && (!Number.isFinite(totalPonds) || totalPonds < 0)) ||
+      (totalStockKg !== null && (!Number.isFinite(totalStockKg) || totalStockKg < 0))
     ) {
       setMessage("Total cages/ponds and total stock must be valid positive numbers.");
       return;
     }
-
-    const cageNames = form.cageNames
-      .split("\n")
-      .map((name) => name.trim())
-      .filter(Boolean);
 
     const result = saveCurrentUserFarm({
       name: form.name.trim(),
@@ -59,7 +52,6 @@ function Page() {
       currency: form.currency.trim().toUpperCase(),
       totalPonds,
       totalStockKg,
-      cageNames,
     });
 
     if (!result.ok) {
@@ -68,29 +60,29 @@ function Page() {
     }
     setSaved(true);
     setMessage(
-      "Farm and cage profile saved. Ask an admin to connect ESP32 devices to cages when ready.",
+      "Farm profile saved. You can manage cages separately and keep device setup admin-only.",
     );
   }
 
   return (
     <DashboardLayout
       title="Farm Settings"
-      subtitle="Create your farm profile and cage list. Device-to-cage communication is connected by an administrator."
+      subtitle="Create and manage the farm profile anytime. Cage records and device links are handled in their own sections."
     >
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Fish className="h-4 w-4 icon-emphasis" /> Farm and Cage Profile
+              <Fish className="h-4 w-4 icon-emphasis" /> Farm Profile
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <Alert>
               <Info className="h-4 w-4" />
-              <AlertTitle>Simple setup flow</AlertTitle>
+              <AlertTitle>Farm setup is always available</AlertTitle>
               <AlertDescription>
-                First save your farm details, then list the cages or ponds farmers use every day. A
-                system admin will later link ESP32 devices to the correct cage for live data.
+                Save the farm details first. You can add cages in Cage Management and continue using
+                finance, inventory, production, and reports even before any device is connected.
               </AlertDescription>
             </Alert>
 
@@ -154,41 +146,27 @@ function Page() {
                 />
               </div>
             </div>
-
-            <div className="space-y-2">
-              <Label>Cage / Pond Names</Label>
-              <Textarea
-                value={form.cageNames}
-                onChange={(e) => setForm((prev) => ({ ...prev, cageNames: e.target.value }))}
-                placeholder={"Cage 001\nCage 002\nNursery Pond"}
-                rows={5}
-              />
-              <p className="text-xs text-muted-foreground">
-                Enter one cage or pond per line. These are farm records only; live device
-                communication is activated by an admin on the Devices page.
-              </p>
-            </div>
           </CardContent>
         </Card>
 
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">What happens next?</CardTitle>
+              <CardTitle className="text-base">Recommended next steps</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm text-muted-foreground">
               <div className="rounded-lg border bg-muted/40 p-3">
-                <p className="font-medium text-foreground">1. Create farm profile</p>
-                <p className="mt-1">Save the farm name, location, owner and currency.</p>
+                <p className="font-medium text-foreground">1. Save farm profile</p>
+                <p className="mt-1">Store the farm name, location, owner, and currency.</p>
               </div>
               <div className="rounded-lg border bg-muted/40 p-3">
-                <p className="font-medium text-foreground">2. Add cage names</p>
-                <p className="mt-1">Use names your workers already use on site.</p>
+                <p className="font-medium text-foreground">2. Manage cages separately</p>
+                <p className="mt-1">Use Cage Management to add cages, fish counts, and biomass.</p>
               </div>
               <div className="rounded-lg border bg-muted/40 p-3">
                 <p className="font-medium text-foreground">3. Admin connects devices</p>
                 <p className="mt-1">
-                  ESP32-to-cage communication and setup tokens stay admin-only for safety.
+                  Device assignment and setup tokens stay admin-only for safety.
                 </p>
               </div>
             </CardContent>
@@ -196,10 +174,10 @@ function Page() {
 
           <Alert>
             <ShieldCheck className="h-4 w-4" />
-            <AlertTitle>Device communication is admin-only</AlertTitle>
+            <AlertTitle>Device setup is optional for farm creation</AlertTitle>
             <AlertDescription>
-              Farmers can create farm and cage records here. An admin links ESP32 hardware to each
-              cage so live water readings come from trusted online devices.
+              Farmers can create and update farm records before devices are available. Live water
+              readings only appear after an admin links an online device to the right cage.
             </AlertDescription>
           </Alert>
         </div>
@@ -207,7 +185,7 @@ function Page() {
 
       <div className="space-y-2">
         <Button onClick={saveFarm} className="min-h-11 w-full sm:w-auto">
-          Save Farm and Cages
+          Save Farm Profile
         </Button>
         {message && (
           <p className={`text-sm ${saved ? "text-success" : "text-muted-foreground"}`}>

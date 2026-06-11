@@ -15,7 +15,7 @@ import { listDeviceStatuses, type DeviceStatus } from "@/lib/platform-clients";
 import { DEFAULT_FARM_ID, DEFAULT_POND_ID, setActiveFarmId, setActivePondId } from "@/lib/tenant";
 
 export const Route = createFileRoute("/settings/devices")({
-  head: () => ({ meta: [{ title: "Devices — AquaSmart" }] }),
+  head: () => ({ meta: [{ title: "Devices � AquaSmart" }] }),
   component: Page,
 });
 
@@ -71,7 +71,7 @@ function Page() {
     farmId: DEFAULT_FARM_ID,
     pondId: DEFAULT_POND_ID,
     cageId: DEFAULT_POND_ID,
-    deviceId: "ESP32_001",
+    deviceId: "DEVICE_001",
     farmName: "Default Farm",
     cageName: "Cage 001",
     firmware: "v3.1-fixedwifi",
@@ -239,14 +239,14 @@ function Page() {
   return (
     <DashboardLayout
       title="Devices"
-      subtitle="Simple device status for farmers, with admin-only setup for ESP32 hardware."
+      subtitle="Simple IoT Device status for farmers, with admin-only IoT Device setup."
     >
       <Alert className="border-info/40 bg-info/10">
         <CheckCircle2 className="h-4 w-4" />
         <AlertTitle>Quick farmer view</AlertTitle>
         <AlertDescription>
-          Green means the ESP32 is talking to the platform. Red means the last heartbeat is old;
-          first check power, Wi-Fi and the device box before changing farm records.
+          Green means the IoT Device is talking to the platform. Red means the last heartbeat is
+          old; first check power, Wi-Fi and the IoT Device box before changing farm records.
         </AlertDescription>
       </Alert>
 
@@ -293,9 +293,10 @@ function Page() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-3">
             <div>
-              <CardTitle className="text-base">Farm Device Status</CardTitle>
+              <CardTitle className="text-base">Farm IoT Device Status</CardTitle>
               <p className="text-xs text-muted-foreground">
-                Farmers can see connection health here. Device setup is handled by an administrator.
+                Farmers can see connection health here. IoT Device setup is handled by an
+                administrator.
               </p>
             </div>
             <Button
@@ -319,14 +320,14 @@ function Page() {
             )}
 
             {isLoading ? (
-              <p className="text-muted-foreground">Loading device heartbeat data…</p>
+              <p className="text-muted-foreground">Loading IoT Device heartbeat data�</p>
             ) : rows.length === 0 ? (
               <div className="rounded-lg border border-dashed p-5 text-center">
                 <AlertCircle className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
-                <p className="font-medium">No device is linked yet</p>
+                <p className="font-medium">No IoT Device is linked yet</p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   You can continue using farm, production, inventory and finance tools. Ask your
-                  system administrator to add the ESP32 device before live sensor readings appear.
+                  system administrator to add the IoT Device before live sensor readings appear.
                 </p>
               </div>
             ) : (
@@ -339,7 +340,7 @@ function Page() {
                       <div>
                         <p className="font-medium">{row.deviceId}</p>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          Last seen {heartbeatAge(row.updatedAt)} · Firmware{" "}
+                          Last seen {heartbeatAge(row.updatedAt)} � Firmware{" "}
                           {row.firmware || "unknown"}
                         </p>
                       </div>
@@ -376,7 +377,7 @@ function Page() {
         {canProvisionDevices ? (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Admin Device Setup</CardTitle>
+              <CardTitle className="text-base">Admin IoT Device Setup</CardTitle>
             </CardHeader>
 
             <CardContent className="space-y-4 text-sm">
@@ -384,7 +385,7 @@ function Page() {
                 <CheckCircle2 className="h-4 w-4" />
                 <AlertTitle>Admin setup checklist</AlertTitle>
                 <AlertDescription>
-                  1) Match the printed ESP32 device label. 2) Confirm the farm and cage names. 3)
+                  1) Match the printed IoT Device label. 2) Confirm the farm and cage names. 3)
                   Enter the one-time setup token. Farmers will only see safe Online/Offline status.
                 </AlertDescription>
               </Alert>
@@ -392,7 +393,7 @@ function Page() {
               <div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
                 <p className="font-medium text-foreground">Currently selected</p>
                 <p className="mt-1">
-                  Farm <span className="font-medium text-foreground">{activeFarmId}</span> ·
+                  Farm <span className="font-medium text-foreground">{activeFarmId}</span> �
                   Cage/Pond <span className="font-medium text-foreground">{activePondId}</span>
                 </p>
               </div>
@@ -437,7 +438,7 @@ function Page() {
                     autoComplete="off"
                   />
                   <p className="text-xs text-muted-foreground">
-                    This must match the cage/pond where the ESP32 sensors are installed.
+                    This must match the cage/pond where the IoT Device sensors are installed.
                   </p>
                 </div>
 
@@ -448,11 +449,11 @@ function Page() {
                     onChange={(event) =>
                       setForm((previous) => ({ ...previous, deviceId: event.target.value }))
                     }
-                    placeholder="ESP32_001"
+                    placeholder="DEVICE_001"
                     autoComplete="off"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Usually printed on the device box or written on the installation label.
+                    Usually printed on the IoT Device box or written on the installation label.
                   </p>
                 </div>
 
@@ -519,7 +520,7 @@ function Page() {
               </div>
 
               <Button onClick={setupFarmDevice} disabled={isSubmitting} className="min-h-11 w-full">
-                {isSubmitting ? "Linking device…" : "Link Device to Farm"}
+                {isSubmitting ? "Linking device�" : "Link IoT Device to Farm"}
               </Button>
             </CardContent>
           </Card>
@@ -527,15 +528,15 @@ function Page() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
-                <Lock className="h-4 w-4" /> Device setup is admin-only
+                <Lock className="h-4 w-4" /> IoT Device setup is admin-only
               </CardTitle>
             </CardHeader>
 
             <CardContent className="space-y-4 text-sm">
               <p className="text-muted-foreground">
                 You can create and manage farm records, finance, production, inventory, feeding and
-                water pages. For live device data, a system administrator must add or reconnect your
-                ESP32 device.
+                water pages. For live IoT Device data, a system administrator must add or reconnect
+                your device.
               </p>
 
               <div className="rounded-lg border bg-muted/40 p-3">
@@ -543,7 +544,7 @@ function Page() {
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
                   <li>Farm ID: {form.farmId || DEFAULT_FARM_ID}</li>
                   <li>Cage/Pond ID: {form.pondId || DEFAULT_POND_ID}</li>
-                  <li>Device label printed on the ESP32 box, if available</li>
+                  <li>IoT Device label printed on the IoT Device box, if available</li>
                 </ul>
               </div>
 

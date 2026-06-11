@@ -42,6 +42,7 @@ export type FeedingCommand = {
   targetPondId: string;
   requestedBy: string;
   requestedAt: string;
+  scheduledFor?: string;
   status: "queued" | "ack" | "done" | "failed";
 };
 

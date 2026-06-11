@@ -125,4 +125,4 @@ The backend writes device status from ingest payload telemetry:
 - `queueFeedingCommand(...)`
 - `listFeedingCommands(...)`
 
-These are implemented in `src/lib/esp32-firebase.ts`.
+These are implemented in `src/lib/device-firebase.ts`.
