@@ -10,8 +10,8 @@ import { ArrowLeft } from "lucide-react";
 
 function AuthLoadingShell() {
   return (
-    <div className="flex min-h-screen items-center justify-center p-6">
-      <div className="max-w-md text-center">
+    <div className="flex min-h-svh items-center justify-center px-4 py-8 sm:p-6">
+      <div className="w-full max-w-md rounded-2xl border bg-card p-6 text-center shadow-sm">
         <h1 className="text-2xl font-semibold">Loading dashboard…</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Checking your browser session before loading farm data.
@@ -47,13 +47,13 @@ export function DashboardLayout({
 
   if (!session) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-6">
-        <div className="max-w-md text-center">
+      <div className="flex min-h-svh items-center justify-center px-4 py-8 sm:p-6">
+        <div className="w-full max-w-md rounded-2xl border bg-card p-6 text-center shadow-sm">
           <h1 className="text-2xl font-semibold">Login required</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             You must register and sign in to access your dashboard.
           </p>
-          <div className="mt-4 flex justify-center gap-2">
+          <div className="mt-4 grid gap-2 sm:flex sm:justify-center">
             <Link to="/auth/register" className="rounded-md border px-4 py-2 text-sm">
               Register
             </Link>
@@ -74,26 +74,29 @@ export function DashboardLayout({
       <AppSidebar />
       <SidebarInset>
         <TopNavbar />
-        <main className="flex flex-col gap-4 p-4 md:gap-6 md:p-6">
-          <div>
+        <main className="mx-auto flex w-full max-w-screen-2xl flex-col gap-4 px-3 py-4 pb-24 sm:px-4 md:gap-6 md:px-6 md:py-6">
+          <div className="flex items-center justify-between gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() =>
                 window.history.length > 1 ? window.history.back() : navigate({ to: "/" })
               }
-              className="gap-2"
+              className="min-h-10 gap-2"
+              aria-label="Go back to previous page"
             >
               <ArrowLeft className="h-4 w-4 icon-emphasis" /> Back
             </Button>
           </div>
           {(title || actions) && (
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <div>
-                {title && <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>}
-                {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
+            <div className="flex flex-col gap-3 rounded-2xl border bg-card/60 p-4 shadow-sm sm:flex-row sm:items-end sm:justify-between">
+              <div className="min-w-0">
+                {title && (
+                  <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{title}</h1>
+                )}
+                {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
               </div>
-              {actions && <div className="flex items-center gap-2">{actions}</div>}
+              {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
             </div>
           )}
           {children}

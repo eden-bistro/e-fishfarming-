@@ -39,6 +39,7 @@ import { Route as AuthForgotPasswordRouteImport } from './routes/auth.forgot-pas
 import { Route as AiInsightsRouteImport } from './routes/ai.insights'
 import { Route as ApiIotSetupRouteImport } from './routes/api.iot.setup'
 import { Route as ApiIotLatestRouteImport } from './routes/api.iot.latest'
+import { Route as ApiIotFeedingCommandRouteImport } from './routes/api.iot.feeding-command'
 import { Route as ApiIotDevicesRouteImport } from './routes/api.iot.devices'
 import { Route as ApiAuthActionRouteImport } from './routes/api.auth.$action'
 
@@ -192,6 +193,11 @@ const ApiIotLatestRoute = ApiIotLatestRouteImport.update({
   path: '/api/iot/latest',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiIotFeedingCommandRoute = ApiIotFeedingCommandRouteImport.update({
+  id: '/api/iot/feeding-command',
+  path: '/api/iot/feeding-command',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiIotDevicesRoute = ApiIotDevicesRouteImport.update({
   id: '/api/iot/devices',
   path: '/api/iot/devices',
@@ -234,6 +240,7 @@ export interface FileRoutesByFullPath {
   '/reports/': typeof ReportsIndexRoute
   '/api/auth/$action': typeof ApiAuthActionRoute
   '/api/iot/devices': typeof ApiIotDevicesRoute
+  '/api/iot/feeding-command': typeof ApiIotFeedingCommandRoute
   '/api/iot/latest': typeof ApiIotLatestRoute
   '/api/iot/setup': typeof ApiIotSetupRoute
 }
@@ -268,6 +275,7 @@ export interface FileRoutesByTo {
   '/reports': typeof ReportsIndexRoute
   '/api/auth/$action': typeof ApiAuthActionRoute
   '/api/iot/devices': typeof ApiIotDevicesRoute
+  '/api/iot/feeding-command': typeof ApiIotFeedingCommandRoute
   '/api/iot/latest': typeof ApiIotLatestRoute
   '/api/iot/setup': typeof ApiIotSetupRoute
 }
@@ -303,6 +311,7 @@ export interface FileRoutesById {
   '/reports/': typeof ReportsIndexRoute
   '/api/auth/$action': typeof ApiAuthActionRoute
   '/api/iot/devices': typeof ApiIotDevicesRoute
+  '/api/iot/feeding-command': typeof ApiIotFeedingCommandRoute
   '/api/iot/latest': typeof ApiIotLatestRoute
   '/api/iot/setup': typeof ApiIotSetupRoute
 }
@@ -339,6 +348,7 @@ export interface FileRouteTypes {
     | '/reports/'
     | '/api/auth/$action'
     | '/api/iot/devices'
+    | '/api/iot/feeding-command'
     | '/api/iot/latest'
     | '/api/iot/setup'
   fileRoutesByTo: FileRoutesByTo
@@ -373,6 +383,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/api/auth/$action'
     | '/api/iot/devices'
+    | '/api/iot/feeding-command'
     | '/api/iot/latest'
     | '/api/iot/setup'
   id:
@@ -407,6 +418,7 @@ export interface FileRouteTypes {
     | '/reports/'
     | '/api/auth/$action'
     | '/api/iot/devices'
+    | '/api/iot/feeding-command'
     | '/api/iot/latest'
     | '/api/iot/setup'
   fileRoutesById: FileRoutesById
@@ -442,6 +454,7 @@ export interface RootRouteChildren {
   ReportsIndexRoute: typeof ReportsIndexRoute
   ApiAuthActionRoute: typeof ApiAuthActionRoute
   ApiIotDevicesRoute: typeof ApiIotDevicesRoute
+  ApiIotFeedingCommandRoute: typeof ApiIotFeedingCommandRoute
   ApiIotLatestRoute: typeof ApiIotLatestRoute
   ApiIotSetupRoute: typeof ApiIotSetupRoute
 }
@@ -658,6 +671,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiIotLatestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/iot/feeding-command': {
+      id: '/api/iot/feeding-command'
+      path: '/api/iot/feeding-command'
+      fullPath: '/api/iot/feeding-command'
+      preLoaderRoute: typeof ApiIotFeedingCommandRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/iot/devices': {
       id: '/api/iot/devices'
       path: '/api/iot/devices'
@@ -706,9 +726,20 @@ const rootRouteChildren: RootRouteChildren = {
   ReportsIndexRoute: ReportsIndexRoute,
   ApiAuthActionRoute: ApiAuthActionRoute,
   ApiIotDevicesRoute: ApiIotDevicesRoute,
+  ApiIotFeedingCommandRoute: ApiIotFeedingCommandRoute,
   ApiIotLatestRoute: ApiIotLatestRoute,
   ApiIotSetupRoute: ApiIotSetupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

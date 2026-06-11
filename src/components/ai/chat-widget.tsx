@@ -138,7 +138,7 @@ function waterSummary(context: ChatContext): string {
   if (!context.latestWater) {
     return context.latestWaterError
       ? `I tried to read the latest Firebase telemetry but could not load it (${context.latestWaterError}). Check /api/iot/latest, Firebase env vars, and the device heartbeat.`
-      : "I do not have a latest water reading yet. Send one ESP32 reading first, then ask again for live DO, pH, temperature, ammonia, nitrite, and turbidity advice.";
+      : "I do not have a latest water reading yet. Send one device reading first, then ask again for live DO, pH, temperature, ammonia, nitrite, and turbidity advice.";
   }
 
   const assessments = assessLatestWater(context.latestWater);

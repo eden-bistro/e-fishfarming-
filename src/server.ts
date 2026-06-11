@@ -1,4 +1,4 @@
-﻿import "./lib/error-capture";
+import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
@@ -672,23 +672,6 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     },
     supabase: supabaseMirror,
   });
-
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    return serverJsonResponse(
-      {
-        ok: false,
-        message: "Failed to read latest water telemetry.",
-        status: response.status,
-        detail: detail.slice(0, 200),
-      },
-      response.status === 404 ? 404 : 502,
-      { "cache-control": "no-store" },
-    );
-  }
-
-  const payload = await response.json().catch(() => null);
-  return serverJsonResponse(payload, 200, { "cache-control": "no-store" });
 }
 
 async function handleIotLatest(request: Request, env: unknown): Promise<Response> {
