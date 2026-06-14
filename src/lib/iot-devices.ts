@@ -17,6 +17,27 @@ export type IotDeviceStatus = {
   updatedAt: string;
 };
 
+const DEVICE_OFFLINE_AFTER_MS = 5 * 60 * 1000;
+
+function isFreshHeartbeat(updatedAt: string): boolean {
+  const timestamp = new Date(updatedAt).getTime();
+  return Number.isFinite(timestamp) && Date.now() - timestamp <= DEVICE_OFFLINE_AFTER_MS;
+}
+
+function normalizeDeviceStatus(
+  status: Partial<IotDeviceStatus> & { deviceId: string },
+): IotDeviceStatus {
+  const updatedAt = String(status.updatedAt ?? "");
+  return {
+    deviceId: String(status.deviceId),
+    firmware: String(status.firmware ?? "unknown"),
+    online: Boolean(status.online) && isFreshHeartbeat(updatedAt),
+    rssi: Number(status.rssi ?? 0) || 0,
+    freeHeap: Number(status.freeHeap ?? 0) || 0,
+    updatedAt,
+  };
+}
+
 export async function handleIotDevices(request: Request, env: unknown): Promise<Response> {
   if (request.method === "OPTIONS") {
     return noContentResponse(204, {
@@ -66,7 +87,9 @@ export async function handleIotDevices(request: Request, env: unknown): Promise<
   > | null;
   const devices =
     raw && typeof raw === "object"
-      ? Object.entries(raw).map(([deviceId, value]) => ({ deviceId, ...value }))
+      ? Object.entries(raw).map(([deviceId, value]) =>
+          normalizeDeviceStatus({ deviceId, ...value }),
+        )
       : [];
   devices.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
   return jsonResponse({ ok: true, farmId, pondId, devices }, 200, { "cache-control": "no-store" });

@@ -1,14 +1,14 @@
+import {
+  listDeviceStatuses as listFirebaseDeviceStatuses,
+  type DeviceStatus as FirebaseDeviceStatus,
+} from "@/lib/device-firebase";
 import { getActiveFarmId, getActivePondId } from "@/lib/tenant";
 import { getAccessToken } from "@/services/auth.service";
-
 const env = import.meta.env as Record<string, string | undefined>;
 
 const firebaseBaseUrl = (env.VITE_FIREBASE_DATABASE_URL ?? env.FIREBASE_DATABASE_URL)?.trim();
 const supabaseUrl = (env.VITE_SUPABASE_URL ?? env.SUPABASE_URL)?.trim();
 const supabaseAnonKey = (env.VITE_SUPABASE_ANON_KEY ?? env.SUPABASE_ANON_KEY)?.trim();
-const fallbackFarmId = env.VITE_DEFAULT_FARM_ID?.trim() || "farmer_001";
-const fallbackPondId = env.VITE_DEFAULT_POND_ID?.trim() || "cage_001";
-const DEVICE_OFFLINE_AFTER_MS = 5 * 60 * 1000;
 
 export type WaterReading = {
   timestamp: string;
@@ -57,32 +57,6 @@ export type WaterAlert = {
   created_at: string;
   source: "firebase" | "derived";
 };
-
-export type DeviceStatus = {
-  deviceId: string;
-  firmware: string;
-  online: boolean;
-  rssi: number;
-  freeHeap: number;
-  updatedAt: string;
-};
-
-function isFreshHeartbeat(updatedAt: string): boolean {
-  const timestamp = new Date(updatedAt).getTime();
-  return Number.isFinite(timestamp) && Date.now() - timestamp <= DEVICE_OFFLINE_AFTER_MS;
-}
-
-function normalizeDeviceStatus(status: Partial<DeviceStatus> & { deviceId: string }): DeviceStatus {
-  const updatedAt = String(status.updatedAt ?? "");
-  return {
-    deviceId: String(status.deviceId),
-    firmware: String(status.firmware ?? "unknown"),
-    online: Boolean(status.online) && isFreshHeartbeat(updatedAt),
-    rssi: Number(status.rssi ?? 0) || 0,
-    freeHeap: Number(status.freeHeap ?? 0) || 0,
-    updatedAt,
-  };
-}
 
 export async function listFeedingEvents(): Promise<FeedingEventRow[]> {
   try {
@@ -134,105 +108,102 @@ function explicitPondPath(farmId: string, pondId: string, ...parts: string[]) {
   return ["farms", farmId, "ponds", pondId, ...parts].map(encodeURIComponent).join("/");
 }
 
-function latestWaterTenantPairs() {
-  const active = { farmId: getActiveFarmId(), pondId: getActivePondId() };
-  const fallback = { farmId: fallbackFarmId, pondId: fallbackPondId };
-  const seen = new Set<string>();
-  return [active, fallback].filter(({ farmId, pondId }) => {
-    const key = `${farmId}/${pondId}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+function activeWaterTenantPair() {
+  const farmId = getActiveFarmId().trim();
+  const pondId = getActivePondId().trim();
+  return farmId && pondId ? { farmId, pondId } : null;
 }
 
 export async function getLatestWaterReading(): Promise<WaterReading | null> {
-  const tenantPairs = latestWaterTenantPairs();
+  const tenantPair = activeWaterTenantPair();
+  if (!tenantPair) return null;
+
   let shouldTryDirectFirebaseFallback = false;
 
-  for (const { farmId, pondId } of tenantPairs) {
-    const params = new URLSearchParams({ farmId, pondId });
-    try {
-      const response = await fetch(`/api/iot/latest?${params.toString()}`, {
-        headers: { accept: "application/json" },
-      });
-      const contentType = response.headers.get("content-type") ?? "";
-      if (response.ok && contentType.includes("application/json")) {
-        const reading = (await response.json()) as WaterReading | null;
-        if (reading) return reading;
-      }
-      shouldTryDirectFirebaseFallback =
-        shouldTryDirectFirebaseFallback ||
-        response.status === 404 ||
-        !contentType.includes("application/json");
-    } catch {
-      shouldTryDirectFirebaseFallback = true;
+  const params = new URLSearchParams(tenantPair);
+  try {
+    const response = await fetch(`/api/iot/latest?${params.toString()}`, {
+      headers: { accept: "application/json" },
+    });
+    const contentType = response.headers.get("content-type") ?? "";
+    if (response.ok && contentType.includes("application/json")) {
+      const reading = (await response.json()) as WaterReading | null;
+      if (reading) return reading;
     }
+    shouldTryDirectFirebaseFallback =
+      response.status === 404 || !contentType.includes("application/json");
+  } catch {
+    shouldTryDirectFirebaseFallback = true;
   }
 
   if (!shouldTryDirectFirebaseFallback || !firebaseBaseUrl) return null;
-  for (const { farmId, pondId } of tenantPairs) {
-    try {
-      const response = await fetch(
-        `${firebaseBaseUrl}/${explicitPondPath(farmId, pondId, "water", "latest")}.json`,
-      );
-      if (!response.ok) continue;
-      const reading = (await response.json()) as WaterReading | null;
-      if (reading) return reading;
-    } catch {
-      // Try the next tenant pair.
-    }
+  try {
+    const response = await fetch(
+      `${firebaseBaseUrl}/${explicitPondPath(
+        tenantPair.farmId,
+        tenantPair.pondId,
+        "water",
+        "latest",
+      )}.json`,
+    );
+    if (!response.ok) return null;
+    const reading = (await response.json()) as WaterReading | null;
+    if (reading) return reading;
+  } catch {
+    return null;
   }
   return null;
 }
 
-export async function getLatestOnlineWaterReading(): Promise<WaterReading | null> {
-  const farmId = getActiveFarmId();
-  const pondId = getActivePondId();
-  const [reading, devices] = await Promise.all([
-    getLatestWaterReading(),
-    listDeviceStatuses(farmId, pondId),
-  ]);
-  const onlineDevices = devices.filter((device) => device.online);
-  if (!reading || onlineDevices.length === 0) return null;
+export type DeviceStatus = FirebaseDeviceStatus;
 
-  if (reading.deviceId) {
-    return onlineDevices.some((device) => device.deviceId === reading.deviceId) ? reading : null;
+export const listDeviceStatuses = listFirebaseDeviceStatuses;
+
+export async function getLatestOnlineWaterReading(): Promise<WaterReading | null> {
+  const latest = await getLatestWaterReading();
+  if (!latest) return null;
+
+  const deviceStatuses = await listDeviceStatuses(getActiveFarmId(), latest.pondId);
+  const onlineDevices = deviceStatuses.filter((device) => device.online);
+
+  if (latest.deviceId) {
+    return onlineDevices.some((device) => device.deviceId === latest.deviceId) ? latest : null;
   }
 
-  return reading;
+  return onlineDevices.length > 0 ? latest : null;
 }
 
 export async function listWaterAlerts(limit = 20): Promise<WaterAlert[]> {
-  if (firebaseBaseUrl) {
-    for (const { farmId, pondId } of latestWaterTenantPairs()) {
-      try {
-        const response = await fetch(
-          `${firebaseBaseUrl}/${explicitPondPath(
-            farmId,
-            pondId,
-            "alerts",
-          )}.json?orderBy="$key"&limitToLast=${limit}`,
-        );
+  const tenantPair = activeWaterTenantPair();
+  if (!tenantPair) return [];
 
-        if (response.ok) {
-          const raw = (await response.json()) as Record<
-            string,
-            Omit<WaterAlert, "id" | "source">
-          > | null;
-          if (raw && typeof raw === "object") {
-            return Object.entries(raw)
-              .map(([id, value]) => ({ id, ...value, source: "firebase" as const }))
-              .sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
-          }
+  if (firebaseBaseUrl) {
+    try {
+      const response = await fetch(
+        `${firebaseBaseUrl}/${explicitPondPath(
+          tenantPair.farmId,
+          tenantPair.pondId,
+          "alerts",
+        )}.json?orderBy="$key"&limitToLast=${limit}`,
+      );
+
+      if (response.ok) {
+        const raw = (await response.json()) as Record<
+          string,
+          Omit<WaterAlert, "id" | "source">
+        > | null;
+        if (raw && typeof raw === "object") {
+          return Object.entries(raw)
+            .map(([id, value]) => ({ id, ...value, source: "firebase" as const }))
+            .sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
         }
-      } catch {
-        // Try the next tenant pair, then fall back to derived alerts below.
       }
+    } catch {
+      // Fall back to derived alerts below.
     }
   }
 
-  const latest = await getLatestWaterReading();
+  const latest = await getLatestOnlineWaterReading();
   if (!latest) return [];
 
   const derived: WaterAlert[] = [];
@@ -332,7 +303,6 @@ export async function listIncome(): Promise<IncomeRow[]> {
     return [];
   }
 }
-
 export async function addIncome(row: IncomeRow): Promise<void> {
   await supabaseRequest("finance_income", {
     method: "POST",
@@ -340,7 +310,6 @@ export async function addIncome(row: IncomeRow): Promise<void> {
     body: JSON.stringify([row]),
   });
 }
-
 export async function updateIncome(id: number, row: IncomeRow): Promise<void> {
   await supabaseRequest(`finance_income?id=eq.${id}`, {
     method: "PATCH",
@@ -348,7 +317,6 @@ export async function updateIncome(id: number, row: IncomeRow): Promise<void> {
     body: JSON.stringify(row),
   });
 }
-
 export async function deleteIncome(id: number): Promise<void> {
   await supabaseRequest(`finance_income?id=eq.${id}`, {
     method: "DELETE",
@@ -366,7 +334,6 @@ export async function listExpenses(): Promise<ExpenseRow[]> {
     return [];
   }
 }
-
 export async function addExpense(row: ExpenseRow): Promise<void> {
   await supabaseRequest("finance_expenses", {
     method: "POST",
@@ -374,7 +341,6 @@ export async function addExpense(row: ExpenseRow): Promise<void> {
     body: JSON.stringify([row]),
   });
 }
-
 export async function updateExpense(id: number, row: ExpenseRow): Promise<void> {
   await supabaseRequest(`finance_expenses?id=eq.${id}`, {
     method: "PATCH",
@@ -382,52 +348,9 @@ export async function updateExpense(id: number, row: ExpenseRow): Promise<void> 
     body: JSON.stringify(row),
   });
 }
-
 export async function deleteExpense(id: number): Promise<void> {
   await supabaseRequest(`finance_expenses?id=eq.${id}`, {
     method: "DELETE",
     headers: { Prefer: "return=minimal" },
   });
-}
-
-export async function listDeviceStatuses(
-  farmId = getActiveFarmId(),
-  pondId = getActivePondId(),
-): Promise<DeviceStatus[]> {
-  const params = new URLSearchParams({ farmId, pondId });
-  let shouldTryDirectFirebaseFallback = false;
-
-  try {
-    const response = await fetch(`/api/iot/devices?${params.toString()}`, {
-      headers: { accept: "application/json" },
-    });
-    const contentType = response.headers.get("content-type") ?? "";
-    if (response.ok && contentType.includes("application/json")) {
-      const payload = (await response.json()) as { devices?: DeviceStatus[] };
-      return Array.isArray(payload.devices) ? payload.devices.map(normalizeDeviceStatus) : [];
-    }
-    shouldTryDirectFirebaseFallback =
-      response.status === 404 || !contentType.includes("application/json");
-  } catch {
-    shouldTryDirectFirebaseFallback = true;
-  }
-
-  if (!shouldTryDirectFirebaseFallback || !firebaseBaseUrl) return [];
-
-  try {
-    const response = await fetch(
-      `${firebaseBaseUrl}/${explicitPondPath(farmId, pondId, "devices", "status")}.json`,
-    );
-    if (!response.ok) return [];
-    const raw = (await response.json()) as Record<
-      string,
-      Partial<Omit<DeviceStatus, "deviceId">>
-    > | null;
-    if (!raw || typeof raw !== "object") return [];
-    return Object.entries(raw)
-      .map(([deviceId, value]) => normalizeDeviceStatus({ deviceId, ...value }))
-      .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
-  } catch {
-    return [];
-  }
 }

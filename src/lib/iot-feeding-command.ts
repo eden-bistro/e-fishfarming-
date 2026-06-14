@@ -17,7 +17,6 @@ export type IotFeedingCommand = {
   targetPondId: string;
   requestedBy: string;
   requestedAt: string;
-  scheduledFor?: string;
   status: "queued" | "ack" | "done" | "failed";
 };
 
@@ -30,16 +29,8 @@ function normalizeCommandBody(body: Record<string, unknown>): Omit<IotFeedingCom
   const amountKg = Number(body.amountKg);
   const targetPondId = String(body.targetPondId ?? body.pondId ?? "").trim();
   const requestedBy = String(body.requestedBy ?? "operator").trim();
-  const scheduledForRaw = String(body.scheduledFor ?? "").trim();
-  const scheduledForDate = scheduledForRaw ? new Date(scheduledForRaw) : null;
 
-  if (
-    !Number.isFinite(amountKg) ||
-    amountKg <= 0 ||
-    !targetPondId ||
-    !requestedBy ||
-    (scheduledForDate !== null && !Number.isFinite(scheduledForDate.getTime()))
-  ) {
+  if (!Number.isFinite(amountKg) || amountKg <= 0 || !targetPondId || !requestedBy) {
     return null;
   }
 
@@ -49,7 +40,6 @@ function normalizeCommandBody(body: Record<string, unknown>): Omit<IotFeedingCom
     targetPondId,
     requestedBy,
     requestedAt: new Date().toISOString(),
-    scheduledFor: scheduledForDate?.toISOString(),
     status: "queued",
   };
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  getLatestWaterReading,
+  getLatestOnlineWaterReading,
   listExpenses,
   listFeedingEvents,
   listIncome,
@@ -77,7 +77,7 @@ export function KpiCards() {
   useEffect(() => {
     async function load() {
       const [water, events, income, expenses] = await Promise.all([
-        getLatestWaterReading(),
+        getLatestOnlineWaterReading(),
         listFeedingEvents(),
         listIncome(),
         listExpenses(),
@@ -118,7 +118,7 @@ export function KpiCards() {
         iconColor="text-info"
         label="Water Quality"
         value={<span className={waterColor}>{waterStatus}</span>}
-        sub="From latest sensor reading"
+        sub="From assigned online sensor"
         link={{ href: "/water/live", text: "View Details" }}
       />
       <KpiCard

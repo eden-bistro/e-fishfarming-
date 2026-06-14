@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Bot, MessageCircle, Send, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getLatestWaterReading, type WaterReading } from "@/lib/platform-clients";
+import { getLatestOnlineWaterReading, type WaterReading } from "@/lib/platform-clients";
 import { listEnterpriseAlerts } from "@/services/modules/alerts.service";
 import { buildProductionIntelligence } from "@/services/modules/production-intelligence.service";
 
@@ -219,7 +219,7 @@ function financeAdvice(): string {
 
 async function buildChatContext(): Promise<ChatContext> {
   try {
-    return { latestWater: await getLatestWaterReading(), latestWaterError: null };
+    return { latestWater: await getLatestOnlineWaterReading(), latestWaterError: null };
   } catch (error) {
     return {
       latestWater: null,

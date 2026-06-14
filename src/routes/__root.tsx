@@ -7,8 +7,31 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { useEffect } from "react";
+
+import { DownloadAppPrompt } from "@/components/download-app-prompt";
 
 import appCss from "../styles.css?url";
+
+const isProduction = import.meta.env.PROD;
+
+function registerServiceWorker() {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return;
+  if (!isProduction || !("serviceWorker" in navigator)) return;
+
+  const register = () => {
+    navigator.serviceWorker.register("/sw.js").catch((error: unknown) => {
+      console.error("AquaSmart service worker registration failed", error);
+    });
+  };
+
+  if (document.readyState === "complete") {
+    register();
+    return;
+  }
+
+  window.addEventListener("load", register, { once: true });
+}
 
 function NotFoundComponent() {
   return (
@@ -72,6 +95,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "theme-color", content: "#0f766e" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-title", content: "AquaSmart" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       { title: "AquaSmart Dashboard" },
       {
         name: "description",
@@ -108,6 +135,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: "/favicon.ico",
       },
       {
+        rel: "manifest",
+        href: "/manifest.webmanifest",
+      },
+      {
+        rel: "apple-touch-icon",
+        href: "/icons/aquasmart-icon.svg",
+      },
+      {
         rel: "stylesheet",
         href: appCss,
       },
@@ -136,9 +171,14 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => {
+    registerServiceWorker();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
+      <DownloadAppPrompt />
     </QueryClientProvider>
   );
 }

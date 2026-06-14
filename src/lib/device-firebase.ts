@@ -60,7 +60,9 @@ export async function listDeviceStatuses(
     const contentType = response.headers.get("content-type") ?? "";
     if (response.ok && contentType.includes("application/json")) {
       const payload = (await response.json()) as { devices?: DeviceStatus[] };
-      return Array.isArray(payload.devices) ? payload.devices : [];
+      return Array.isArray(payload.devices)
+        ? payload.devices.map((device) => normalizeDeviceStatus(device))
+        : [];
     }
     shouldTryDirectFirebaseFallback =
       response.status === 404 || !contentType.includes("application/json");

@@ -11,7 +11,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { useEffect, useState } from "react";
-import { getLatestWaterReading } from "@/lib/platform-clients";
+import { getLatestOnlineWaterReading } from "@/lib/platform-clients";
 
 export const Route = createFileRoute("/water/history")({
   head: () => ({ meta: [{ title: "Water History — AquaSmart" }] }),
@@ -36,7 +36,7 @@ function Chart({
   useEffect(() => {
     let mounted = true;
     async function tick() {
-      const latest = await getLatestWaterReading();
+      const latest = await getLatestOnlineWaterReading();
       if (!mounted || !latest) return;
       const row: Row = {
         h: new Date(latest.timestamp).toLocaleTimeString([], {
@@ -65,7 +65,9 @@ function Chart({
       </CardHeader>
       <CardContent className="h-56">
         {data.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No realtime data yet.</p>
+          <p className="text-sm text-muted-foreground">
+            No online device is currently streaming realtime data.
+          </p>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data}>

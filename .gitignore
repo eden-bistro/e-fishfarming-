@@ -44,3 +44,6 @@ firmware/secret.h
 /iot-setup.json
 /iot-setup.local
 /local-debug-backup/
+
+# Generated screenshots and local artifacts
+artifacts/*.png
