@@ -12,7 +12,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { userHasRole } from "@/contexts/rbac";
 import { listDeviceStatuses, type DeviceStatus } from "@/lib/platform-clients";
-import { DEFAULT_FARM_ID, DEFAULT_POND_ID, setActiveFarmId, setActivePondId } from "@/lib/tenant";
+import {
+  DEFAULT_FARM_ID,
+  DEFAULT_POND_ID,
+  getActiveFarmId,
+  getActivePondId,
+  setActiveFarmId,
+  setActivePondId,
+} from "@/lib/tenant";
 
 export const Route = createFileRoute("/settings/devices")({
   head: () => ({ meta: [{ title: "Devices � AquaSmart" }] }),
@@ -68,9 +75,9 @@ function Page() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [setupStatus, setSetupStatus] = useState<SetupStatus>({ type: "idle", message: "" });
   const [form, setForm] = useState({
-    farmId: DEFAULT_FARM_ID,
-    pondId: DEFAULT_POND_ID,
-    cageId: DEFAULT_POND_ID,
+    farmId: getActiveFarmId() || DEFAULT_FARM_ID,
+    pondId: getActivePondId() || DEFAULT_POND_ID,
+    cageId: getActivePondId() || DEFAULT_POND_ID,
     deviceId: "DEVICE_001",
     farmName: "Default Farm",
     cageName: "Cage 001",
