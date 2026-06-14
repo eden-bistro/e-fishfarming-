@@ -1,0 +1,11 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">AquaSmart maskable icon</title>
+  <desc id="desc">A centered fish symbol with safe padding for adaptive app icons.</desc>
+  <rect width="512" height="512" fill="#0F766E"/>
+  <circle cx="382" cy="130" r="58" fill="#67E8F9" fill-opacity="0.9"/>
+  <path d="M100 270c68-82 167-82 294 0-127 82-226 82-294 0Z" fill="#F8FAFC"/>
+  <path d="M312 270c35-42 74-63 116-63-18 30-18 96 0 126-42 0-81-21-116-63Z" fill="#CCFBF1"/>
+  <circle cx="181" cy="250" r="14" fill="#0F172A"/>
+  <path d="M219 303c39 21 82 21 129 0" stroke="#0F766E" stroke-width="20" stroke-linecap="round"/>
+  <path d="M136 365c44 27 105 42 176 42 31 0 61-3 88-10" stroke="#99F6E4" stroke-width="26" stroke-linecap="round"/>
+</svg>

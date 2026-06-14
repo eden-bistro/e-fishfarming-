@@ -1,0 +1,40 @@
+{
+  "name": "AquaSmart Dashboard",
+  "short_name": "AquaSmart",
+  "description": "Smart fish farm operations dashboard for alerts, water quality, feeding, and farm tools.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f766e",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/icons/aquasmart-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/aquasmart-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Water Alerts",
+      "short_name": "Alerts",
+      "description": "Review active water and enterprise alerts.",
+      "url": "/water/alerts"
+    },
+    {
+      "name": "Manual Feeding",
+      "short_name": "Feeding",
+      "description": "Record or trigger a manual feeding event.",
+      "url": "/feeding/manual"
+    }
+  ]
+}
