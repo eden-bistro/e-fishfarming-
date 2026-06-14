@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { Bell, Calendar, ChevronDown } from "lucide-react";
-import { getCurrentUserRecord, getSessionUser, logoutUser } from "@/lib/auth";
+import {
+  getCurrentUserRecord,
+  getSessionUser,
+  loadCurrentUserFarmProfile,
+  logoutUser,
+} from "@/lib/auth";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -63,6 +68,18 @@ export function TopNavbar() {
         year: "numeric",
       }),
     );
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadFarmName() {
+      const farm = await loadCurrentUserFarmProfile();
+      if (!cancelled) setFarmName(farm?.name?.trim() || "No farm profile");
+    }
+    void loadFarmName();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
