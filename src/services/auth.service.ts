@@ -6,6 +6,7 @@ export type SessionUser = {
 };
 
 const SESSION_KEY = "aquasmart_session_v3";
+const DEVICE_ID_KEY = "aquasmart_device_id";
 const REFRESH_WINDOW_MS = 60_000;
 const OFFLINE_AUTH_MESSAGE =
   "You are offline. Reconnect to the internet before signing in or refreshing your session.";
@@ -35,6 +36,35 @@ function getSessionStorage() {
   }
 }
 
+function createDeviceId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+
+  return `device_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+}
+
+function getDeviceId() {
+  const storage = getSessionStorage();
+  if (!storage) return "server";
+
+  const existing = storage.getItem(DEVICE_ID_KEY);
+  if (existing) return existing;
+
+  const deviceId = createDeviceId();
+  storage.setItem(DEVICE_ID_KEY, deviceId);
+  return deviceId;
+}
+
+function sessionKeyForDevice() {
+  return `${SESSION_KEY}:${getDeviceId()}`;
+}
+
+function sessionKeysForRead() {
+  const keys = [sessionKeyForDevice(), SESSION_KEY];
+  return [...new Set(keys)];
+}
+
 function setSession(
   access_token: string,
   user: SessionUser,
@@ -45,7 +75,7 @@ function setSession(
   if (!storage) return;
   const expires_at = expires_in ? Date.now() + expires_in * 1000 : undefined;
   storage.setItem(
-    SESSION_KEY,
+    sessionKeyForDevice(),
     JSON.stringify({
       access_token,
       refresh_token,
@@ -60,19 +90,26 @@ function getSessionRecord(): SessionRecord | null {
   const storage = getSessionStorage();
   if (!storage) return null;
 
-  const raw = storage.getItem(SESSION_KEY) ?? window.sessionStorage.getItem(SESSION_KEY);
+  const deviceSessionKey = sessionKeyForDevice();
+  const readKey = sessionKeysForRead().find(
+    (key) => storage.getItem(key) ?? window.sessionStorage.getItem(key),
+  );
+  if (!readKey) return null;
+
+  const raw = storage.getItem(readKey) ?? window.sessionStorage.getItem(readKey);
   if (!raw) return null;
 
-  if (!storage.getItem(SESSION_KEY)) {
-    storage.setItem(SESSION_KEY, raw);
+  if (readKey !== deviceSessionKey || !storage.getItem(deviceSessionKey)) {
+    storage.setItem(deviceSessionKey, raw);
+    storage.removeItem(SESSION_KEY);
     window.sessionStorage.removeItem(SESSION_KEY);
   }
 
   try {
     return JSON.parse(raw) as SessionRecord;
   } catch {
-    storage.removeItem(SESSION_KEY);
-    window.sessionStorage.removeItem(SESSION_KEY);
+    sessionKeysForRead().forEach((key) => storage.removeItem(key));
+    sessionKeysForRead().forEach((key) => window.sessionStorage.removeItem(key));
     return null;
   }
 }
@@ -112,8 +149,11 @@ async function refreshAccessToken(session: SessionRecord): Promise<string | null
 
 export function logoutUser() {
   const storage = getSessionStorage();
-  storage?.removeItem(SESSION_KEY);
-  if (isBrowser()) window.sessionStorage.removeItem(SESSION_KEY);
+  if (!storage) return;
+  sessionKeysForRead().forEach((key) => storage.removeItem(key));
+  if (isBrowser()) {
+    sessionKeysForRead().forEach((key) => window.sessionStorage.removeItem(key));
+  }
 }
 
 function canUseDirectSupabaseAuth() {

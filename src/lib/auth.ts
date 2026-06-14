@@ -6,6 +6,11 @@ import {
   registerUser as registerUserService,
   type SessionUser,
 } from "@/services/auth.service";
+import {
+  farmProfileBackendAvailable,
+  fetchFarmProfileRemote,
+  saveFarmProfileRemote,
+} from "@/services/farm-profile.service";
 
 export type FarmProfile = {
   name: string;
@@ -71,11 +76,42 @@ export function getCurrentUserRecord(): AuthUser | null {
   return { id: session.id, email: session.email, name: session.email, farm };
 }
 
-export function saveCurrentUserFarm(
+function cacheCurrentUserFarm(userId: string, farm: FarmProfile) {
+  if (!isBrowser()) return;
+  window.localStorage.setItem(`${FARM_KEY}:${userId}`, JSON.stringify(farm));
+}
+
+export async function loadCurrentUserFarmProfile(): Promise<FarmProfile | null> {
+  const session = getSessionUser();
+  if (!session) return null;
+
+  const localFarm = getCurrentUserRecord()?.farm ?? null;
+  const remoteFarm = await fetchFarmProfileRemote();
+  if (remoteFarm) {
+    cacheCurrentUserFarm(session.id, remoteFarm);
+    return remoteFarm;
+  }
+
+  if (localFarm) {
+    await saveFarmProfileRemote(localFarm);
+  }
+
+  return localFarm;
+}
+
+export async function saveCurrentUserFarm(
   farm: FarmProfile,
-): { ok: true } | { ok: false; message: string } {
+): Promise<{ ok: true } | { ok: false; message: string }> {
   const current = getCurrentUserRecord();
   if (!current || !isBrowser()) return { ok: false, message: "No authenticated user." };
-  window.localStorage.setItem(`${FARM_KEY}:${current.id}`, JSON.stringify(farm));
+  cacheCurrentUserFarm(current.id, farm);
+  const synced = await saveFarmProfileRemote(farm);
+  if (!synced && farmProfileBackendAvailable()) {
+    return {
+      ok: false,
+      message:
+        "Farm profile was saved on this device but could not sync to your account. Please try again before using another device.",
+    };
+  }
   return { ok: true };
 }
