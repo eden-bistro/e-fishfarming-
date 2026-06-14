@@ -16,10 +16,27 @@ function scopedKey(base: string, userId: string) {
   return `${base}:${userId}`;
 }
 
+function farmIdForUser(userId: string) {
+  const safeId = userId
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  return safeId ? `user_${safeId}` : "";
+}
+
+export function getUserDefaultFarmId() {
+  const user = getSessionUser();
+  if (!user) return "";
+  return farmIdForUser(user.id);
+}
+
 export function getActiveFarmId() {
   const user = getSessionUser();
-  if (!user || !isBrowser()) return DEFAULT_FARM_ID;
-  return window.localStorage.getItem(scopedKey(ACTIVE_FARM_KEY, user.id)) ?? DEFAULT_FARM_ID;
+  if (!user) return "";
+  if (!isBrowser()) return farmIdForUser(user.id);
+  return window.localStorage.getItem(scopedKey(ACTIVE_FARM_KEY, user.id)) ?? farmIdForUser(user.id);
 }
 
 export function setActiveFarmId(farmId: string) {
@@ -30,7 +47,8 @@ export function setActiveFarmId(farmId: string) {
 
 export function getActivePondId() {
   const user = getSessionUser();
-  if (!user || !isBrowser()) return DEFAULT_POND_ID;
+  if (!user) return "";
+  if (!isBrowser()) return DEFAULT_POND_ID;
   return window.localStorage.getItem(scopedKey(ACTIVE_POND_KEY, user.id)) ?? DEFAULT_POND_ID;
 }
 
