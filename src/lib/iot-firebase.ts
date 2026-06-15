@@ -133,16 +133,8 @@ export function getFirebaseDatabaseConfig(env: unknown): FirebaseDatabaseConfig 
   };
 }
 
-export function getDefaultFarmId(env: unknown): string {
-  return firstDefined([getEnvRecord(env).VITE_DEFAULT_FARM_ID]) ?? "farmer_001";
-}
-
 export function getDefaultPondId(env: unknown): string {
   return firstDefined([getEnvRecord(env).VITE_DEFAULT_POND_ID]) ?? "cage_001";
-}
-
-export function getDefaultDeviceId(env: unknown): string {
-  return firstDefined([getEnvRecord(env).VITE_DEFAULT_DEVICE_ID]) ?? "DEVICE_001";
 }
 
 export async function getFirebaseDatabaseAuth(

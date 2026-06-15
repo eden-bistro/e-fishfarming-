@@ -1,8 +1,6 @@
 import {
   encodedFarmPondPath,
   firstDefined,
-  getDefaultDeviceId,
-  getDefaultFarmId,
   getDefaultPondId,
   getEnvRecord,
   jsonResponse,
@@ -93,9 +91,9 @@ export async function handleIotSetup(request: Request, env: unknown): Promise<Re
   }
 
   const now = new Date().toISOString();
-  const farmId = String(body.farmId ?? getDefaultFarmId(env)).trim();
+  const farmId = String(body.farmId ?? "").trim();
   const pondId = String(body.pondId ?? body.cageId ?? getDefaultPondId(env)).trim();
-  const deviceId = String(body.deviceId ?? getDefaultDeviceId(env)).trim();
+  const deviceId = String(body.deviceId ?? "").trim();
   const farmName = String(body.farmName ?? "Default Farm").trim();
   const cageName = String(body.cageName ?? body.pondName ?? pondId).trim();
   const firmware = String(body.firmware ?? "unknown").trim();

@@ -1,6 +1,5 @@
 import {
   encodedFarmPondPath,
-  getDefaultFarmId,
   getDefaultPondId,
   jsonResponse,
   noContentResponse,
@@ -61,7 +60,7 @@ export async function handleIotDevices(request: Request, env: unknown): Promise<
   if (!firebase.ok) return firebase.response;
 
   const url = new URL(request.url);
-  const farmId = (url.searchParams.get("farmId") || getDefaultFarmId(env)).trim();
+  const farmId = (url.searchParams.get("farmId") ?? "").trim();
   const pondId = (url.searchParams.get("pondId") || getDefaultPondId(env)).trim();
   if (!farmId || !pondId) {
     return jsonResponse({ ok: false, message: "farmId and pondId are required." }, 400, {
