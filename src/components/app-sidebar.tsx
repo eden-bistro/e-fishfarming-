@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   LineChart,
   LogOut,
+  ShieldCheck,
   Settings,
   Wallet,
 } from "lucide-react";
@@ -22,6 +23,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { logoutUser } from "@/lib/auth";
+import { isAdminUser } from "@/contexts/rbac";
 
 const navItems = [
   {
@@ -49,6 +51,13 @@ const navItems = [
     ],
   },
   { title: "AI Insights", url: "/ai/insights", icon: Cpu, description: "Smart recommendations" },
+  {
+    title: "Admin",
+    url: "/admin/dashboard",
+    icon: ShieldCheck,
+    description: "Admin-only management",
+    adminOnly: true,
+  },
   {
     title: "Feeding System",
     icon: Fish,
@@ -110,6 +119,8 @@ export function AppSidebar() {
     if (isMobile) setOpenMobile(false);
   };
 
+  const canSeeAdmin = isAdminUser();
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
@@ -127,6 +138,7 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarMenu>
           {navItems.map((item) => {
+            if ("adminOnly" in item && item.adminOnly && !canSeeAdmin) return null;
             if (!("children" in item)) {
               return (
                 <SidebarMenuItem key={item.title}>

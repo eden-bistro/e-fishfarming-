@@ -9,6 +9,7 @@ import {
   resolveFirebaseDatabase,
   writeFirebaseJson,
 } from "@/lib/iot-firebase";
+import { getAuthorizedUser, requireFarmAccess } from "@/lib/server-authz";
 
 export type IotFeedingCommand = {
   id: string;
@@ -49,7 +50,7 @@ export async function handleIotFeedingCommand(request: Request, env: unknown): P
     return noContentResponse(204, {
       allow: "GET, POST, HEAD, OPTIONS",
       "access-control-allow-methods": "GET, POST, HEAD, OPTIONS",
-      "access-control-allow-headers": "content-type",
+      "access-control-allow-headers": "authorization, content-type",
     });
   }
 
@@ -58,6 +59,9 @@ export async function handleIotFeedingCommand(request: Request, env: unknown): P
       allow: "GET, POST, HEAD, OPTIONS",
     });
   }
+
+  const authz = await getAuthorizedUser(request, env);
+  if (!authz.ok) return authz.response;
 
   const firebase = await resolveFirebaseDatabase(env);
   if (!firebase.ok) return firebase.response;
@@ -70,6 +74,9 @@ export async function handleIotFeedingCommand(request: Request, env: unknown): P
       "cache-control": "no-store",
     });
   }
+
+  const forbidden = requireFarmAccess(authz.user, farmId);
+  if (forbidden) return forbidden;
 
   if (request.method === "GET" || request.method === "HEAD") {
     const limit = Math.max(1, Math.min(Number(url.searchParams.get("limit") ?? 20) || 20, 100));
