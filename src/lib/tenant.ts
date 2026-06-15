@@ -35,14 +35,13 @@ export function getUserDefaultFarmId() {
 export function getActiveFarmId() {
   const user = getSessionUser();
   if (!user) return "";
-  if (!isBrowser()) return farmIdForUser(user.id);
-  return window.localStorage.getItem(scopedKey(ACTIVE_FARM_KEY, user.id)) ?? farmIdForUser(user.id);
+  return farmIdForUser(user.id);
 }
 
-export function setActiveFarmId(farmId: string) {
+export function setActiveFarmId(_farmId: string) {
   const user = getSessionUser();
   if (!user || !isBrowser()) return;
-  window.localStorage.setItem(scopedKey(ACTIVE_FARM_KEY, user.id), farmId);
+  window.localStorage.setItem(scopedKey(ACTIVE_FARM_KEY, user.id), farmIdForUser(user.id));
 }
 
 export function getActivePondId() {

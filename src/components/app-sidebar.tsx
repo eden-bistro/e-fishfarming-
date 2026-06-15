@@ -31,14 +31,23 @@ const navItems = [
     description: "Daily farm overview",
   },
   {
-    title: "Cage Management",
-    url: "/cages",
-    icon: Cpu,
-    description: "Cages and ponds",
+    title: "Production Module",
+    icon: Fish,
+    description: "Growth, harvests and stock",
+    children: [
+      { title: "Production", url: "/production" },
+      { title: "Inventory", url: "/inventory" },
+    ],
   },
-  { title: "Hatchery", url: "/hatchery", icon: Fish, description: "Fingerlings and stock" },
-  { title: "Production", url: "/production", icon: Fish, description: "Growth and harvests" },
-  { title: "Inventory", url: "/inventory", icon: Wallet, description: "Feed and supplies" },
+  {
+    title: "Cage & Hatchery",
+    icon: Cpu,
+    description: "Cages, ponds and fingerlings",
+    children: [
+      { title: "Cage Management", url: "/cages" },
+      { title: "Hatchery", url: "/hatchery" },
+    ],
+  },
   { title: "AI Insights", url: "/ai/insights", icon: Cpu, description: "Smart recommendations" },
   {
     title: "Feeding System",
@@ -89,11 +98,8 @@ export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { isMobile, setOpenMobile } = useSidebar();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    Production:
-      path.startsWith("/production") ||
-      path.startsWith("/cages") ||
-      path.startsWith("/hatchery") ||
-      path.startsWith("/inventory"),
+    "Production Module": path.startsWith("/production") || path.startsWith("/inventory"),
+    "Cage & Hatchery": path.startsWith("/cages") || path.startsWith("/hatchery"),
     "Feeding System": path.startsWith("/feeding"),
     "Water Quality": path.startsWith("/water"),
     Financial: path.startsWith("/finance"),
