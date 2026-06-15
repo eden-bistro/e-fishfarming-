@@ -405,10 +405,6 @@ function getFirebaseDatabaseConfig(env: unknown): FirebaseDatabaseConfig {
   };
 }
 
-function getDefaultFarmId(env: unknown): string {
-  return firstDefined([getEnvRecord(env).VITE_DEFAULT_FARM_ID]) ?? "farmer_001";
-}
-
 function getDefaultPondId(env: unknown): string {
   return firstDefined([getEnvRecord(env).VITE_DEFAULT_POND_ID]) ?? "cage_001";
 }
@@ -730,7 +726,7 @@ async function handleIotLatest(request: Request, env: unknown): Promise<Response
   }
 
   const url = new URL(request.url);
-  const farmId = (url.searchParams.get("farmId") || getDefaultFarmId(env)).trim();
+  const farmId = (url.searchParams.get("farmId") ?? "").trim();
   const pondId = (url.searchParams.get("pondId") || getDefaultPondId(env)).trim();
   if (!farmId || !pondId) {
     return serverJsonResponse({ ok: false, message: "farmId and pondId are required." }, 400, {

@@ -1,6 +1,5 @@
 import {
   encodedFarmPondPath,
-  getDefaultFarmId,
   getDefaultPondId,
   jsonResponse,
   noContentResponse,
@@ -9,6 +8,7 @@ import {
   resolveFirebaseDatabase,
   writeFirebaseJson,
 } from "@/lib/iot-firebase";
+import { getAuthorizedUser, requireFarmAccess } from "@/lib/server-authz";
 
 export type IotFeedingCommand = {
   id: string;
@@ -49,7 +49,7 @@ export async function handleIotFeedingCommand(request: Request, env: unknown): P
     return noContentResponse(204, {
       allow: "GET, POST, HEAD, OPTIONS",
       "access-control-allow-methods": "GET, POST, HEAD, OPTIONS",
-      "access-control-allow-headers": "content-type",
+      "access-control-allow-headers": "authorization, content-type",
     });
   }
 
@@ -59,17 +59,23 @@ export async function handleIotFeedingCommand(request: Request, env: unknown): P
     });
   }
 
+  const authz = await getAuthorizedUser(request, env);
+  if (!authz.ok) return authz.response;
+
   const firebase = await resolveFirebaseDatabase(env);
   if (!firebase.ok) return firebase.response;
 
   const url = new URL(request.url);
-  const farmId = (url.searchParams.get("farmId") || getDefaultFarmId(env)).trim();
+  const farmId = (url.searchParams.get("farmId") ?? "").trim();
   const pondId = (url.searchParams.get("pondId") || getDefaultPondId(env)).trim();
   if (!farmId || !pondId) {
     return jsonResponse({ ok: false, message: "farmId and pondId are required." }, 400, {
       "cache-control": "no-store",
     });
   }
+
+  const forbidden = requireFarmAccess(authz.user, farmId);
+  if (forbidden) return forbidden;
 
   if (request.method === "GET" || request.method === "HEAD") {
     const limit = Math.max(1, Math.min(Number(url.searchParams.get("limit") ?? 20) || 20, 100));

@@ -11,9 +11,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { userHasRole } from "@/contexts/rbac";
+import { getAccessToken } from "@/services/auth.service";
 import { listDeviceStatuses, type DeviceStatus } from "@/lib/platform-clients";
 import {
-  DEFAULT_FARM_ID,
   DEFAULT_POND_ID,
   getActiveFarmId,
   getActivePondId,
@@ -68,24 +68,24 @@ function deviceStatusHelp(row: DeviceStatus): string {
 }
 
 function Page() {
-  const canProvisionDevices = userHasRole(["super_admin"]);
+  const canProvisionDevices = userHasRole(["admin"]);
   const [rows, setRows] = useState<DeviceStatus[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [setupStatus, setSetupStatus] = useState<SetupStatus>({ type: "idle", message: "" });
   const [form, setForm] = useState({
-    farmId: getActiveFarmId() || DEFAULT_FARM_ID,
+    farmId: getActiveFarmId(),
     pondId: getActivePondId() || DEFAULT_POND_ID,
     cageId: getActivePondId() || DEFAULT_POND_ID,
-    deviceId: "DEVICE_001",
+    deviceId: "",
     farmName: "Default Farm",
     cageName: "Cage 001",
     firmware: "v3.1-fixedwifi",
     setupToken: "",
   });
 
-  const accountFarmId = getActiveFarmId() || DEFAULT_FARM_ID;
+  const accountFarmId = getActiveFarmId();
   const activeFarmId = accountFarmId;
   const activePondId = form.pondId.trim() || DEFAULT_POND_ID;
 
@@ -204,10 +204,12 @@ function Page() {
     };
 
     try {
+      const accessToken = await getAccessToken();
       const response = await fetch("/api/iot/setup", {
         method: "POST",
         headers: {
-          authorization: `Bearer ${setupToken}`,
+          authorization: accessToken ? `Bearer ${accessToken}` : "",
+          "x-iot-setup-token": setupToken,
           "content-type": "application/json; charset=utf-8",
         },
         body: JSON.stringify(payload),
@@ -456,7 +458,7 @@ function Page() {
                     onChange={(event) =>
                       setForm((previous) => ({ ...previous, deviceId: event.target.value }))
                     }
-                    placeholder="DEVICE_001"
+                    placeholder="Printed device ID"
                     autoComplete="off"
                   />
                   <p className="text-xs text-muted-foreground">
