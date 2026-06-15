@@ -85,7 +85,8 @@ function Page() {
     setupToken: "",
   });
 
-  const activeFarmId = form.farmId.trim() || DEFAULT_FARM_ID;
+  const accountFarmId = getActiveFarmId() || DEFAULT_FARM_ID;
+  const activeFarmId = accountFarmId;
   const activePondId = form.pondId.trim() || DEFAULT_POND_ID;
 
   const deviceSummary = useMemo(() => {
@@ -160,7 +161,7 @@ function Page() {
   }, [activeFarmId, activePondId]);
 
   async function setupFarmDevice() {
-    const farmId = form.farmId.trim();
+    const farmId = accountFarmId;
     const pondId = form.pondId.trim();
     const deviceId = form.deviceId.trim();
     const setupToken = form.setupToken.trim();
@@ -418,15 +419,14 @@ function Page() {
                 <div className="space-y-2">
                   <Label>Farm ID</Label>
                   <Input
-                    value={form.farmId}
-                    onChange={(event) =>
-                      setForm((previous) => ({ ...previous, farmId: event.target.value }))
-                    }
-                    placeholder="farmer_001"
+                    value={accountFarmId}
+                    readOnly
+                    placeholder="user_<account-id>"
                     autoComplete="off"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Use the farm code assigned by your company or system administrator.
+                    This account-scoped farm ID is locked to your signed-in user, so another account
+                    cannot select or manage it.
                   </p>
                 </div>
 
@@ -549,7 +549,7 @@ function Page() {
               <div className="rounded-lg border bg-muted/40 p-3">
                 <p className="font-medium">What to send your administrator</p>
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
-                  <li>Farm ID: {form.farmId || DEFAULT_FARM_ID}</li>
+                  <li>Farm ID: {accountFarmId}</li>
                   <li>Cage/Pond ID: {form.pondId || DEFAULT_POND_ID}</li>
                   <li>IoT Device label printed on the IoT Device box, if available</li>
                 </ul>
