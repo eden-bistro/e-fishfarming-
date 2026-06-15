@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { userHasRole } from "@/contexts/rbac";
+import { getAccessToken } from "@/services/auth.service";
 import { listDeviceStatuses, type DeviceStatus } from "@/lib/platform-clients";
 import {
   DEFAULT_FARM_ID,
@@ -68,7 +69,7 @@ function deviceStatusHelp(row: DeviceStatus): string {
 }
 
 function Page() {
-  const canProvisionDevices = userHasRole(["super_admin"]);
+  const canProvisionDevices = userHasRole(["admin"]);
   const [rows, setRows] = useState<DeviceStatus[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -204,10 +205,12 @@ function Page() {
     };
 
     try {
+      const accessToken = await getAccessToken();
       const response = await fetch("/api/iot/setup", {
         method: "POST",
         headers: {
-          authorization: `Bearer ${setupToken}`,
+          authorization: accessToken ? `Bearer ${accessToken}` : "",
+          "x-iot-setup-token": setupToken,
           "content-type": "application/json; charset=utf-8",
         },
         body: JSON.stringify(payload),

@@ -7,6 +7,7 @@ import {
   readFirebaseJson,
   resolveFirebaseDatabase,
 } from "@/lib/iot-firebase";
+import { getAuthorizedUser, requireFarmAccess } from "@/lib/server-authz";
 
 export type IotDeviceStatus = {
   deviceId: string;
@@ -43,7 +44,7 @@ export async function handleIotDevices(request: Request, env: unknown): Promise<
     return noContentResponse(204, {
       allow: "GET, HEAD, OPTIONS",
       "access-control-allow-methods": "GET, HEAD, OPTIONS",
-      "access-control-allow-headers": "content-type",
+      "access-control-allow-headers": "authorization, content-type",
     });
   }
 
@@ -52,6 +53,9 @@ export async function handleIotDevices(request: Request, env: unknown): Promise<
       allow: "GET, HEAD, OPTIONS",
     });
   }
+
+  const authz = await getAuthorizedUser(request, env);
+  if (!authz.ok) return authz.response;
 
   const firebase = await resolveFirebaseDatabase(env);
   if (!firebase.ok) return firebase.response;
@@ -64,6 +68,9 @@ export async function handleIotDevices(request: Request, env: unknown): Promise<
       "cache-control": "no-store",
     });
   }
+
+  const forbidden = requireFarmAccess(authz.user, farmId);
+  if (forbidden) return forbidden;
 
   const path = `${encodedFarmPondPath(farmId, pondId)}/devices/status`;
   const response = await readFirebaseJson(firebase.baseUrl, path, firebase.auth);
