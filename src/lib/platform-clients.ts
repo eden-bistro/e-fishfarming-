@@ -24,6 +24,7 @@ export type WaterReading = {
 
 export type IncomeRow = {
   id?: number;
+  farm_id?: string;
   date: string;
   buyer: string;
   quantity_kg: number;
@@ -33,6 +34,7 @@ export type IncomeRow = {
 
 export type ExpenseRow = {
   id?: number;
+  farm_id?: string;
   date: string;
   category: string;
   description: string;
@@ -41,6 +43,7 @@ export type ExpenseRow = {
 
 export type FeedingEventRow = {
   id?: number;
+  farm_id?: string;
   timestamp: string;
   pond_id: string;
   mode: string;
@@ -307,14 +310,14 @@ export async function addIncome(row: IncomeRow): Promise<void> {
   await supabaseRequest("finance_income", {
     method: "POST",
     headers: { Prefer: "return=minimal" },
-    body: JSON.stringify([row]),
+    body: JSON.stringify([{ ...row, farm_id: getActiveFarmId() }]),
   });
 }
 export async function updateIncome(id: number, row: IncomeRow): Promise<void> {
   await supabaseRequest(`finance_income?id=eq.${id}`, {
     method: "PATCH",
     headers: { Prefer: "return=minimal" },
-    body: JSON.stringify(row),
+    body: JSON.stringify({ ...row, farm_id: getActiveFarmId() }),
   });
 }
 export async function deleteIncome(id: number): Promise<void> {
@@ -338,14 +341,14 @@ export async function addExpense(row: ExpenseRow): Promise<void> {
   await supabaseRequest("finance_expenses", {
     method: "POST",
     headers: { Prefer: "return=minimal" },
-    body: JSON.stringify([row]),
+    body: JSON.stringify([{ ...row, farm_id: getActiveFarmId() }]),
   });
 }
 export async function updateExpense(id: number, row: ExpenseRow): Promise<void> {
   await supabaseRequest(`finance_expenses?id=eq.${id}`, {
     method: "PATCH",
     headers: { Prefer: "return=minimal" },
-    body: JSON.stringify(row),
+    body: JSON.stringify({ ...row, farm_id: getActiveFarmId() }),
   });
 }
 export async function deleteExpense(id: number): Promise<void> {
