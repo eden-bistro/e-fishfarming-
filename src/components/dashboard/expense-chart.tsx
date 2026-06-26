@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { listExpenses, type ExpenseRow } from "@/lib/platform-clients";
+import { listExpenses, PLATFORM_DATA_CHANGED_EVENT, type ExpenseRow } from "@/lib/platform-clients";
 import {
   currentMonthRange,
   filterExpensesByDate,
@@ -22,15 +22,23 @@ export function ExpenseChart({
 }: ExpenseChartProps) {
   const [loadedRows, setLoadedRows] = useState<ExpenseRow[]>([]);
 
+  const load = useCallback(async () => {
+    setLoadedRows(await listExpenses());
+  }, []);
+
   useEffect(() => {
     if (rows) return;
 
-    async function load() {
-      setLoadedRows(await listExpenses());
-    }
-
     void load();
-  }, [rows]);
+    const timer = window.setInterval(() => void load(), 30_000);
+    window.addEventListener(PLATFORM_DATA_CHANGED_EVENT, load);
+    window.addEventListener("focus", load);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener(PLATFORM_DATA_CHANGED_EVENT, load);
+      window.removeEventListener("focus", load);
+    };
+  }, [load, rows]);
 
   const filteredRows = useMemo(
     () => filterExpensesByDate(rows ?? loadedRows, range),

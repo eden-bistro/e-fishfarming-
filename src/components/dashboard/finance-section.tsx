@@ -1,5 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
-import { listExpenses, listIncome, type ExpenseRow, type IncomeRow } from "@/lib/platform-clients";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  listExpenses,
+  listIncome,
+  PLATFORM_DATA_CHANGED_EVENT,
+  type ExpenseRow,
+  type IncomeRow,
+} from "@/lib/platform-clients";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Area, AreaChart, ResponsiveContainer } from "recharts";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
@@ -78,14 +84,23 @@ export function FinanceSection() {
   const [expenseRows, setExpenseRows] = useState<ExpenseRow[]>([]);
   const [range, setRange] = useState<DateRange>(() => currentMonthRange());
 
-  useEffect(() => {
-    async function load() {
-      const [income, expenses] = await Promise.all([listIncome(), listExpenses()]);
-      setIncomeRows(income);
-      setExpenseRows(expenses);
-    }
-    void load();
+  const load = useCallback(async () => {
+    const [income, expenses] = await Promise.all([listIncome(), listExpenses()]);
+    setIncomeRows(income);
+    setExpenseRows(expenses);
   }, []);
+
+  useEffect(() => {
+    void load();
+    const timer = window.setInterval(() => void load(), 30_000);
+    window.addEventListener(PLATFORM_DATA_CHANGED_EVENT, load);
+    window.addEventListener("focus", load);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener(PLATFORM_DATA_CHANGED_EVENT, load);
+      window.removeEventListener("focus", load);
+    };
+  }, [load]);
 
   const filteredIncome = useMemo(() => filterIncomeByDate(incomeRows, range), [incomeRows, range]);
   const filteredExpenses = useMemo(
