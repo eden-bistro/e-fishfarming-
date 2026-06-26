@@ -147,7 +147,7 @@ function Page() {
               placeholder="e.g. 12500"
               aria-label="Expense amount"
               value={form.amount}
-              onChange={(e) => setForm((f) => ({ ...f, amount: Number(e.target.value) }))}
+              onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
             />
           </div>
           <Button className="md:self-end" onClick={() => void save()}>
