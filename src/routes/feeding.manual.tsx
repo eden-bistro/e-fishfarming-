@@ -12,9 +12,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Hand, Play } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { pushManualFeedingEvent } from "@/lib/platform-clients";
+import { getLatestOnlineWaterReading, pushManualFeedingEvent } from "@/lib/platform-clients";
 import { consumeFeedInventory } from "@/services/modules/inventory.service";
 import { addProductionEventRemote } from "@/services/modules/production.service";
 
@@ -23,9 +23,53 @@ export const Route = createFileRoute("/feeding/manual")({
   component: Page,
 });
 
+function waterQualityStatus(reading: Awaited<ReturnType<typeof getLatestOnlineWaterReading>>) {
+  if (!reading) {
+    return {
+      canFeed: false,
+      label: "No live water data",
+      message: "Connect an online water sensor before feeding.",
+    };
+  }
+
+  const canFeed =
+    reading.dissolvedOxygen >= 5 &&
+    reading.ph >= 6.5 &&
+    reading.ph <= 8.5 &&
+    reading.ammonia <= 0.05;
+
+  return {
+    canFeed,
+    label: canFeed ? "Safe to feed" : "Water quality not safe",
+    message: canFeed
+      ? "Dissolved oxygen, pH, and ammonia are in the feeding-safe range."
+      : "Feeding is blocked until dissolved oxygen, pH, and ammonia return to safe levels.",
+  };
+}
+
 function Page() {
   const [amount, setAmount] = useState([2.5]);
   const [pond, setPond] = useState("Pond A");
+  const [quality, setQuality] = useState({
+    canFeed: false,
+    label: "Checking water quality...",
+    message: "Checking the latest online water sensor before feeding.",
+  });
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadQuality() {
+      const status = waterQualityStatus(await getLatestOnlineWaterReading());
+      if (mounted) setQuality(status);
+    }
+    void loadQuality();
+    const timer = window.setInterval(() => void loadQuality(), 30_000);
+    return () => {
+      mounted = false;
+      window.clearInterval(timer);
+    };
+  }, []);
+
   return (
     <DashboardLayout
       title="Manual Feeding"
@@ -62,9 +106,20 @@ function Page() {
               </div>
               <Slider value={amount} onValueChange={setAmount} min={0.5} max={10} step={0.1} />
             </div>
+            <div
+              className={`rounded-md border p-3 text-sm ${quality.canFeed ? "bg-success/10 text-success" : "bg-warning/10 text-warning"}`}
+            >
+              <p className="font-medium">{quality.label}</p>
+              <p className="mt-1 text-xs">{quality.message}</p>
+            </div>
             <Button
               className="w-full gap-2"
+              disabled={!quality.canFeed}
               onClick={async () => {
+                if (!quality.canFeed) {
+                  toast.error(quality.message);
+                  return;
+                }
                 await pushManualFeedingEvent(amount[0]);
                 consumeFeedInventory(amount[0], "Manual feed");
                 await addProductionEventRemote({
