@@ -4,6 +4,8 @@ import {
   filterExpensesByDate,
   filterIncomeByDate,
   incomeAmount,
+  incomeQuantity,
+  incomeUnit,
   isWithinDateRange,
   type DateRange,
 } from "@/services/modules/finance-analytics.service";
@@ -76,7 +78,9 @@ export async function buildOperationalFinanceSnapshot(
     0,
   );
   const feedKg = Math.max(productionFeedKg, inventoryFeedUsageKg);
-  const soldKg = income.reduce((sum, row) => sum + Number(row.quantity_kg ?? 0), 0);
+  const soldKg = income
+    .filter((row) => incomeUnit(row).toLowerCase() === "kg")
+    .reduce((sum, row) => sum + incomeQuantity(row), 0);
   const totalIncome = income.reduce((sum, row) => sum + incomeAmount(row), 0);
   const totalExpenses = expenses.reduce((sum, row) => sum + expenseAmount(row), 0);
   const feedExpenses = expenses
