@@ -4,6 +4,7 @@ alter table if exists public.finance_expenses enable row level security;
 alter table if exists public.feeding_events enable row level security;
 alter table if exists public.water_readings enable row level security;
 alter table if exists public.production_events enable row level security;
+alter table if exists public.farm_profiles enable row level security;
 alter table if exists public.inventory_items enable row level security;
 alter table if exists public.inventory_movements enable row level security;
 alter table if exists public.cages enable row level security;
@@ -56,6 +57,21 @@ for select using (farm_id = coalesce(auth.jwt() -> 'app_metadata' ->> 'farm_id',
 drop policy if exists "water_readings_insert" on water_readings;
 create policy "water_readings_insert" on water_readings
 for insert with check (farm_id = coalesce(auth.jwt() -> 'app_metadata' ->> 'farm_id', 'default'));
+
+
+drop policy if exists "farm_profiles_select" on farm_profiles;
+create policy "farm_profiles_select" on farm_profiles
+for select using (tenant_id = auth.uid()::text);
+drop policy if exists "farm_profiles_insert" on farm_profiles;
+create policy "farm_profiles_insert" on farm_profiles
+for insert with check (tenant_id = auth.uid()::text);
+drop policy if exists "farm_profiles_update" on farm_profiles;
+create policy "farm_profiles_update" on farm_profiles
+for update using (tenant_id = auth.uid()::text)
+with check (tenant_id = auth.uid()::text);
+drop policy if exists "farm_profiles_delete" on farm_profiles;
+create policy "farm_profiles_delete" on farm_profiles
+for delete using (tenant_id = auth.uid()::text);
 
 create policy if not exists "production_events_select" on production_events
 for select using (tenant_id = auth.uid()::text);
