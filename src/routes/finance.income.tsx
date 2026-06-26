@@ -61,6 +61,10 @@ function Page() {
 
   const filteredRows = useMemo(() => filterIncomeByDate(rows, range), [range, rows]);
   const total = useMemo(() => sumIncome(filteredRows), [filteredRows]);
+  const draftQuantity = Number(form.quantity_kg);
+  const draftPrice = Number(form.price_per_kg);
+  const draftTotal =
+    Number.isFinite(draftQuantity) && Number.isFinite(draftPrice) ? draftQuantity * draftPrice : 0;
 
   function exportIncomeCsv() {
     const header = ["Date", "Buyer", "Quantity kg", "Price per kg", "Total"];
@@ -124,30 +128,59 @@ function Page() {
         <CardHeader>
           <CardTitle className="text-base">Add / Edit Income</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-2 md:grid-cols-5">
-          <Input
-            type="date"
-            value={form.date}
-            onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-          />
-          <Input
-            placeholder="Buyer"
-            value={form.buyer}
-            onChange={(e) => setForm((f) => ({ ...f, buyer: e.target.value }))}
-          />
-          <Input
-            type="number"
-            placeholder="Qty kg"
-            value={form.quantity_kg}
-            onChange={(e) => setForm((f) => ({ ...f, quantity_kg: Number(e.target.value) }))}
-          />
-          <Input
-            type="number"
-            placeholder="Price/kg"
-            value={form.price_per_kg}
-            onChange={(e) => setForm((f) => ({ ...f, price_per_kg: Number(e.target.value) }))}
-          />
-          <Button onClick={() => void save()}>{editId ? "Update" : "Add"}</Button>
+        <CardContent className="grid gap-3 md:grid-cols-5">
+          <div>
+            <p className="mb-1 text-xs text-muted-foreground">Sale date</p>
+            <Input
+              type="date"
+              aria-label="Income date"
+              value={form.date}
+              onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+            />
+          </div>
+          <div>
+            <p className="mb-1 text-xs text-muted-foreground">Buyer name</p>
+            <Input
+              placeholder="e.g. Lakeside Hotel"
+              aria-label="Buyer name"
+              value={form.buyer}
+              onChange={(e) => setForm((f) => ({ ...f, buyer: e.target.value }))}
+            />
+          </div>
+          <div>
+            <p className="mb-1 text-xs text-muted-foreground">Quantity sold (kg)</p>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="e.g. 120"
+              aria-label="Quantity sold in kilograms"
+              value={form.quantity_kg}
+              onChange={(e) => setForm((f) => ({ ...f, quantity_kg: Number(e.target.value) }))}
+            />
+          </div>
+          <div>
+            <p className="mb-1 text-xs text-muted-foreground">Price for each kg</p>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="e.g. 450"
+              aria-label="Price per kilogram"
+              value={form.price_per_kg}
+              onChange={(e) => setForm((f) => ({ ...f, price_per_kg: Number(e.target.value) }))}
+            />
+          </div>
+          <Button className="md:self-end" onClick={() => void save()}>
+            {editId ? "Update" : "Add"}
+          </Button>
+          <div className="rounded-md border bg-muted/30 p-3 text-sm md:col-span-5">
+            <p className="font-medium">You are recording</p>
+            <p className="text-muted-foreground">
+              {form.buyer.trim() || "Buyer"} will be charged {formatCurrency(draftPrice || 0)} per
+              kg for {draftQuantity || 0} kg. Estimated total: {formatCurrency(draftTotal)}.
+            </p>
+          </div>
         </CardContent>
       </Card>
 
