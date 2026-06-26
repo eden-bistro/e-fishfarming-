@@ -43,17 +43,18 @@ function Page() {
   const [rows, setRows] = useState<IncomeRow[]>([]);
   const [editId, setEditId] = useState<number | null>(null);
   const [range, setRange] = useState<DateRange>(() => currentMonthRange());
-  const [form, setForm] = useState({
+  const emptyForm = {
     date: "",
     buyer: "",
-    income_type: "",
+    income_type: "Fish sale",
     unit: "kg",
     quantity: 0,
     unit_price: 0,
     quantity_kg: 0,
     price_per_kg: 0,
     total: 0,
-  });
+  };
+  const [form, setForm] = useState(emptyForm);
 
   async function load() {
     try {
@@ -104,8 +105,9 @@ function Page() {
     );
     if (!ok) return;
     await deleteIncome(row.id);
+    setRows((current) => current.filter((item) => item.id !== row.id));
     toast.success("Income record deleted.");
-    await load();
+    void load();
   }
 
   async function save() {
@@ -135,21 +137,13 @@ function Page() {
       total: qty * price,
     };
     try {
-      if (editId) await updateIncome(editId, payload);
-      else await addIncome(payload);
+      const saved = editId ? await updateIncome(editId, payload) : await addIncome(payload);
+      setRows((current) =>
+        editId ? current.map((row) => (row.id === editId ? saved : row)) : [saved, ...current],
+      );
       toast.success(editId ? "Income updated." : "Income added.");
       setEditId(null);
-      setForm({
-        date: "",
-        buyer: "",
-        income_type: "",
-        unit: "kg",
-        quantity: 0,
-        unit_price: 0,
-        quantity_kg: 0,
-        price_per_kg: 0,
-        total: 0,
-      });
+      setForm(emptyForm);
       await load();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to save income record.");
@@ -193,7 +187,10 @@ function Page() {
               placeholder="e.g. 120"
               aria-label="Quantity sold in kilograms"
               value={form.quantity_kg}
-              onChange={(e) => setForm((f) => ({ ...f, quantity_kg: Number(e.target.value) }))}
+              onChange={(e) => {
+                const quantity = Number(e.target.value);
+                setForm((f) => ({ ...f, quantity, quantity_kg: quantity }));
+              }}
             />
           </div>
           <div>
@@ -205,7 +202,10 @@ function Page() {
               placeholder="e.g. 450"
               aria-label="Price per kilogram"
               value={form.price_per_kg}
-              onChange={(e) => setForm((f) => ({ ...f, price_per_kg: Number(e.target.value) }))}
+              onChange={(e) => {
+                const unitPrice = Number(e.target.value);
+                setForm((f) => ({ ...f, unit_price: unitPrice, price_per_kg: unitPrice }));
+              }}
             />
           </div>
           <Button className="md:self-end" onClick={() => void save()}>
@@ -301,11 +301,18 @@ function Page() {
                       variant="outline"
                       onClick={() => {
                         setEditId(r.id ?? null);
+                        const quantity = incomeQuantity(r);
+                        const unitPrice = incomeUnitPrice(r);
                         setForm({
                           date: r.date,
                           buyer: r.buyer,
-                          quantity_kg: String(r.quantity_kg),
-                          price_per_kg: String(r.price_per_kg),
+                          income_type: incomeType(r),
+                          unit: incomeUnit(r),
+                          quantity,
+                          unit_price: unitPrice,
+                          quantity_kg: Number(r.quantity_kg ?? quantity),
+                          price_per_kg: Number(r.price_per_kg ?? unitPrice),
+                          total: incomeAmount(r),
                         });
                       }}
                     >
