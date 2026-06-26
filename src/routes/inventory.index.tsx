@@ -25,8 +25,8 @@ function RouteComponent() {
     name: "",
     category: "feed" as InventoryCategory,
     unit: "kg",
-    quantity: "0",
-    low: "10",
+    quantity: "",
+    low: "",
   });
 
   const canWrite = userHasRole(["admin", "farm_user"]);

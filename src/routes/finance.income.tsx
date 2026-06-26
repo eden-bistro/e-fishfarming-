@@ -43,7 +43,7 @@ function Page() {
   const [rows, setRows] = useState<IncomeRow[]>([]);
   const [editId, setEditId] = useState<number | null>(null);
   const [range, setRange] = useState<DateRange>(() => currentMonthRange());
-  const [form, setForm] = useState<IncomeRow>({
+  const [form, setForm] = useState({
     date: "",
     buyer: "",
     income_type: "",
@@ -301,7 +301,12 @@ function Page() {
                       variant="outline"
                       onClick={() => {
                         setEditId(r.id ?? null);
-                        setForm(r);
+                        setForm({
+                          date: r.date,
+                          buyer: r.buyer,
+                          quantity_kg: String(r.quantity_kg),
+                          price_per_kg: String(r.price_per_kg),
+                        });
                       }}
                     >
                       Edit

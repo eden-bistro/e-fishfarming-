@@ -39,11 +39,11 @@ function Page() {
   const [rows, setRows] = useState<ExpenseRow[]>([]);
   const [editId, setEditId] = useState<number | null>(null);
   const [range, setRange] = useState<DateRange>(() => currentMonthRange());
-  const [form, setForm] = useState<ExpenseRow>({
+  const [form, setForm] = useState({
     date: "",
     category: "",
     description: "",
-    amount: 0,
+    amount: "",
   });
 
   async function load() {
@@ -91,7 +91,7 @@ function Page() {
       else await addExpense(payload);
       toast.success(editId ? "Expense updated." : "Expense added.");
       setEditId(null);
-      setForm({ date: "", category: "", description: "", amount: 0 });
+      setForm({ date: "", category: "", description: "", amount: "" });
       await load();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to save expense record.");
@@ -219,7 +219,12 @@ function Page() {
                       variant="outline"
                       onClick={() => {
                         setEditId(e.id ?? null);
-                        setForm(e);
+                        setForm({
+                          date: e.date,
+                          category: e.category,
+                          description: e.description,
+                          amount: String(e.amount),
+                        });
                       }}
                     >
                       Edit
