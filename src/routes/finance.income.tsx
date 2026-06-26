@@ -48,11 +48,11 @@ function Page() {
     buyer: "",
     income_type: "Fish sale",
     unit: "kg",
-    quantity: "",
-    unit_price: "",
-    quantity_kg: "",
-    price_per_kg: "",
-    total: "",
+    quantity: 0,
+    unit_price: 0,
+    quantity_kg: 0,
+    price_per_kg: 0,
+    total: 0,
   };
   const [form, setForm] = useState(emptyForm);
 
@@ -190,7 +190,7 @@ function Page() {
               aria-label="Quantity sold in kilograms"
               value={form.quantity_kg}
               onChange={(e) => {
-                const quantity = e.target.value;
+                const quantity = Number(e.target.value);
                 setForm((f) => ({ ...f, quantity, quantity_kg: quantity }));
               }}
             />
@@ -205,7 +205,7 @@ function Page() {
               aria-label="Price per kilogram"
               value={form.price_per_kg}
               onChange={(e) => {
-                const unitPrice = e.target.value;
+                const unitPrice = Number(e.target.value);
                 setForm((f) => ({ ...f, unit_price: unitPrice, price_per_kg: unitPrice }));
               }}
             />
@@ -310,11 +310,11 @@ function Page() {
                           buyer: r.buyer,
                           income_type: incomeType(r),
                           unit: incomeUnit(r),
-                          quantity: String(quantity),
-                          unit_price: String(unitPrice),
-                          quantity_kg: String(r.quantity_kg ?? quantity),
-                          price_per_kg: String(r.price_per_kg ?? unitPrice),
-                          total: String(incomeAmount(r)),
+                          quantity,
+                          unit_price: unitPrice,
+                          quantity_kg: Number(r.quantity_kg ?? quantity),
+                          price_per_kg: Number(r.price_per_kg ?? unitPrice),
+                          total: incomeAmount(r),
                         });
                       }}
                     >
