@@ -127,13 +127,15 @@ function Page() {
       return;
     }
 
-    const payload = {
-      ...form,
+    const payload: IncomeRow = {
+      date: form.date,
       buyer: form.buyer.trim(),
       income_type: form.income_type.trim(),
       unit: form.unit.trim(),
       quantity: qty,
       unit_price: price,
+      quantity_kg: qty,
+      price_per_kg: price,
       total: qty * price,
     };
     try {
