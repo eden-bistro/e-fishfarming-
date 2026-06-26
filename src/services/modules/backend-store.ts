@@ -51,3 +51,35 @@ export async function restInsert(table: string, row: Record<string, unknown>) {
   });
   return response.ok;
 }
+
+export async function restUpdate(table: string, id: string, row: Record<string, unknown>) {
+  if (!backendEnabled()) return false;
+  const tid = tenantId();
+  const accessToken = await getAccessToken();
+  const headers = authHeaders(accessToken);
+  headers.set("content-type", "application/json");
+  headers.set("Prefer", "return=minimal");
+  const response = await fetch(
+    `${supabaseUrl}/rest/v1/${table}?tenant_id=eq.${encodeURIComponent(tid)}&id=eq.${encodeURIComponent(id)}`,
+    {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify(row),
+    },
+  );
+  return response.ok;
+}
+
+export async function restDelete(table: string, id: string) {
+  if (!backendEnabled()) return false;
+  const tid = tenantId();
+  const accessToken = await getAccessToken();
+  const response = await fetch(
+    `${supabaseUrl}/rest/v1/${table}?tenant_id=eq.${encodeURIComponent(tid)}&id=eq.${encodeURIComponent(id)}`,
+    {
+      method: "DELETE",
+      headers: authHeaders(accessToken),
+    },
+  );
+  return response.ok;
+}
