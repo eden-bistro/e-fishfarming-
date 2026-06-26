@@ -104,8 +104,9 @@ function Page() {
     );
     if (!ok) return;
     await deleteIncome(row.id);
+    setRows((current) => current.filter((item) => item.id !== row.id));
     toast.success("Income record deleted.");
-    await load();
+    void load();
   }
 
   async function save() {
@@ -135,8 +136,10 @@ function Page() {
       total: qty * price,
     };
     try {
-      if (editId) await updateIncome(editId, payload);
-      else await addIncome(payload);
+      const saved = editId ? await updateIncome(editId, payload) : await addIncome(payload);
+      setRows((current) =>
+        editId ? current.map((row) => (row.id === editId ? saved : row)) : [saved, ...current],
+      );
       toast.success(editId ? "Income updated." : "Income added.");
       setEditId(null);
       setForm({

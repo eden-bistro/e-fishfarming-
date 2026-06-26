@@ -69,8 +69,9 @@ function Page() {
     );
     if (!ok) return;
     await deleteExpense(row.id);
+    setRows((current) => current.filter((item) => item.id !== row.id));
     toast.success("Expense record deleted.");
-    await load();
+    void load();
   }
 
   async function save() {
@@ -87,8 +88,10 @@ function Page() {
       amount,
     };
     try {
-      if (editId) await updateExpense(editId, payload);
-      else await addExpense(payload);
+      const saved = editId ? await updateExpense(editId, payload) : await addExpense(payload);
+      setRows((current) =>
+        editId ? current.map((row) => (row.id === editId ? saved : row)) : [saved, ...current],
+      );
       toast.success(editId ? "Expense updated." : "Expense added.");
       setEditId(null);
       setForm({ date: "", category: "", description: "", amount: "" });
