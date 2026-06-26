@@ -22,7 +22,6 @@ import {
 } from "@/lib/platform-clients";
 import { toast } from "sonner";
 import {
-  FINANCE_EXPENSE_CATEGORIES,
   currentMonthRange,
   expenseAmount,
   filterExpensesByDate,
@@ -61,6 +60,7 @@ function Page() {
 
   const filteredRows = useMemo(() => filterExpensesByDate(rows, range), [range, rows]);
   const totalExpenses = useMemo(() => sumExpenses(filteredRows), [filteredRows]);
+  const draftAmount = Number(form.amount);
 
   async function confirmDelete(row: ExpenseRow) {
     if (!row.id) return;
@@ -101,42 +101,62 @@ function Page() {
   return (
     <DashboardLayout
       title="Expenses"
-      subtitle="Operating costs with standard categories, date filters, and guarded deletes."
+      subtitle="Operating costs with typed categories, date filters, and guarded deletes."
     >
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Add / Edit Expense</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-2 md:grid-cols-5">
-          <Input
-            type="date"
-            value={form.date}
-            onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-          />
-          <select
-            className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-            value={form.category}
-            onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-          >
-            <option value="">Select category</option>
-            {FINANCE_EXPENSE_CATEGORIES.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
-          <Input
-            placeholder="Description"
-            value={form.description}
-            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-          />
-          <Input
-            type="number"
-            placeholder="Amount"
-            value={form.amount}
-            onChange={(e) => setForm((f) => ({ ...f, amount: Number(e.target.value) }))}
-          />
-          <Button onClick={() => void save()}>{editId ? "Update" : "Add"}</Button>
+        <CardContent className="grid gap-3 md:grid-cols-5">
+          <div>
+            <p className="mb-1 text-xs text-muted-foreground">Expense date</p>
+            <Input
+              type="date"
+              aria-label="Expense date"
+              value={form.date}
+              onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+            />
+          </div>
+          <div>
+            <p className="mb-1 text-xs text-muted-foreground">Type any category</p>
+            <Input
+              placeholder="e.g. Feed, Medicine, Fuel"
+              aria-label="Expense category"
+              value={form.category}
+              onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+            />
+          </div>
+          <div>
+            <p className="mb-1 text-xs text-muted-foreground">What was paid for?</p>
+            <Input
+              placeholder="e.g. Starter feed bags"
+              aria-label="Expense description"
+              value={form.description}
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+            />
+          </div>
+          <div>
+            <p className="mb-1 text-xs text-muted-foreground">Amount paid</p>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="e.g. 12500"
+              aria-label="Expense amount"
+              value={form.amount}
+              onChange={(e) => setForm((f) => ({ ...f, amount: Number(e.target.value) }))}
+            />
+          </div>
+          <Button className="md:self-end" onClick={() => void save()}>
+            {editId ? "Update" : "Add"}
+          </Button>
+          <div className="rounded-md border bg-muted/30 p-3 text-sm md:col-span-5">
+            <p className="font-medium">You are recording</p>
+            <p className="text-muted-foreground">
+              {form.category.trim() || "Category"} expense for{" "}
+              {form.description.trim() || "description"}. Total: {formatCurrency(draftAmount || 0)}.
+            </p>
+          </div>
         </CardContent>
       </Card>
 
