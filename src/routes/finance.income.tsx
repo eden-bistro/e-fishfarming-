@@ -39,12 +39,11 @@ function Page() {
   const [rows, setRows] = useState<IncomeRow[]>([]);
   const [editId, setEditId] = useState<number | null>(null);
   const [range, setRange] = useState<DateRange>(() => currentMonthRange());
-  const [form, setForm] = useState<IncomeRow>({
+  const [form, setForm] = useState({
     date: "",
     buyer: "",
-    quantity_kg: 0,
-    price_per_kg: 0,
-    total: 0,
+    quantity_kg: "",
+    price_per_kg: "",
   });
 
   async function load() {
@@ -90,8 +89,9 @@ function Page() {
     );
     if (!ok) return;
     await deleteIncome(row.id);
+    setRows((current) => current.filter((item) => item.id !== row.id));
     toast.success("Income record deleted.");
-    await load();
+    void load();
   }
 
   async function save() {
@@ -102,14 +102,22 @@ function Page() {
       return;
     }
 
-    const payload = { ...form, buyer: form.buyer.trim(), total: qty * price };
+    const payload: IncomeRow = {
+      date: form.date,
+      buyer: form.buyer.trim(),
+      quantity_kg: qty,
+      price_per_kg: price,
+      total: qty * price,
+    };
     try {
-      if (editId) await updateIncome(editId, payload);
-      else await addIncome(payload);
+      const saved = editId ? await updateIncome(editId, payload) : await addIncome(payload);
+      setRows((current) =>
+        editId ? current.map((row) => (row.id === editId ? saved : row)) : [saved, ...current],
+      );
       toast.success(editId ? "Income updated." : "Income added.");
       setEditId(null);
-      setForm({ date: "", buyer: "", quantity_kg: 0, price_per_kg: 0, total: 0 });
-      await load();
+      setForm({ date: "", buyer: "", quantity_kg: "", price_per_kg: "" });
+      void load();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to save income record.");
     }
@@ -139,13 +147,13 @@ function Page() {
             type="number"
             placeholder="Qty kg"
             value={form.quantity_kg}
-            onChange={(e) => setForm((f) => ({ ...f, quantity_kg: Number(e.target.value) }))}
+            onChange={(e) => setForm((f) => ({ ...f, quantity_kg: e.target.value }))}
           />
           <Input
             type="number"
             placeholder="Price/kg"
             value={form.price_per_kg}
-            onChange={(e) => setForm((f) => ({ ...f, price_per_kg: Number(e.target.value) }))}
+            onChange={(e) => setForm((f) => ({ ...f, price_per_kg: e.target.value }))}
           />
           <Button onClick={() => void save()}>{editId ? "Update" : "Add"}</Button>
         </CardContent>
@@ -227,7 +235,12 @@ function Page() {
                       variant="outline"
                       onClick={() => {
                         setEditId(r.id ?? null);
-                        setForm(r);
+                        setForm({
+                          date: r.date,
+                          buyer: r.buyer,
+                          quantity_kg: String(r.quantity_kg),
+                          price_per_kg: String(r.price_per_kg),
+                        });
                       }}
                     >
                       Edit
