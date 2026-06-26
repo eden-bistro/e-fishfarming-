@@ -107,7 +107,7 @@ function Page() {
                 <CardTitle className="text-base">Review Users</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm text-muted-foreground">
-                <p>Review admin and farm-user roles. The initial admin is fishhydro1@gmail.com.</p>
+                <p>Review admin and farm-user roles from trusted Supabase role metadata.</p>
                 <Button asChild variant="outline">
                   <Link to="/settings/users-and-roles">Open Users</Link>
                 </Button>

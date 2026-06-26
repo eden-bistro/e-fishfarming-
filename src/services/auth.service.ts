@@ -3,6 +3,7 @@ import { hasSupabaseConfig, supabaseAnonKey, supabaseUrl } from "@/supabase/clie
 export type SessionUser = {
   id: string;
   email: string;
+  role?: "admin" | "farm_user";
 };
 
 const SESSION_KEY = "aquasmart_session_v3";
@@ -30,9 +31,9 @@ function isBrowser() {
 function getSessionStorage() {
   if (!isBrowser()) return null;
   try {
-    return window.localStorage;
-  } catch {
     return window.sessionStorage;
+  } catch {
+    return null;
   }
 }
 
@@ -65,6 +66,18 @@ function sessionKeysForRead() {
   return [...new Set(keys)];
 }
 
+function roleFromUserPayload(userObj: Record<string, unknown>): SessionUser["role"] {
+  const appMetadata =
+    userObj.app_metadata && typeof userObj.app_metadata === "object"
+      ? (userObj.app_metadata as Record<string, unknown>)
+      : {};
+  const userMetadata =
+    userObj.user_metadata && typeof userObj.user_metadata === "object"
+      ? (userObj.user_metadata as Record<string, unknown>)
+      : {};
+  return appMetadata.role === "admin" || userMetadata.role === "admin" ? "admin" : "farm_user";
+}
+
 function setSession(
   access_token: string,
   user: SessionUser,
@@ -91,25 +104,31 @@ function getSessionRecord(): SessionRecord | null {
   if (!storage) return null;
 
   const deviceSessionKey = sessionKeyForDevice();
-  const readKey = sessionKeysForRead().find(
-    (key) => storage.getItem(key) ?? window.sessionStorage.getItem(key),
-  );
+  const readKey = sessionKeysForRead().find((key) => storage.getItem(key));
   if (!readKey) return null;
 
-  const raw = storage.getItem(readKey) ?? window.sessionStorage.getItem(readKey);
+  const raw = storage.getItem(readKey);
   if (!raw) return null;
 
   if (readKey !== deviceSessionKey || !storage.getItem(deviceSessionKey)) {
     storage.setItem(deviceSessionKey, raw);
     storage.removeItem(SESSION_KEY);
-    window.sessionStorage.removeItem(SESSION_KEY);
+    try {
+      window.localStorage.removeItem(SESSION_KEY);
+    } catch {
+      // Ignore unavailable localStorage while clearing legacy persistent sessions.
+    }
   }
 
   try {
     return JSON.parse(raw) as SessionRecord;
   } catch {
     sessionKeysForRead().forEach((key) => storage.removeItem(key));
-    sessionKeysForRead().forEach((key) => window.sessionStorage.removeItem(key));
+    try {
+      sessionKeysForRead().forEach((key) => window.localStorage.removeItem(key));
+    } catch {
+      // Ignore unavailable localStorage while clearing legacy persistent sessions.
+    }
     return null;
   }
 }
@@ -152,7 +171,11 @@ export function logoutUser() {
   if (!storage) return;
   sessionKeysForRead().forEach((key) => storage.removeItem(key));
   if (isBrowser()) {
-    sessionKeysForRead().forEach((key) => window.sessionStorage.removeItem(key));
+    try {
+      sessionKeysForRead().forEach((key) => window.localStorage.removeItem(key));
+    } catch {
+      // Ignore unavailable localStorage while clearing legacy persistent sessions.
+    }
   }
 }
 
@@ -246,6 +269,7 @@ export async function registerUser(name: string, email: string, password: string
   const user = {
     id: String(userObj.id ?? ""),
     email: String(userObj.email ?? email.trim().toLowerCase()),
+    role: roleFromUserPayload(userObj),
   };
 
   const refresh_token = String(result.payload.refresh_token ?? "");
@@ -275,6 +299,7 @@ export async function loginUser(email: string, password: string) {
   const user = {
     id: String(userObj.id ?? ""),
     email: String(userObj.email ?? email.trim().toLowerCase()),
+    role: roleFromUserPayload(userObj),
   };
 
   if (!access_token || !user.id) {
