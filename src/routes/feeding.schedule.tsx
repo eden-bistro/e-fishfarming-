@@ -10,6 +10,7 @@ import {
   queueFeedingCommand,
   type FeedingCommand,
 } from "@/lib/device-firebase";
+import { getLatestOnlineWaterReading } from "@/lib/platform-clients";
 import { listCages, type Cage } from "@/services/modules/cages.service";
 import {
   listProductionEventsRemote,
@@ -69,6 +70,30 @@ function formatCommandTime(command: FeedingCommand) {
   return Number.isFinite(date.getTime()) ? date.toLocaleString() : value;
 }
 
+function waterQualityStatus(reading: Awaited<ReturnType<typeof getLatestOnlineWaterReading>>) {
+  if (!reading) {
+    return {
+      canFeed: false,
+      label: "No live water data",
+      message: "Connect an online water sensor before scheduling feeding.",
+    };
+  }
+
+  const canFeed =
+    reading.dissolvedOxygen >= 5 &&
+    reading.ph >= 6.5 &&
+    reading.ph <= 8.5 &&
+    reading.ammonia <= 0.05;
+
+  return {
+    canFeed,
+    label: canFeed ? "Safe to feed" : "Water quality not safe",
+    message: canFeed
+      ? "Dissolved oxygen, pH, and ammonia are in the feeding-safe range."
+      : "Feeding is blocked until dissolved oxygen, pH, and ammonia return to safe levels.",
+  };
+}
+
 function Page() {
   const [rows, setRows] = useState<FeedingCommand[]>([]);
   const [cages, setCages] = useState<Cage[]>([]);
@@ -81,6 +106,11 @@ function Page() {
   });
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [quality, setQuality] = useState({
+    canFeed: false,
+    label: "Checking water quality...",
+    message: "Checking the latest online water sensor before scheduling feeding.",
+  });
 
   const queuedCount = useMemo(() => rows.filter((row) => row.status === "queued").length, [rows]);
   const selectedFishCount = useMemo(
@@ -108,6 +138,10 @@ function Page() {
     }
     if (!form.scheduledFor || !Number.isFinite(scheduledDate.getTime())) {
       setMessage("Choose a valid feeding time before queueing.");
+      return;
+    }
+    if (!quality.canFeed) {
+      setMessage(quality.message);
       return;
     }
 
@@ -145,8 +179,13 @@ function Page() {
     let mounted = true;
     const load = async () => {
       try {
-        const [commands] = await Promise.all([listFeedingCommands(30), refreshFarmData()]);
-        if (mounted) setRows(commands);
+        const commands = await listFeedingCommands(30);
+        await refreshFarmData();
+        const latestWater = await getLatestOnlineWaterReading();
+        if (mounted) {
+          setRows(commands);
+          setQuality(waterQualityStatus(latestWater));
+        }
       } catch {
         if (mounted) setRows([]);
       }
@@ -167,6 +206,14 @@ function Page() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Queue Feeding Command</CardTitle>
+          <div
+            className={`rounded-md border p-3 text-sm ${
+              quality.canFeed ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
+            }`}
+          >
+            <p className="font-medium">{quality.label}</p>
+            <p className="mt-1 text-xs">{quality.message}</p>
+          </div>
         </CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-5">
           <div className="space-y-1">
@@ -216,7 +263,7 @@ function Page() {
           <div className="flex items-end">
             <Button
               onClick={() => void addCommand()}
-              disabled={loading}
+              disabled={loading || !quality.canFeed}
               className="min-h-10 w-full"
             >
               {loading ? "Queuing..." : "Queue"}

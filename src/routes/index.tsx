@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { KpiCards } from "@/components/dashboard/kpi-cards";
 import { WaterMonitoring } from "@/components/dashboard/water-monitoring";
-import { FeedingSchedule } from "@/components/dashboard/feeding-schedule";
 import { FinanceSection } from "@/components/dashboard/finance-section";
 import { ExpenseChart } from "@/components/dashboard/expense-chart";
 import { StatusBar } from "@/components/dashboard/status-bar";
@@ -25,12 +24,7 @@ function Dashboard() {
   return (
     <DashboardLayout>
       <KpiCards />
-      <div className="grid grid-cols-1 gap-4 md:gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2">
-          <WaterMonitoring />
-        </div>
-        <FeedingSchedule />
-      </div>
+      <WaterMonitoring />
       <div className="grid grid-cols-1 gap-4 md:gap-6 xl:grid-cols-3">
         <div className="xl:col-span-2">
           <FinanceSection />

@@ -8,19 +8,6 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
-function AuthLoadingShell() {
-  return (
-    <div className="flex min-h-svh items-center justify-center px-4 py-8 sm:p-6">
-      <div className="w-full max-w-md rounded-2xl border bg-card p-6 text-center shadow-sm">
-        <h1 className="text-2xl font-semibold">Loading dashboard…</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Checking your browser session before loading farm data.
-        </p>
-      </div>
-    </div>
-  );
-}
-
 export function DashboardLayout({
   title,
   subtitle,
@@ -32,8 +19,8 @@ export function DashboardLayout({
   actions?: ReactNode;
   children: ReactNode;
 }) {
-  const [hydrated, setHydrated] = useState(false);
-  const [session, setSession] = useState<ReturnType<typeof getSessionUser>>(null);
+  const [hydrated, setHydrated] = useState(typeof window !== "undefined");
+  const [session, setSession] = useState<ReturnType<typeof getSessionUser>>(() => getSessionUser());
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -41,9 +28,7 @@ export function DashboardLayout({
     setHydrated(true);
   }, []);
 
-  if (!hydrated) {
-    return <AuthLoadingShell />;
-  }
+  if (!hydrated) return null;
 
   if (!session) {
     return (

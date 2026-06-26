@@ -10,6 +10,13 @@ const firebaseBaseUrl = (env.VITE_FIREBASE_DATABASE_URL ?? env.FIREBASE_DATABASE
 const supabaseUrl = (env.VITE_SUPABASE_URL ?? env.SUPABASE_URL)?.trim();
 const supabaseAnonKey = (env.VITE_SUPABASE_ANON_KEY ?? env.SUPABASE_ANON_KEY)?.trim();
 
+export const PLATFORM_DATA_CHANGED_EVENT = "aquasmart:platform-data-changed";
+
+function notifyPlatformDataChanged() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(PLATFORM_DATA_CHANGED_EVENT));
+}
+
 export type WaterReading = {
   timestamp: string;
   pondId: string;
@@ -349,7 +356,9 @@ export async function addIncome(row: IncomeRow): Promise<IncomeRow> {
     headers: { Prefer: "return=minimal" },
     body: JSON.stringify([{ ...serializeIncomeRow(row), farm_id: getActiveFarmId() }]),
   });
-  return Array.isArray(rows) && rows[0] ? (rows[0] as IncomeRow) : row;
+  const saved = Array.isArray(rows) && rows[0] ? (rows[0] as IncomeRow) : row;
+  notifyPlatformDataChanged();
+  return saved;
 }
 export async function updateIncome(id: number, row: IncomeRow): Promise<IncomeRow> {
   const rows = await supabaseRequest(`finance_income?id=eq.${id}&select=*`, {
@@ -357,13 +366,16 @@ export async function updateIncome(id: number, row: IncomeRow): Promise<IncomeRo
     headers: { Prefer: "return=minimal" },
     body: JSON.stringify({ ...serializeIncomeRow(row), farm_id: getActiveFarmId() }),
   });
-  return Array.isArray(rows) && rows[0] ? (rows[0] as IncomeRow) : { ...row, id };
+  const saved = Array.isArray(rows) && rows[0] ? (rows[0] as IncomeRow) : { ...row, id };
+  notifyPlatformDataChanged();
+  return saved;
 }
 export async function deleteIncome(id: number): Promise<void> {
   await supabaseRequest(`finance_income?id=eq.${id}`, {
     method: "DELETE",
     headers: { Prefer: "return=minimal" },
   });
+  notifyPlatformDataChanged();
 }
 
 export async function listExpenses(): Promise<ExpenseRow[]> {
@@ -382,7 +394,9 @@ export async function addExpense(row: ExpenseRow): Promise<ExpenseRow> {
     headers: { Prefer: "return=minimal" },
     body: JSON.stringify([{ ...row, farm_id: getActiveFarmId() }]),
   });
-  return Array.isArray(rows) && rows[0] ? (rows[0] as ExpenseRow) : row;
+  const saved = Array.isArray(rows) && rows[0] ? (rows[0] as ExpenseRow) : row;
+  notifyPlatformDataChanged();
+  return saved;
 }
 export async function updateExpense(id: number, row: ExpenseRow): Promise<ExpenseRow> {
   const rows = await supabaseRequest(`finance_expenses?id=eq.${id}&select=*`, {
@@ -390,11 +404,14 @@ export async function updateExpense(id: number, row: ExpenseRow): Promise<Expens
     headers: { Prefer: "return=minimal" },
     body: JSON.stringify({ ...row, farm_id: getActiveFarmId() }),
   });
-  return Array.isArray(rows) && rows[0] ? (rows[0] as ExpenseRow) : { ...row, id };
+  const saved = Array.isArray(rows) && rows[0] ? (rows[0] as ExpenseRow) : { ...row, id };
+  notifyPlatformDataChanged();
+  return saved;
 }
 export async function deleteExpense(id: number): Promise<void> {
   await supabaseRequest(`finance_expenses?id=eq.${id}`, {
     method: "DELETE",
     headers: { Prefer: "return=minimal" },
   });
+  notifyPlatformDataChanged();
 }
