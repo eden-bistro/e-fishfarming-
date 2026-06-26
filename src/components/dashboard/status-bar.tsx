@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getCurrentUserRecord, loadCurrentUserFarmProfile, type FarmProfile } from "@/lib/auth";
+import { getCurrentUserRecord } from "@/lib/auth";
 import { listDeviceStatuses, type DeviceStatus } from "@/lib/device-firebase";
 import { CheckCircle2, Wifi, Clock, MapPin } from "lucide-react";
 
@@ -25,18 +25,13 @@ function newestDeviceUpdate(devices: DeviceStatus[]): string {
 }
 
 export function StatusBar() {
-  const [farm, setFarm] = useState<FarmProfile | undefined>(getCurrentUserRecord()?.farm);
+  const farm = getCurrentUserRecord()?.farm;
   const farmName = farm?.name?.trim() || "No farm profile";
   const [devices, setDevices] = useState<DeviceStatus[]>([]);
   const [loadingDevices, setLoadingDevices] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
-
-    async function loadFarm() {
-      const actualFarm = await loadCurrentUserFarmProfile();
-      if (!cancelled && actualFarm) setFarm(actualFarm);
-    }
 
     async function loadDevices() {
       setLoadingDevices(true);
@@ -47,7 +42,6 @@ export function StatusBar() {
       }
     }
 
-    void loadFarm();
     void loadDevices();
     const timer = window.setInterval(loadDevices, 30_000);
     return () => {

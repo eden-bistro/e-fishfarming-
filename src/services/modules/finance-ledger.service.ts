@@ -4,6 +4,7 @@ import {
   filterExpensesByDate,
   filterIncomeByDate,
   incomeAmount,
+  incomeType,
   expenseAmount,
   summarizeExpensesByCategory,
   type ExpenseCategorySummary,
@@ -70,8 +71,8 @@ function incomeToLedger(row: IncomeRow): LedgerEntry {
     reference: `INC-${row.id ?? "NA"}-${row.date}`,
     date: row.date,
     type: "income",
-    account: "Revenue - Fish Sales",
-    description: `Sale to ${row.buyer}`,
+    account: `Revenue - ${incomeType(row)}`,
+    description: `${incomeType(row)} to ${row.buyer}`,
     debit: 0,
     credit: amount,
     amount,
@@ -97,7 +98,7 @@ function expenseToLedger(row: ExpenseRow): LedgerEntry {
 function incomeToJournal(row: IncomeRow): JournalTransaction {
   const amount = incomeAmount(row);
   const id = `JRN-INC-${row.id ?? "NA"}-${row.date}`;
-  const description = `Fish sale to ${row.buyer}`;
+  const description = `${incomeType(row)} to ${row.buyer}`;
   const lines: JournalLine[] = [
     {
       transactionId: id,
@@ -110,7 +111,7 @@ function incomeToJournal(row: IncomeRow): JournalTransaction {
     {
       transactionId: id,
       date: row.date,
-      account: "Revenue - Fish Sales",
+      account: `Revenue - ${incomeType(row)}`,
       description,
       debit: 0,
       credit: amount,

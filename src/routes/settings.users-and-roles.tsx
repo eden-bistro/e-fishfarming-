@@ -8,16 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import {
-  APP_ROLES,
-  getCurrentUserRole,
-  setCurrentUserRole,
-  userHasRole,
-  type AppRole,
-} from "@/contexts/rbac";
+import { getCurrentUserRole, userHasRole } from "@/contexts/rbac";
 import { AccessDenied } from "@/components/access-denied";
 
-type Role = "System" | "Super Admin" | "Farmer" | "Worker" | "Accountant";
+type Role = "admin" | "farm_user";
 
 type UserRow = {
   id: number;
@@ -28,7 +22,7 @@ type UserRow = {
 
 const initialUsers: UserRow[] = [];
 
-const roles: Role[] = ["System", "Super Admin", "Farmer", "Worker", "Accountant"];
+const roles: Role[] = ["admin", "farm_user"];
 
 export const Route = createFileRoute("/settings/users-and-roles")({
   head: () => ({ meta: [{ title: "Users & Roles — AquaSmart" }] }),
@@ -38,10 +32,9 @@ export const Route = createFileRoute("/settings/users-and-roles")({
 function Page() {
   const [users, setUsers] = useState<UserRow[]>(initialUsers);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [form, setForm] = useState({ name: "", email: "", role: "Worker" as Role });
-  const [myRole, setMyRole] = useState<AppRole>(getCurrentUserRole());
+  const [form, setForm] = useState({ name: "", email: "", role: "farm_user" as Role });
 
-  const canManageUsers = userHasRole(["super_admin"]);
+  const canManageUsers = userHasRole(["admin"]);
 
   const isEditing = editingId !== null;
 
@@ -51,7 +44,7 @@ function Page() {
 
   function resetForm() {
     setEditingId(null);
-    setForm({ name: "", email: "", role: "Worker" });
+    setForm({ name: "", email: "", role: "farm_user" });
   }
 
   function startEdit(user: UserRow) {
@@ -94,26 +87,13 @@ function Page() {
     >
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">My Role (Demo RBAC Control)</CardTitle>
+          <CardTitle className="text-base">Current Role</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center gap-3">
-          <select
-            value={myRole}
-            onChange={(e) => {
-              const next = e.target.value as AppRole;
-              setMyRole(next);
-              setCurrentUserRole(next);
-            }}
-            className="h-10 w-56 rounded-md border border-input bg-background px-3 text-sm"
-          >
-            {APP_ROLES.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
+        <CardContent className="space-y-2">
+          <Badge variant="secondary">{getCurrentUserRole()}</Badge>
           <p className="text-xs text-muted-foreground">
-            System users can access every page; super_admin can manage users and roles.
+            Admin users can access cross-farm management tools. Farm users keep farm-scoped access.
+            Role assignment is enforced by Supabase metadata/RLS, not browser controls.
           </p>
         </CardContent>
       </Card>

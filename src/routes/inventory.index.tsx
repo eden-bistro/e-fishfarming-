@@ -1,17 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useMemo, useState } from "react";
-import {
-  APP_ROLES,
-  getCurrentUserRole,
-  setCurrentUserRole,
-  userHasRole,
-  type AppRole,
-} from "@/contexts/rbac";
+import { getCurrentUserRole, userHasRole } from "@/contexts/rbac";
 import {
   listInventoryItems,
   listInventoryItemsRemote,
@@ -25,7 +20,6 @@ import {
 export const Route = createFileRoute("/inventory/")({ component: RouteComponent });
 
 function RouteComponent() {
-  const [role, setRole] = useState<AppRole>(getCurrentUserRole());
   const [refresh, setRefresh] = useState(0);
   const [form, setForm] = useState({
     name: "",
@@ -35,7 +29,7 @@ function RouteComponent() {
     low: "",
   });
 
-  const canWrite = userHasRole(["super_admin", "farmer", "accountant"]);
+  const canWrite = userHasRole(["admin", "farm_user"]);
   const [items, setItems] = useState<Awaited<ReturnType<typeof listInventoryItems>>>([]);
   const [movements, setMovements] = useState<Awaited<ReturnType<typeof listStockMovements>>>([]);
 
@@ -68,26 +62,12 @@ function RouteComponent() {
     >
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">My Role (Demo RBAC Control)</CardTitle>
+          <CardTitle className="text-base">Access</CardTitle>
         </CardHeader>
         <CardContent>
-          <select
-            value={role}
-            onChange={(e) => {
-              const next = e.target.value as AppRole;
-              setRole(next);
-              setCurrentUserRole(next);
-            }}
-            className="h-10 w-56 rounded-md border border-input bg-background px-3 text-sm"
-          >
-            {APP_ROLES.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
+          <Badge variant="secondary">{getCurrentUserRole()}</Badge>
           <p className="mt-2 text-xs text-muted-foreground">
-            worker role is read-only for inventory operations.
+            Device administration remains admin-only; farm users can manage farm inventory.
           </p>
         </CardContent>
       </Card>
