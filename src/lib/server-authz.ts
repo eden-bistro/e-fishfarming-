@@ -9,8 +9,6 @@ export type AuthorizedUser = {
   farmId: string;
 };
 
-const INITIAL_ADMIN_EMAIL = "fishhydro1@gmail.com";
-
 function safeFarmIdForUser(userId: string) {
   const safeId = userId
     .trim()
@@ -34,9 +32,12 @@ function getSupabaseAuthConfig(env: unknown) {
   };
 }
 
-function normalizeRole(rawRole: unknown, email: string): AppUserRole {
-  if (email.trim().toLowerCase() === INITIAL_ADMIN_EMAIL) return "admin";
+function normalizeRole(rawRole: unknown): AppUserRole {
   return rawRole === "admin" ? "admin" : "farm_user";
+}
+
+function isEmailVerified(payload: Record<string, unknown>) {
+  return Boolean(payload.email_confirmed_at || payload.confirmed_at || payload.email_verified);
 }
 
 export async function getAuthorizedUser(
@@ -92,7 +93,16 @@ export async function getAuthorizedUser(
     payload.app_metadata && typeof payload.app_metadata === "object"
       ? (payload.app_metadata as Record<string, unknown>)
       : {};
-  const role = normalizeRole(appMetadata.role ?? userMetadata.role, email);
+  if (!isEmailVerified(payload)) {
+    return {
+      ok: false,
+      response: jsonResponse({ ok: false, message: "Verified email required." }, 403, {
+        "cache-control": "no-store",
+      }),
+    };
+  }
+
+  const role = normalizeRole(appMetadata.role ?? userMetadata.role);
 
   if (!id || !email) {
     return {

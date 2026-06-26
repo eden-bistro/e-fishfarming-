@@ -3,16 +3,9 @@ import { getSessionUser } from "@/lib/auth";
 export const APP_ROLES = ["admin", "farm_user"] as const;
 export type AppRole = (typeof APP_ROLES)[number];
 
-export const INITIAL_ADMIN_EMAIL = "fishhydro1@gmail.com";
-
-function isInitialAdmin(email: string) {
-  return email.trim().toLowerCase() === INITIAL_ADMIN_EMAIL;
-}
-
 export function getCurrentUserRole(): AppRole {
-  const user = getSessionUser();
-  if (!user) return "farm_user";
-  return isInitialAdmin(user.email) ? "admin" : "farm_user";
+  const role = getSessionUser()?.role;
+  return role === "admin" ? "admin" : "farm_user";
 }
 
 export function setCurrentUserRole(_role: AppRole) {

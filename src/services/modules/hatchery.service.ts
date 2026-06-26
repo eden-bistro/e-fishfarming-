@@ -48,12 +48,30 @@ export function listBrooders() {
   return readJson<Brooder>(farmKey(BROODERS_KEY));
 }
 
-export function createBrooder(input: Omit<Brooder, "id" | "createdAt">) {
+export function upsertBrooder(
+  input: Omit<Brooder, "id" | "createdAt"> & { id?: string; createdAt?: string },
+) {
   const rows = listBrooders();
-  writeJson(farmKey(BROODERS_KEY), [
-    { ...input, id: crypto.randomUUID(), createdAt: new Date().toISOString() },
-    ...rows,
-  ]);
+  const next = {
+    ...input,
+    id: input.id ?? crypto.randomUUID(),
+    createdAt: input.createdAt ?? new Date().toISOString(),
+  };
+  writeJson(
+    farmKey(BROODERS_KEY),
+    input.id ? rows.map((row) => (row.id === input.id ? next : row)) : [next, ...rows],
+  );
+}
+
+export function createBrooder(input: Omit<Brooder, "id" | "createdAt">) {
+  upsertBrooder(input);
+}
+
+export function deleteBrooder(id: string) {
+  writeJson(
+    farmKey(BROODERS_KEY),
+    listBrooders().filter((row) => row.id !== id),
+  );
 }
 
 export function listFingerlingBatches() {
@@ -72,4 +90,20 @@ export function markFingerlingBatchTransferred(batchId: string, cageName: string
       : row,
   );
   writeJson(farmKey(FINGERLINGS_KEY), rows);
+}
+
+export function upsertFingerlingBatch(input: Omit<FingerlingBatch, "id"> & { id?: string }) {
+  const rows = listFingerlingBatches();
+  const next = { ...input, id: input.id ?? crypto.randomUUID() };
+  writeJson(
+    farmKey(FINGERLINGS_KEY),
+    input.id ? rows.map((row) => (row.id === input.id ? next : row)) : [next, ...rows],
+  );
+}
+
+export function deleteFingerlingBatch(id: string) {
+  writeJson(
+    farmKey(FINGERLINGS_KEY),
+    listFingerlingBatches().filter((row) => row.id !== id),
+  );
 }
