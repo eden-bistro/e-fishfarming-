@@ -24,15 +24,21 @@ export type WaterReading = {
 
 export type IncomeRow = {
   id?: number;
+  farm_id?: string;
   date: string;
   buyer: string;
-  quantity_kg: number;
-  price_per_kg: number;
+  income_type: string;
+  unit: string;
+  quantity: number;
+  unit_price: number;
+  quantity_kg?: number;
+  price_per_kg?: number;
   total: number;
 };
 
 export type ExpenseRow = {
   id?: number;
+  farm_id?: string;
   date: string;
   category: string;
   description: string;
@@ -41,6 +47,7 @@ export type ExpenseRow = {
 
 export type FeedingEventRow = {
   id?: number;
+  farm_id?: string;
   timestamp: string;
   pond_id: string;
   mode: string;
@@ -293,12 +300,45 @@ export async function pushManualFeedingEvent(amountKg: number): Promise<void> {
   });
 }
 
+function normalizeIncomeRow(row: Partial<IncomeRow>): IncomeRow {
+  const quantity = Number(row.quantity ?? row.quantity_kg ?? 0);
+  const unitPrice = Number(row.unit_price ?? row.price_per_kg ?? 0);
+  const unit = String(row.unit || "kg").trim() || "kg";
+  return {
+    ...row,
+    date: row.date ?? "",
+    buyer: row.buyer ?? "",
+    income_type: String(row.income_type || "Fish sale").trim() || "Fish sale",
+    unit,
+    quantity,
+    unit_price: unitPrice,
+    quantity_kg: Number(row.quantity_kg ?? (unit.toLowerCase() === "kg" ? quantity : 0)),
+    price_per_kg: Number(row.price_per_kg ?? (unit.toLowerCase() === "kg" ? unitPrice : 0)),
+    total: Number(row.total ?? quantity * unitPrice),
+  };
+}
+
+function serializeIncomeRow(row: IncomeRow): IncomeRow {
+  const quantity = Number(row.quantity);
+  const unitPrice = Number(row.unit_price);
+  return {
+    ...row,
+    income_type: row.income_type.trim(),
+    unit: row.unit.trim(),
+    quantity,
+    unit_price: unitPrice,
+    quantity_kg: row.unit.trim().toLowerCase() === "kg" ? quantity : 0,
+    price_per_kg: row.unit.trim().toLowerCase() === "kg" ? unitPrice : 0,
+    total: quantity * unitPrice,
+  };
+}
+
 export async function listIncome(): Promise<IncomeRow[]> {
   try {
     const rows = await supabaseRequest("finance_income?select=*&order=date.desc", {
       method: "GET",
     });
-    return (rows as IncomeRow[] | null) ?? [];
+    return ((rows as Partial<IncomeRow>[] | null) ?? []).map(normalizeIncomeRow);
   } catch {
     return [];
   }
@@ -307,14 +347,14 @@ export async function addIncome(row: IncomeRow): Promise<void> {
   await supabaseRequest("finance_income", {
     method: "POST",
     headers: { Prefer: "return=minimal" },
-    body: JSON.stringify([row]),
+    body: JSON.stringify([{ ...serializeIncomeRow(row), farm_id: getActiveFarmId() }]),
   });
 }
 export async function updateIncome(id: number, row: IncomeRow): Promise<void> {
   await supabaseRequest(`finance_income?id=eq.${id}`, {
     method: "PATCH",
     headers: { Prefer: "return=minimal" },
-    body: JSON.stringify(row),
+    body: JSON.stringify({ ...serializeIncomeRow(row), farm_id: getActiveFarmId() }),
   });
 }
 export async function deleteIncome(id: number): Promise<void> {
@@ -338,14 +378,14 @@ export async function addExpense(row: ExpenseRow): Promise<void> {
   await supabaseRequest("finance_expenses", {
     method: "POST",
     headers: { Prefer: "return=minimal" },
-    body: JSON.stringify([row]),
+    body: JSON.stringify([{ ...row, farm_id: getActiveFarmId() }]),
   });
 }
 export async function updateExpense(id: number, row: ExpenseRow): Promise<void> {
   await supabaseRequest(`finance_expenses?id=eq.${id}`, {
     method: "PATCH",
     headers: { Prefer: "return=minimal" },
-    body: JSON.stringify(row),
+    body: JSON.stringify({ ...row, farm_id: getActiveFarmId() }),
   });
 }
 export async function deleteExpense(id: number): Promise<void> {

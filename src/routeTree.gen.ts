@@ -37,6 +37,7 @@ import { Route as AuthRegisterRouteImport } from './routes/auth.register'
 import { Route as AuthLoginRouteImport } from './routes/auth.login'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth.forgot-password'
 import { Route as AiInsightsRouteImport } from './routes/ai.insights'
+import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as ApiIotSetupRouteImport } from './routes/api.iot.setup'
 import { Route as ApiIotLatestRouteImport } from './routes/api.iot.latest'
 import { Route as ApiIotFeedingCommandRouteImport } from './routes/api.iot.feeding-command'
@@ -183,6 +184,11 @@ const AiInsightsRoute = AiInsightsRouteImport.update({
   path: '/ai/insights',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/admin/dashboard',
+  path: '/admin/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiIotSetupRoute = ApiIotSetupRouteImport.update({
   id: '/api/iot/setup',
   path: '/api/iot/setup',
@@ -211,6 +217,7 @@ const ApiAuthActionRoute = ApiAuthActionRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/ai/insights': typeof AiInsightsRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
@@ -246,6 +253,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/ai/insights': typeof AiInsightsRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
@@ -282,6 +290,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/ai/insights': typeof AiInsightsRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
@@ -319,6 +328,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin/dashboard'
     | '/ai/insights'
     | '/auth/forgot-password'
     | '/auth/login'
@@ -354,6 +364,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin/dashboard'
     | '/ai/insights'
     | '/auth/forgot-password'
     | '/auth/login'
@@ -389,6 +400,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin/dashboard'
     | '/ai/insights'
     | '/auth/forgot-password'
     | '/auth/login'
@@ -425,6 +437,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminDashboardRoute: typeof AdminDashboardRoute
   AiInsightsRoute: typeof AiInsightsRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthLoginRoute: typeof AuthLoginRoute
@@ -657,6 +670,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AiInsightsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/dashboard': {
+      id: '/admin/dashboard'
+      path: '/admin/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/iot/setup': {
       id: '/api/iot/setup'
       path: '/api/iot/setup'
@@ -697,6 +717,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminDashboardRoute: AdminDashboardRoute,
   AiInsightsRoute: AiInsightsRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthLoginRoute: AuthLoginRoute,

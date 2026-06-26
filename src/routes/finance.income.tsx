@@ -26,6 +26,10 @@ import {
   filterIncomeByDate,
   formatCurrency,
   incomeAmount,
+  incomeQuantity,
+  incomeType,
+  incomeUnit,
+  incomeUnitPrice,
   sumIncome,
   type DateRange,
 } from "@/services/modules/finance-analytics.service";
@@ -42,8 +46,13 @@ function Page() {
   const [form, setForm] = useState({
     date: "",
     buyer: "",
-    quantity_kg: "",
-    price_per_kg: "",
+    income_type: "",
+    unit: "kg",
+    quantity: 0,
+    unit_price: 0,
+    quantity_kg: 0,
+    price_per_kg: 0,
+    total: 0,
   });
 
   async function load() {
@@ -60,14 +69,20 @@ function Page() {
 
   const filteredRows = useMemo(() => filterIncomeByDate(rows, range), [range, rows]);
   const total = useMemo(() => sumIncome(filteredRows), [filteredRows]);
+  const draftQuantity = Number(form.quantity_kg);
+  const draftPrice = Number(form.price_per_kg);
+  const draftTotal =
+    Number.isFinite(draftQuantity) && Number.isFinite(draftPrice) ? draftQuantity * draftPrice : 0;
 
   function exportIncomeCsv() {
-    const header = ["Date", "Buyer", "Quantity kg", "Price per kg", "Total"];
+    const header = ["Date", "Buyer", "Income type", "Quantity", "Unit", "Unit price", "Total"];
     const body = filteredRows.map((row) => [
       row.date,
       row.buyer.replaceAll('"', '""'),
-      String(row.quantity_kg),
-      String(row.price_per_kg),
+      incomeType(row).replaceAll('"', '""'),
+      String(incomeQuantity(row)),
+      incomeUnit(row).replaceAll('"', '""'),
+      String(incomeUnitPrice(row)),
       incomeAmount(row).toFixed(2),
     ]);
     const csv = [header, ...body]
@@ -94,18 +109,29 @@ function Page() {
   }
 
   async function save() {
-    const qty = Number(form.quantity_kg);
-    const price = Number(form.price_per_kg);
-    if (!form.date || !form.buyer.trim() || qty <= 0 || price <= 0) {
-      toast.error("Please provide date, buyer, quantity and price greater than zero.");
+    const qty = Number(form.quantity);
+    const price = Number(form.unit_price);
+    if (
+      !form.date ||
+      !form.buyer.trim() ||
+      !form.income_type.trim() ||
+      !form.unit.trim() ||
+      qty <= 0 ||
+      price <= 0
+    ) {
+      toast.error(
+        "Please provide date, buyer, income type, unit, quantity and price greater than zero.",
+      );
       return;
     }
 
-    const payload: IncomeRow = {
-      date: form.date,
+    const payload = {
+      ...form,
       buyer: form.buyer.trim(),
-      quantity_kg: qty,
-      price_per_kg: price,
+      income_type: form.income_type.trim(),
+      unit: form.unit.trim(),
+      quantity: qty,
+      unit_price: price,
       total: qty * price,
     };
     try {
@@ -113,7 +139,17 @@ function Page() {
       else await addIncome(payload);
       toast.success(editId ? "Income updated." : "Income added.");
       setEditId(null);
-      setForm({ date: "", buyer: "", quantity_kg: "", price_per_kg: "" });
+      setForm({
+        date: "",
+        buyer: "",
+        income_type: "",
+        unit: "kg",
+        quantity: 0,
+        unit_price: 0,
+        quantity_kg: 0,
+        price_per_kg: 0,
+        total: 0,
+      });
       await load();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to save income record.");
@@ -129,30 +165,59 @@ function Page() {
         <CardHeader>
           <CardTitle className="text-base">Add / Edit Income</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-2 md:grid-cols-5">
-          <Input
-            type="date"
-            value={form.date}
-            onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-          />
-          <Input
-            placeholder="Buyer"
-            value={form.buyer}
-            onChange={(e) => setForm((f) => ({ ...f, buyer: e.target.value }))}
-          />
-          <Input
-            type="number"
-            placeholder="Qty kg"
-            value={form.quantity_kg}
-            onChange={(e) => setForm((f) => ({ ...f, quantity_kg: e.target.value }))}
-          />
-          <Input
-            type="number"
-            placeholder="Price/kg"
-            value={form.price_per_kg}
-            onChange={(e) => setForm((f) => ({ ...f, price_per_kg: e.target.value }))}
-          />
-          <Button onClick={() => void save()}>{editId ? "Update" : "Add"}</Button>
+        <CardContent className="grid gap-3 md:grid-cols-5">
+          <div>
+            <p className="mb-1 text-xs text-muted-foreground">Sale date</p>
+            <Input
+              type="date"
+              aria-label="Income date"
+              value={form.date}
+              onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+            />
+          </div>
+          <div>
+            <p className="mb-1 text-xs text-muted-foreground">Buyer name</p>
+            <Input
+              placeholder="e.g. Lakeside Hotel"
+              aria-label="Buyer name"
+              value={form.buyer}
+              onChange={(e) => setForm((f) => ({ ...f, buyer: e.target.value }))}
+            />
+          </div>
+          <div>
+            <p className="mb-1 text-xs text-muted-foreground">Quantity sold (kg)</p>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="e.g. 120"
+              aria-label="Quantity sold in kilograms"
+              value={form.quantity_kg}
+              onChange={(e) => setForm((f) => ({ ...f, quantity_kg: Number(e.target.value) }))}
+            />
+          </div>
+          <div>
+            <p className="mb-1 text-xs text-muted-foreground">Price for each kg</p>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="e.g. 450"
+              aria-label="Price per kilogram"
+              value={form.price_per_kg}
+              onChange={(e) => setForm((f) => ({ ...f, price_per_kg: Number(e.target.value) }))}
+            />
+          </div>
+          <Button className="md:self-end" onClick={() => void save()}>
+            {editId ? "Update" : "Add"}
+          </Button>
+          <div className="rounded-md border bg-muted/30 p-3 text-sm md:col-span-5">
+            <p className="font-medium">You are recording</p>
+            <p className="text-muted-foreground">
+              {form.buyer.trim() || "Buyer"} will be charged {formatCurrency(draftPrice || 0)} per
+              kg for {draftQuantity || 0} kg. Estimated total: {formatCurrency(draftTotal)}.
+            </p>
+          </div>
         </CardContent>
       </Card>
 
@@ -210,8 +275,9 @@ function Page() {
               <TableRow>
                 <TableHead>Date</TableHead>
                 <TableHead>Buyer</TableHead>
+                <TableHead>Type</TableHead>
                 <TableHead>Quantity</TableHead>
-                <TableHead>Price/kg</TableHead>
+                <TableHead>Unit price</TableHead>
                 <TableHead className="text-right">Total</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -221,8 +287,11 @@ function Page() {
                 <TableRow key={`${r.id}-${r.date}`}>
                   <TableCell>{r.date}</TableCell>
                   <TableCell>{r.buyer}</TableCell>
-                  <TableCell>{r.quantity_kg} kg</TableCell>
-                  <TableCell>{formatCurrency(Number(r.price_per_kg))}</TableCell>
+                  <TableCell>{incomeType(r)}</TableCell>
+                  <TableCell>
+                    {incomeQuantity(r)} {incomeUnit(r)}
+                  </TableCell>
+                  <TableCell>{formatCurrency(incomeUnitPrice(r))}</TableCell>
                   <TableCell className="text-right font-medium">
                     {formatCurrency(incomeAmount(r))}
                   </TableCell>
