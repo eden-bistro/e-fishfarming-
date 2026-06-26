@@ -69,8 +69,8 @@ function Page() {
 
   const filteredRows = useMemo(() => filterIncomeByDate(rows, range), [range, rows]);
   const total = useMemo(() => sumIncome(filteredRows), [filteredRows]);
-  const draftQuantity = Number(form.quantity);
-  const draftPrice = Number(form.unit_price);
+  const draftQuantity = Number(form.quantity_kg);
+  const draftPrice = Number(form.price_per_kg);
   const draftTotal =
     Number.isFinite(draftQuantity) && Number.isFinite(draftPrice) ? draftQuantity * draftPrice : 0;
 
@@ -165,7 +165,7 @@ function Page() {
         <CardHeader>
           <CardTitle className="text-base">Add / Edit Income</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-6">
+        <CardContent className="grid gap-3 md:grid-cols-5">
           <div>
             <p className="mb-1 text-xs text-muted-foreground">Sale date</p>
             <Input
@@ -185,56 +185,37 @@ function Page() {
             />
           </div>
           <div>
-            <p className="mb-1 text-xs text-muted-foreground">What is being sold?</p>
-            <Input
-              placeholder="e.g. Fish, Fingerlings"
-              aria-label="Income type or item sold"
-              value={form.income_type}
-              onChange={(e) => setForm((f) => ({ ...f, income_type: e.target.value }))}
-            />
-          </div>
-          <div>
-            <p className="mb-1 text-xs text-muted-foreground">Quantity sold</p>
+            <p className="mb-1 text-xs text-muted-foreground">Quantity sold (kg)</p>
             <Input
               type="number"
               min="0"
               step="0.01"
-              placeholder="e.g. 120 or 1000"
-              aria-label="Quantity sold"
-              value={form.quantity}
-              onChange={(e) => setForm((f) => ({ ...f, quantity: Number(e.target.value) }))}
+              placeholder="e.g. 120"
+              aria-label="Quantity sold in kilograms"
+              value={form.quantity_kg}
+              onChange={(e) => setForm((f) => ({ ...f, quantity_kg: Number(e.target.value) }))}
             />
           </div>
           <div>
-            <p className="mb-1 text-xs text-muted-foreground">Unit</p>
-            <Input
-              placeholder="e.g. kg, pieces, trays"
-              aria-label="Income unit"
-              value={form.unit}
-              onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))}
-            />
-          </div>
-          <div>
-            <p className="mb-1 text-xs text-muted-foreground">Price per unit</p>
+            <p className="mb-1 text-xs text-muted-foreground">Price for each kg</p>
             <Input
               type="number"
               min="0"
               step="0.01"
-              placeholder="e.g. 450 or 10"
-              aria-label="Price per unit"
-              value={form.unit_price}
-              onChange={(e) => setForm((f) => ({ ...f, unit_price: Number(e.target.value) }))}
+              placeholder="e.g. 450"
+              aria-label="Price per kilogram"
+              value={form.price_per_kg}
+              onChange={(e) => setForm((f) => ({ ...f, price_per_kg: Number(e.target.value) }))}
             />
           </div>
           <Button className="md:self-end" onClick={() => void save()}>
             {editId ? "Update" : "Add"}
           </Button>
-          <div className="rounded-md border bg-muted/30 p-3 text-sm md:col-span-6">
+          <div className="rounded-md border bg-muted/30 p-3 text-sm md:col-span-5">
             <p className="font-medium">You are recording</p>
             <p className="text-muted-foreground">
-              Recording {form.income_type.trim() || "income"} for {form.buyer.trim() || "buyer"}:{" "}
-              {draftQuantity || 0} {form.unit.trim() || "units"} × {formatCurrency(draftPrice || 0)}{" "}
-              = {formatCurrency(draftTotal)}.
+              {form.buyer.trim() || "Buyer"} will be charged {formatCurrency(draftPrice || 0)} per
+              kg for {draftQuantity || 0} kg. Estimated total: {formatCurrency(draftTotal)}.
             </p>
           </div>
         </CardContent>
