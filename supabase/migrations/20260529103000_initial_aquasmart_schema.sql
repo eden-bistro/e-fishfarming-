@@ -33,11 +33,11 @@ create table if not exists finance_income (
   buyer text not null,
   income_type text not null default 'Fish sale',
   unit text not null default 'kg',
-  quantity numeric not null,
-  unit_price numeric not null,
-  quantity_kg numeric not null,
-  price_per_kg numeric not null,
-  total numeric not null,
+  quantity numeric not null default 0,
+  unit_price numeric not null default 0,
+  quantity_kg numeric not null default 0,
+  price_per_kg numeric not null default 0,
+  total numeric not null default 0,
   farm_id text not null default 'default',
   created_at timestamptz not null default now()
 );
