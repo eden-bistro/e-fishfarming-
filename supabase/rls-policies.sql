@@ -129,6 +129,21 @@ drop policy if exists "farm_profiles_delete" on farm_profiles;
 create policy "farm_profiles_delete" on farm_profiles
 for delete using (tenant_id = auth.uid()::text);
 
+
+drop policy if exists "farm_profiles_select" on farm_profiles;
+create policy "farm_profiles_select" on farm_profiles
+for select using (tenant_id = auth.uid()::text);
+drop policy if exists "farm_profiles_insert" on farm_profiles;
+create policy "farm_profiles_insert" on farm_profiles
+for insert with check (tenant_id = auth.uid()::text);
+drop policy if exists "farm_profiles_update" on farm_profiles;
+create policy "farm_profiles_update" on farm_profiles
+for update using (tenant_id = auth.uid()::text)
+with check (tenant_id = auth.uid()::text);
+drop policy if exists "farm_profiles_delete" on farm_profiles;
+create policy "farm_profiles_delete" on farm_profiles
+for delete using (tenant_id = auth.uid()::text);
+
 create policy if not exists "production_events_select" on production_events
 for select using (tenant_id = auth.uid()::text);
 create policy if not exists "production_events_insert" on production_events
