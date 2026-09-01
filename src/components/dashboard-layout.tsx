@@ -19,7 +19,9 @@ export function DashboardLayout({
   actions?: ReactNode;
   children: ReactNode;
 }) {
-  const [hydrated, setHydrated] = useState(typeof window !== "undefined");
+  // Begin with the same markup as the server and only read browser-backed auth after hydration.
+  // This prevents SSR/client markup mismatches for users with a session stored in sessionStorage.
+  const [hydrated, setHydrated] = useState(false);
   const [session, setSession] = useState<ReturnType<typeof getSessionUser>>(() => getSessionUser());
   const navigate = useNavigate();
 
