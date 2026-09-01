@@ -11,7 +11,6 @@ import {
   fetchFarmProfileRemote,
   saveFarmProfileRemote,
 } from "@/services/farm-profile.service";
-import type { FarmProfile } from "@/lib/farm-profile";
 
 export type { FarmProfile } from "@/lib/farm-profile";
 
@@ -68,28 +67,9 @@ export function getCurrentUserRecord(): AuthUser | null {
   return { id: session.id, email: session.email, name: session.email, farm };
 }
 
-function farmStorageKey(userId: string) {
-  return `${FARM_KEY}:${userId}`;
-}
-
-function getCachedFarmProfile(userId: string): FarmProfile | undefined {
-  if (!isBrowser()) return undefined;
-
-  const key = farmStorageKey(userId);
-  const raw = window.localStorage.getItem(key);
-  if (!raw) return undefined;
-
-  try {
-    return JSON.parse(raw) as FarmProfile;
-  } catch {
-    window.localStorage.removeItem(key);
-    return undefined;
-  }
-}
-
 function cacheCurrentUserFarm(userId: string, farm: FarmProfile) {
   if (!isBrowser()) return;
-  window.localStorage.setItem(farmStorageKey(userId), JSON.stringify(farm));
+  window.localStorage.setItem(`${FARM_KEY}:${userId}`, JSON.stringify(farm));
 }
 
 export async function loadCurrentUserFarmProfile(): Promise<FarmProfile | null> {

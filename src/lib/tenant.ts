@@ -5,7 +5,6 @@ const ACTIVE_POND_KEY = "aquasmart_active_pond_id";
 
 const env = import.meta.env as Record<string, string | undefined>;
 
-export const DEFAULT_FARM_ID = env.VITE_DEFAULT_FARM_ID ?? "farmer_001";
 export const DEFAULT_POND_ID = env.VITE_DEFAULT_POND_ID ?? "cage_001";
 
 function isBrowser() {
@@ -35,14 +34,13 @@ export function getUserDefaultFarmId() {
 export function getActiveFarmId() {
   const user = getSessionUser();
   if (!user) return "";
-  if (!isBrowser()) return farmIdForUser(user.id);
-  return window.localStorage.getItem(scopedKey(ACTIVE_FARM_KEY, user.id)) ?? farmIdForUser(user.id);
+  return farmIdForUser(user.id);
 }
 
-export function setActiveFarmId(farmId: string) {
+export function setActiveFarmId(_farmId: string) {
   const user = getSessionUser();
   if (!user || !isBrowser()) return;
-  window.localStorage.setItem(scopedKey(ACTIVE_FARM_KEY, user.id), farmId);
+  window.localStorage.setItem(scopedKey(ACTIVE_FARM_KEY, user.id), farmIdForUser(user.id));
 }
 
 export function getActivePondId() {

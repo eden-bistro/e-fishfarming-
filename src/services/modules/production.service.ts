@@ -1,5 +1,11 @@
 import { getSessionUser } from "@/lib/auth";
-import { backendEnabled, restInsert, restSelect } from "@/services/modules/backend-store";
+import {
+  backendEnabled,
+  restDelete,
+  restInsert,
+  restSelect,
+  restUpdate,
+} from "@/services/modules/backend-store";
 
 export type ProductionEventType = "stocking" | "mortality" | "harvest" | "sale" | "feeding";
 
@@ -66,21 +72,31 @@ export async function listProductionEventsRemote() {
   return readLocal();
 }
 
-export function addProductionEvent(event: Omit<ProductionEvent, "id" | "createdAt">) {
+export function upsertProductionEvent(
+  event: Omit<ProductionEvent, "id" | "createdAt"> & { id?: string; createdAt?: string },
+) {
   const events = readLocal();
   const next: ProductionEvent = {
     ...event,
-    id: crypto.randomUUID(),
-    createdAt: new Date().toISOString(),
+    id: event.id ?? crypto.randomUUID(),
+    createdAt: event.createdAt ?? new Date().toISOString(),
   };
-  writeLocal([next, ...events]);
+  writeLocal(
+    event.id ? events.map((row) => (row.id === event.id ? next : row)) : [next, ...events],
+  );
   return next;
 }
 
-export async function addProductionEventRemote(event: Omit<ProductionEvent, "id" | "createdAt">) {
-  const next = addProductionEvent(event);
+export function addProductionEvent(event: Omit<ProductionEvent, "id" | "createdAt">) {
+  return upsertProductionEvent(event);
+}
+
+export async function upsertProductionEventRemote(
+  event: Omit<ProductionEvent, "id" | "createdAt"> & { id?: string; createdAt?: string },
+) {
+  const next = upsertProductionEvent(event);
   if (backendEnabled()) {
-    await restInsert("production_events", {
+    const payload = {
       id: next.id,
       cage_id: next.cageId,
       type: next.type,
@@ -88,9 +104,29 @@ export async function addProductionEventRemote(event: Omit<ProductionEvent, "id"
       weight_kg: next.weightKg,
       feed_kg: next.feedKg,
       created_at: next.createdAt,
-    });
+    };
+    if (event.id) {
+      await restUpdate("production_events", next.id, payload);
+    } else {
+      await restInsert("production_events", payload);
+    }
   }
   return next;
+}
+
+export async function addProductionEventRemote(event: Omit<ProductionEvent, "id" | "createdAt">) {
+  return upsertProductionEventRemote(event);
+}
+
+export function deleteProductionEvent(id: string) {
+  writeLocal(readLocal().filter((event) => event.id !== id));
+}
+
+export async function deleteProductionEventRemote(id: string) {
+  deleteProductionEvent(id);
+  if (backendEnabled()) {
+    await restDelete("production_events", id);
+  }
 }
 
 export const createProductionEvent = addProductionEvent;

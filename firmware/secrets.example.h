@@ -9,15 +9,15 @@
 #define IOT_INGEST_TOKEN "YOUR_DEVICE_BEARER_TOKEN"
 
 #ifndef FARMER_ID
-#define FARMER_ID "farmer_001"
+#define FARMER_ID "DEVICE_ASSIGNED_FARM_ID"
 #endif
 
 #ifndef CAGE_ID
-#define CAGE_ID "cage_001"
+#define CAGE_ID "DEVICE_ASSIGNED_CAGE_ID"
 #endif
 
 #ifndef DEVICE_ID
-#define DEVICE_ID "ESP32_001"
+#define DEVICE_ID "DEVICE_PRINTED_ID"
 #endif
 
 #ifndef FIRMWARE_VERSION

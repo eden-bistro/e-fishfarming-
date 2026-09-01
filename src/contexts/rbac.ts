@@ -1,38 +1,22 @@
 import { getSessionUser } from "@/lib/auth";
 
-export const APP_ROLES = ["system", "super_admin", "farmer", "accountant", "worker"] as const;
+export const APP_ROLES = ["admin", "farm_user"] as const;
 export type AppRole = (typeof APP_ROLES)[number];
 
-const ROLE_KEY = "aquasmart_user_role";
-
-function isBrowser() {
-  return typeof window !== "undefined";
-}
-
-function roleKey(userId: string) {
-  return `${ROLE_KEY}:${userId}`;
-}
-
-function isSystemUser(email: string) {
-  return email.trim().toLowerCase().startsWith("system@");
-}
-
 export function getCurrentUserRole(): AppRole {
-  const user = getSessionUser();
-  if (!user) return "farmer";
-  if (isSystemUser(user.email)) return "system";
-  if (!isBrowser()) return "farmer";
-  const role = window.localStorage.getItem(roleKey(user.id)) as AppRole | null;
-  return role && APP_ROLES.includes(role) ? role : "farmer";
+  const role = getSessionUser()?.role;
+  return role === "admin" ? "admin" : "farm_user";
 }
 
-export function setCurrentUserRole(role: AppRole) {
-  const user = getSessionUser();
-  if (!user || !isBrowser()) return;
-  window.localStorage.setItem(roleKey(user.id), role);
+export function setCurrentUserRole(_role: AppRole) {
+  // Roles are intentionally not writable from the browser. Role assignment is enforced by
+  // Supabase user/profile metadata, SQL helper functions, RLS policies, and server route guards.
 }
 
 export function userHasRole(allowed: AppRole[]) {
-  const role = getCurrentUserRole();
-  return role === "system" || allowed.includes(role);
+  return allowed.includes(getCurrentUserRole());
+}
+
+export function isAdminUser() {
+  return getCurrentUserRole() === "admin";
 }

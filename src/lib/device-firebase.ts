@@ -1,5 +1,6 @@
 import { pondPath } from "@/firebase/paths";
 import { getActiveFarmId, getActivePondId } from "@/lib/tenant";
+import { getAccessToken } from "@/services/auth.service";
 
 const env = import.meta.env as Record<string, string | undefined>;
 const firebaseBaseUrl = env.VITE_FIREBASE_DATABASE_URL ?? env.FIREBASE_DATABASE_URL;
@@ -24,6 +25,11 @@ function normalizeDeviceStatus(status: Partial<DeviceStatus> & { deviceId: strin
 
 function explicitPondPath(farmId: string, pondId: string, ...parts: string[]) {
   return ["farms", farmId, "ponds", pondId, ...parts].map(encodeURIComponent).join("/");
+}
+
+async function authHeader(): Promise<Record<string, string>> {
+  const token = await getAccessToken();
+  return token ? { authorization: `Bearer ${token}` } : {};
 }
 
 export type DeviceStatus = {
@@ -55,7 +61,7 @@ export async function listDeviceStatuses(
 
   try {
     const response = await fetch(`/api/iot/devices?${params.toString()}`, {
-      headers: { accept: "application/json" },
+      headers: { accept: "application/json", ...(await authHeader()) },
     });
     const contentType = response.headers.get("content-type") ?? "";
     if (response.ok && contentType.includes("application/json")) {
@@ -98,7 +104,7 @@ export async function queueFeedingCommand(
   const params = new URLSearchParams({ farmId, pondId });
   const response = await fetch(`/api/iot/feeding-command?${params.toString()}`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...(await authHeader()) },
     body: JSON.stringify(input),
   });
 
@@ -128,7 +134,7 @@ export async function listFeedingCommands(limit = 20): Promise<FeedingCommand[]>
 
   try {
     const response = await fetch(`/api/iot/feeding-command?${params.toString()}`, {
-      headers: { accept: "application/json" },
+      headers: { accept: "application/json", ...(await authHeader()) },
     });
     const contentType = response.headers.get("content-type") ?? "";
     if (response.ok && contentType.includes("application/json")) {

@@ -59,7 +59,7 @@ export function TopNavbar() {
   const [today, setToday] = useState("Today");
   const pageTitle = titleForPath(pathname);
   const [farmName, setFarmName] = useState(
-    getCurrentUserRecord()?.farm?.name?.trim() || "No farm profile",
+    () => getCurrentUserRecord()?.farm?.name?.trim() || "No farm profile",
   );
 
   useEffect(() => {
