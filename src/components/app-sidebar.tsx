@@ -42,13 +42,10 @@ const navItems = [
     ],
   },
   {
-    title: "Cage & Hatchery",
+    title: "Cage Management",
     icon: Cpu,
-    description: "Cages, ponds and fingerlings",
-    children: [
-      { title: "Cage Management", url: "/cages" },
-      { title: "Hatchery", url: "/hatchery" },
-    ],
+    description: "Manage cages and ponds",
+    children: [{ title: "Cage Management", url: "/cages" }],
   },
   { title: "AI Insights", url: "/ai/insights", icon: Cpu, description: "Smart recommendations" },
   {
@@ -108,7 +105,7 @@ export function AppSidebar() {
   const { isMobile, setOpenMobile } = useSidebar();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     "Production Module": path.startsWith("/production") || path.startsWith("/inventory"),
-    "Cage & Hatchery": path.startsWith("/cages") || path.startsWith("/hatchery"),
+    "Cage Management": path.startsWith("/cages"),
     "Feeding System": path.startsWith("/feeding"),
     "Water Quality": path.startsWith("/water"),
     Financial: path.startsWith("/finance"),

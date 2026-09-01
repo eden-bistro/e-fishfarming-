@@ -95,26 +95,6 @@ create table if not exists cages (
   created_at timestamptz not null default now()
 );
 
-create table if not exists hatchery_brooders (
-  id uuid primary key,
-  tenant_id text not null,
-  name text not null,
-  species text not null,
-  status text not null check (status in ('active', 'paused')),
-  created_at timestamptz not null default now()
-);
-
-create table if not exists hatchery_fingerling_batches (
-  id uuid primary key,
-  tenant_id text not null,
-  brooder_id uuid references hatchery_brooders(id) on delete set null,
-  quantity numeric not null,
-  production_date date not null,
-  growth_status text not null check (growth_status in ('early', 'mid', 'ready_for_transfer')),
-  transferred_to_cage text,
-  created_at timestamptz not null default now()
-);
-
 create index if not exists idx_water_readings_pond_time on water_readings (pond_id, timestamp desc);
 create index if not exists idx_income_date on finance_income (date desc);
 create index if not exists idx_expenses_date on finance_expenses (date desc);
@@ -122,8 +102,6 @@ create index if not exists idx_production_events_tenant_time on production_event
 create index if not exists idx_inventory_items_tenant_category on inventory_items (tenant_id, category);
 create index if not exists idx_inventory_movements_tenant_time on inventory_movements (tenant_id, created_at desc);
 create index if not exists idx_cages_tenant_status on cages (tenant_id, status);
-create index if not exists idx_hatchery_brooders_tenant_status on hatchery_brooders (tenant_id, status);
-create index if not exists idx_hatchery_batches_tenant_status on hatchery_fingerling_batches (tenant_id, growth_status);
 
 -- Enable RLS
 alter table if exists public.finance_income enable row level security;
@@ -134,8 +112,6 @@ alter table if exists public.production_events enable row level security;
 alter table if exists public.inventory_items enable row level security;
 alter table if exists public.inventory_movements enable row level security;
 alter table if exists public.cages enable row level security;
-alter table if exists public.hatchery_brooders enable row level security;
-alter table if exists public.hatchery_fingerling_batches enable row level security;
 
 -- Multi-tenant scope: each authenticated user only accesses their farm.
 -- Older finance/IoT tables are scoped by farm_id derived from auth.uid().
@@ -236,45 +212,3 @@ with check (tenant_id = auth.uid()::text);
 drop policy if exists "cages_delete" on cages;
 create policy "cages_delete" on cages
 for delete using (tenant_id = auth.uid()::text);
-
-drop policy if exists "hatchery_brooders_select" on hatchery_brooders;
-create policy "hatchery_brooders_select" on hatchery_brooders
-for select using (tenant_id = auth.uid()::text);
-drop policy if exists "hatchery_brooders_insert" on hatchery_brooders;
-create policy "hatchery_brooders_insert" on hatchery_brooders
-for insert with check (tenant_id = auth.uid()::text);
-drop policy if exists "hatchery_brooders_update" on hatchery_brooders;
-create policy "hatchery_brooders_update" on hatchery_brooders
-for update using (tenant_id = auth.uid()::text)
-with check (tenant_id = auth.uid()::text);
-drop policy if exists "hatchery_brooders_delete" on hatchery_brooders;
-create policy "hatchery_brooders_delete" on hatchery_brooders
-for delete using (tenant_id = auth.uid()::text);
-
-drop policy if exists "hatchery_fingerling_batches_select" on hatchery_fingerling_batches;
-create policy "hatchery_fingerling_batches_select" on hatchery_fingerling_batches
-for select using (tenant_id = auth.uid()::text);
-drop policy if exists "hatchery_fingerling_batches_insert" on hatchery_fingerling_batches;
-create policy "hatchery_fingerling_batches_insert" on hatchery_fingerling_batches
-for insert with check (tenant_id = auth.uid()::text);
-drop policy if exists "hatchery_fingerling_batches_update" on hatchery_fingerling_batches;
-create policy "hatchery_fingerling_batches_update" on hatchery_fingerling_batches
-for update using (tenant_id = auth.uid()::text)
-with check (tenant_id = auth.uid()::text);
-drop policy if exists "hatchery_fingerling_batches_delete" on hatchery_fingerling_batches;
-create policy "hatchery_fingerling_batches_delete" on hatchery_fingerling_batches
-for delete using (tenant_id = auth.uid()::text);
-
--- Security fix: ensure analytical views run with caller privileges (not definer).
--- Run in Supabase SQL editor.
-
-DO $do$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_views WHERE schemaname = 'public' AND viewname = 'farmer_profit'
-  ) THEN
-    -- Force invoker semantics so RLS/user permissions are evaluated per caller.
-    EXECUTE 'alter view public.farmer_profit set (security_invoker = true)';
-  END IF;
-END
-$do$;

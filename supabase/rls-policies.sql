@@ -8,8 +8,6 @@ alter table if exists public.farm_profiles enable row level security;
 alter table if exists public.inventory_items enable row level security;
 alter table if exists public.inventory_movements enable row level security;
 alter table if exists public.cages enable row level security;
-alter table if exists public.hatchery_brooders enable row level security;
-alter table if exists public.hatchery_fingerling_batches enable row level security;
 
 -- Multi-tenant scope: each authenticated user only accesses their farm.
 -- Older finance/IoT tables are scoped by farm_id derived from auth.uid().
@@ -172,24 +170,4 @@ create policy if not exists "cages_update" on cages
 for update using (tenant_id = auth.uid()::text)
 with check (tenant_id = auth.uid()::text);
 create policy if not exists "cages_delete" on cages
-for delete using (tenant_id = auth.uid()::text);
-
-create policy if not exists "hatchery_brooders_select" on hatchery_brooders
-for select using (tenant_id = auth.uid()::text);
-create policy if not exists "hatchery_brooders_insert" on hatchery_brooders
-for insert with check (tenant_id = auth.uid()::text);
-create policy if not exists "hatchery_brooders_update" on hatchery_brooders
-for update using (tenant_id = auth.uid()::text)
-with check (tenant_id = auth.uid()::text);
-create policy if not exists "hatchery_brooders_delete" on hatchery_brooders
-for delete using (tenant_id = auth.uid()::text);
-
-create policy if not exists "hatchery_fingerling_batches_select" on hatchery_fingerling_batches
-for select using (tenant_id = auth.uid()::text);
-create policy if not exists "hatchery_fingerling_batches_insert" on hatchery_fingerling_batches
-for insert with check (tenant_id = auth.uid()::text);
-create policy if not exists "hatchery_fingerling_batches_update" on hatchery_fingerling_batches
-for update using (tenant_id = auth.uid()::text)
-with check (tenant_id = auth.uid()::text);
-create policy if not exists "hatchery_fingerling_batches_delete" on hatchery_fingerling_batches
 for delete using (tenant_id = auth.uid()::text);

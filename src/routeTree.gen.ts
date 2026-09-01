@@ -13,7 +13,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ReportsIndexRouteImport } from './routes/reports.index'
 import { Route as ProductionIndexRouteImport } from './routes/production.index'
 import { Route as InventoryIndexRouteImport } from './routes/inventory.index'
-import { Route as HatcheryIndexRouteImport } from './routes/hatchery.index'
 import { Route as CagesIndexRouteImport } from './routes/cages.index'
 import { Route as WaterLiveRouteImport } from './routes/water.live'
 import { Route as WaterHistoryRouteImport } from './routes/water.history'
@@ -43,6 +42,7 @@ import { Route as ApiIotLatestRouteImport } from './routes/api.iot.latest'
 import { Route as ApiIotFeedingCommandRouteImport } from './routes/api.iot.feeding-command'
 import { Route as ApiIotDevicesRouteImport } from './routes/api.iot.devices'
 import { Route as ApiAuthActionRouteImport } from './routes/api.auth.$action'
+import { Route as ApiAiChatRouteImport } from './routes/api.ai.chat'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -62,11 +62,6 @@ const ProductionIndexRoute = ProductionIndexRouteImport.update({
 const InventoryIndexRoute = InventoryIndexRouteImport.update({
   id: '/inventory/',
   path: '/inventory/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HatcheryIndexRoute = HatcheryIndexRouteImport.update({
-  id: '/hatchery/',
-  path: '/hatchery/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CagesIndexRoute = CagesIndexRouteImport.update({
@@ -214,6 +209,11 @@ const ApiAuthActionRoute = ApiAuthActionRouteImport.update({
   path: '/api/auth/$action',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAiChatRoute = ApiAiChatRouteImport.update({
+  id: '/api/ai/chat',
+  path: '/api/ai/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -241,10 +241,10 @@ export interface FileRoutesByFullPath {
   '/water/history': typeof WaterHistoryRoute
   '/water/live': typeof WaterLiveRoute
   '/cages/': typeof CagesIndexRoute
-  '/hatchery/': typeof HatcheryIndexRoute
   '/inventory/': typeof InventoryIndexRoute
   '/production/': typeof ProductionIndexRoute
   '/reports/': typeof ReportsIndexRoute
+  '/api/ai/chat': typeof ApiAiChatRoute
   '/api/auth/$action': typeof ApiAuthActionRoute
   '/api/iot/devices': typeof ApiIotDevicesRoute
   '/api/iot/feeding-command': typeof ApiIotFeedingCommandRoute
@@ -277,10 +277,10 @@ export interface FileRoutesByTo {
   '/water/history': typeof WaterHistoryRoute
   '/water/live': typeof WaterLiveRoute
   '/cages': typeof CagesIndexRoute
-  '/hatchery': typeof HatcheryIndexRoute
   '/inventory': typeof InventoryIndexRoute
   '/production': typeof ProductionIndexRoute
   '/reports': typeof ReportsIndexRoute
+  '/api/ai/chat': typeof ApiAiChatRoute
   '/api/auth/$action': typeof ApiAuthActionRoute
   '/api/iot/devices': typeof ApiIotDevicesRoute
   '/api/iot/feeding-command': typeof ApiIotFeedingCommandRoute
@@ -314,10 +314,10 @@ export interface FileRoutesById {
   '/water/history': typeof WaterHistoryRoute
   '/water/live': typeof WaterLiveRoute
   '/cages/': typeof CagesIndexRoute
-  '/hatchery/': typeof HatcheryIndexRoute
   '/inventory/': typeof InventoryIndexRoute
   '/production/': typeof ProductionIndexRoute
   '/reports/': typeof ReportsIndexRoute
+  '/api/ai/chat': typeof ApiAiChatRoute
   '/api/auth/$action': typeof ApiAuthActionRoute
   '/api/iot/devices': typeof ApiIotDevicesRoute
   '/api/iot/feeding-command': typeof ApiIotFeedingCommandRoute
@@ -352,10 +352,10 @@ export interface FileRouteTypes {
     | '/water/history'
     | '/water/live'
     | '/cages/'
-    | '/hatchery/'
     | '/inventory/'
     | '/production/'
     | '/reports/'
+    | '/api/ai/chat'
     | '/api/auth/$action'
     | '/api/iot/devices'
     | '/api/iot/feeding-command'
@@ -388,10 +388,10 @@ export interface FileRouteTypes {
     | '/water/history'
     | '/water/live'
     | '/cages'
-    | '/hatchery'
     | '/inventory'
     | '/production'
     | '/reports'
+    | '/api/ai/chat'
     | '/api/auth/$action'
     | '/api/iot/devices'
     | '/api/iot/feeding-command'
@@ -424,10 +424,10 @@ export interface FileRouteTypes {
     | '/water/history'
     | '/water/live'
     | '/cages/'
-    | '/hatchery/'
     | '/inventory/'
     | '/production/'
     | '/reports/'
+    | '/api/ai/chat'
     | '/api/auth/$action'
     | '/api/iot/devices'
     | '/api/iot/feeding-command'
@@ -461,10 +461,10 @@ export interface RootRouteChildren {
   WaterHistoryRoute: typeof WaterHistoryRoute
   WaterLiveRoute: typeof WaterLiveRoute
   CagesIndexRoute: typeof CagesIndexRoute
-  HatcheryIndexRoute: typeof HatcheryIndexRoute
   InventoryIndexRoute: typeof InventoryIndexRoute
   ProductionIndexRoute: typeof ProductionIndexRoute
   ReportsIndexRoute: typeof ReportsIndexRoute
+  ApiAiChatRoute: typeof ApiAiChatRoute
   ApiAuthActionRoute: typeof ApiAuthActionRoute
   ApiIotDevicesRoute: typeof ApiIotDevicesRoute
   ApiIotFeedingCommandRoute: typeof ApiIotFeedingCommandRoute
@@ -500,13 +500,6 @@ declare module '@tanstack/react-router' {
       path: '/inventory'
       fullPath: '/inventory/'
       preLoaderRoute: typeof InventoryIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/hatchery/': {
-      id: '/hatchery/'
-      path: '/hatchery'
-      fullPath: '/hatchery/'
-      preLoaderRoute: typeof HatcheryIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cages/': {
@@ -712,6 +705,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthActionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/ai/chat': {
+      id: '/api/ai/chat'
+      path: '/api/ai/chat'
+      fullPath: '/api/ai/chat'
+      preLoaderRoute: typeof ApiAiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -741,10 +741,10 @@ const rootRouteChildren: RootRouteChildren = {
   WaterHistoryRoute: WaterHistoryRoute,
   WaterLiveRoute: WaterLiveRoute,
   CagesIndexRoute: CagesIndexRoute,
-  HatcheryIndexRoute: HatcheryIndexRoute,
   InventoryIndexRoute: InventoryIndexRoute,
   ProductionIndexRoute: ProductionIndexRoute,
   ReportsIndexRoute: ReportsIndexRoute,
+  ApiAiChatRoute: ApiAiChatRoute,
   ApiAuthActionRoute: ApiAuthActionRoute,
   ApiIotDevicesRoute: ApiIotDevicesRoute,
   ApiIotFeedingCommandRoute: ApiIotFeedingCommandRoute,

@@ -15,12 +15,6 @@ export function listRoadmapPhases(): RoadmapPhase[] {
 
   return [
     {
-      id: "2.7",
-      title: "Hatchery → Production transfer workflow",
-      status: "completed",
-      summary: "Fingerling batches can move to cages and create stocking production events.",
-    },
-    {
       id: "2.8",
       title: "Unified alerts center (IoT + enterprise)",
       status: "completed",
