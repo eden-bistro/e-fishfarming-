@@ -1,5 +1,11 @@
 import { getSessionUser } from "@/lib/auth";
-import { backendEnabled, restInsert, restSelect } from "@/services/modules/backend-store";
+import {
+  backendEnabled,
+  restDelete,
+  restInsert,
+  restSelect,
+  restUpdate,
+} from "@/services/modules/backend-store";
 
 export type InventoryCategory = "feed" | "medicine" | "equipment" | "fuel" | "consumable";
 export type StockMovementType = "purchase" | "usage" | "adjustment";
@@ -126,7 +132,7 @@ export async function upsertInventoryItemRemote(
 ) {
   const next = upsertInventoryItem(item);
   if (backendEnabled()) {
-    await restInsert("inventory_items", {
+    const payload = {
       id: next.id,
       name: next.name,
       category: next.category,
@@ -134,9 +140,29 @@ export async function upsertInventoryItemRemote(
       quantity: next.quantity,
       low_stock_threshold: next.lowStockThreshold,
       created_at: next.createdAt,
-    });
+    };
+    if (item.id) {
+      await restUpdate("inventory_items", next.id, payload);
+    } else {
+      await restInsert("inventory_items", payload);
+    }
   }
   return next;
+}
+
+export function deleteInventoryItem(id: string) {
+  const store = readStore();
+  writeStore({
+    items: store.items.filter((item) => item.id !== id),
+    movements: store.movements.filter((movement) => movement.itemId !== id),
+  });
+}
+
+export async function deleteInventoryItemRemote(id: string) {
+  deleteInventoryItem(id);
+  if (backendEnabled()) {
+    await restDelete("inventory_items", id);
+  }
 }
 
 export function recordStockMovement(input: Omit<StockMovement, "id" | "createdAt">) {

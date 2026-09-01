@@ -1,61 +1,61 @@
 {
   "rules": {
-    ".read": "auth != null",
+    ".read": false,
+    ".write": false,
     "farms": {
       "$farmId": {
+        ".read": "auth != null && (auth.token.admin == true || $farmId === 'user_' + auth.uid || auth.token.farm_id === $farmId)",
+        ".write": false,
         "ponds": {
           "$pondId": {
             "water": {
               "latest": {
-                ".write": "auth != null && auth.token.device == true",
-                ".validate": "newData.hasChildren(['timestamp','pondId','temperature','ph','dissolvedOxygen','ammonia','nitrite'])"
+                ".write": "auth != null && auth.token.device == true && auth.token.farm_id === $farmId",
+                ".validate": "newData.hasChildren(['timestamp','pondId','temperature','ph','dissolvedOxygen','ammonia','nitrite']) && newData.child('pondId').val() === $pondId && newData.child('timestamp').isString() && newData.child('temperature').isNumber() && newData.child('ph').isNumber() && newData.child('dissolvedOxygen').isNumber() && newData.child('ammonia').isNumber() && newData.child('nitrite').isNumber()"
               },
               "history": {
                 "$readingId": {
-                  ".write": "auth != null && auth.token.device == true",
-                  ".validate": "newData.hasChildren(['timestamp','pondId','deviceId','temperature','ph','dissolvedOxygen','ammonia','nitrite'])"
+                  ".write": "auth != null && auth.token.device == true && auth.token.farm_id === $farmId",
+                  ".validate": "newData.hasChildren(['timestamp','pondId','deviceId','temperature','ph','dissolvedOxygen','ammonia','nitrite']) && newData.child('pondId').val() === $pondId && newData.child('timestamp').isString() && newData.child('deviceId').isString() && newData.child('temperature').isNumber() && newData.child('ph').isNumber() && newData.child('dissolvedOxygen').isNumber() && newData.child('ammonia').isNumber() && newData.child('nitrite').isNumber()"
                 }
               }
             },
             "feeding": {
               "events": {
                 "$eventId": {
-                  ".write": "auth != null && (auth.token.device == true || auth.token.admin == true)"
+                  ".write": "auth != null && ((auth.token.device == true && auth.token.farm_id === $farmId) || auth.token.admin == true || $farmId === 'user_' + auth.uid)",
+                  ".validate": "newData.hasChildren(['timestamp','pondId','mode','amountKg','status']) && newData.child('pondId').val() === $pondId && newData.child('timestamp').isString() && newData.child('mode').isString() && newData.child('amountKg').isNumber() && newData.child('status').isString()"
                 }
               },
               "commands": {
                 "$commandId": {
-                  ".read": "auth != null",
-                  ".write": "auth != null && (auth.token.admin == true || auth.token.device == true)"
+                  ".write": "auth != null && (auth.token.admin == true || $farmId === 'user_' + auth.uid || (auth.token.device == true && auth.token.farm_id === $farmId))",
+                  ".validate": "newData.hasChildren(['command','createdAt']) && newData.child('command').isString() && newData.child('createdAt').isString()"
                 }
               }
             },
             "devices": {
               "status": {
                 "$deviceId": {
-                  ".read": "auth != null",
-                  ".write": "auth != null && auth.token.device == true",
-                  ".validate": "newData.hasChildren(['firmware','online','rssi','freeHeap','updatedAt'])"
+                  ".write": "auth != null && auth.token.device == true && auth.token.farm_id === $farmId",
+                  ".validate": "newData.hasChildren(['firmware','online','rssi','freeHeap','updatedAt']) && newData.child('firmware').isString() && newData.child('online').isBoolean() && newData.child('rssi').isNumber() && newData.child('freeHeap').isNumber() && newData.child('updatedAt').isString()"
                 }
               }
             },
             "alerts": {
               "$alertId": {
-                ".read": "auth != null",
-                ".write": "auth != null && (auth.token.device == true || auth.token.admin == true)",
-                ".validate": "newData.hasChildren(['type','severity','message','pond_id','created_at'])"
+                ".write": "auth != null && ((auth.token.device == true && auth.token.farm_id === $farmId) || auth.token.admin == true || $farmId === 'user_' + auth.uid)",
+                ".validate": "newData.hasChildren(['type','severity','message','pond_id','created_at']) && newData.child('pond_id').val() === $pondId && newData.child('type').isString() && newData.child('severity').isString() && newData.child('message').isString() && newData.child('created_at').isString()"
               }
             }
           }
         },
         "finance": {
           "income": {
-            ".read": "auth != null",
-            ".write": "auth != null && auth.token.admin == true"
+            ".write": "auth != null && (auth.token.admin == true || $farmId === 'user_' + auth.uid)"
           },
           "expenses": {
-            ".read": "auth != null",
-            ".write": "auth != null && auth.token.admin == true"
+            ".write": "auth != null && (auth.token.admin == true || $farmId === 'user_' + auth.uid)"
           }
         }
       }

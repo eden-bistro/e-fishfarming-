@@ -11,9 +11,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { userHasRole } from "@/contexts/rbac";
+import { getAccessToken } from "@/services/auth.service";
 import { listDeviceStatuses, type DeviceStatus } from "@/lib/platform-clients";
 import {
-  DEFAULT_FARM_ID,
   DEFAULT_POND_ID,
   getActiveFarmId,
   getActivePondId,
@@ -68,24 +68,25 @@ function deviceStatusHelp(row: DeviceStatus): string {
 }
 
 function Page() {
-  const canProvisionDevices = userHasRole(["super_admin"]);
+  const canProvisionDevices = userHasRole(["admin"]);
   const [rows, setRows] = useState<DeviceStatus[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [setupStatus, setSetupStatus] = useState<SetupStatus>({ type: "idle", message: "" });
   const [form, setForm] = useState({
-    farmId: getActiveFarmId() || DEFAULT_FARM_ID,
+    farmId: getActiveFarmId(),
     pondId: getActivePondId() || DEFAULT_POND_ID,
     cageId: getActivePondId() || DEFAULT_POND_ID,
-    deviceId: "DEVICE_001",
+    deviceId: "",
     farmName: "Default Farm",
     cageName: "Cage 001",
     firmware: "v3.1-fixedwifi",
     setupToken: "",
   });
 
-  const activeFarmId = form.farmId.trim() || DEFAULT_FARM_ID;
+  const accountFarmId = getActiveFarmId();
+  const activeFarmId = accountFarmId;
   const activePondId = form.pondId.trim() || DEFAULT_POND_ID;
 
   const deviceSummary = useMemo(() => {
@@ -160,7 +161,7 @@ function Page() {
   }, [activeFarmId, activePondId]);
 
   async function setupFarmDevice() {
-    const farmId = form.farmId.trim();
+    const farmId = accountFarmId;
     const pondId = form.pondId.trim();
     const deviceId = form.deviceId.trim();
     const setupToken = form.setupToken.trim();
@@ -203,10 +204,12 @@ function Page() {
     };
 
     try {
+      const accessToken = await getAccessToken();
       const response = await fetch("/api/iot/setup", {
         method: "POST",
         headers: {
-          authorization: `Bearer ${setupToken}`,
+          authorization: accessToken ? `Bearer ${accessToken}` : "",
+          "x-iot-setup-token": setupToken,
           "content-type": "application/json; charset=utf-8",
         },
         body: JSON.stringify(payload),
@@ -418,15 +421,14 @@ function Page() {
                 <div className="space-y-2">
                   <Label>Farm ID</Label>
                   <Input
-                    value={form.farmId}
-                    onChange={(event) =>
-                      setForm((previous) => ({ ...previous, farmId: event.target.value }))
-                    }
-                    placeholder="farmer_001"
+                    value={accountFarmId}
+                    readOnly
+                    placeholder="user_<account-id>"
                     autoComplete="off"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Use the farm code assigned by your company or system administrator.
+                    This account-scoped farm ID is locked to your signed-in user, so another account
+                    cannot select or manage it.
                   </p>
                 </div>
 
@@ -456,7 +458,7 @@ function Page() {
                     onChange={(event) =>
                       setForm((previous) => ({ ...previous, deviceId: event.target.value }))
                     }
-                    placeholder="DEVICE_001"
+                    placeholder="Printed device ID"
                     autoComplete="off"
                   />
                   <p className="text-xs text-muted-foreground">
@@ -549,7 +551,7 @@ function Page() {
               <div className="rounded-lg border bg-muted/40 p-3">
                 <p className="font-medium">What to send your administrator</p>
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
-                  <li>Farm ID: {form.farmId || DEFAULT_FARM_ID}</li>
+                  <li>Farm ID: {accountFarmId}</li>
                   <li>Cage/Pond ID: {form.pondId || DEFAULT_POND_ID}</li>
                   <li>IoT Device label printed on the IoT Device box, if available</li>
                 </ul>

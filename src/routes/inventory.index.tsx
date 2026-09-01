@@ -1,19 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useMemo, useState } from "react";
-import {
-  APP_ROLES,
-  getCurrentUserRole,
-  setCurrentUserRole,
-  userHasRole,
-  type AppRole,
-} from "@/contexts/rbac";
+import { Pencil, Trash2, X } from "lucide-react";
+import { getCurrentUserRole, userHasRole } from "@/contexts/rbac";
 import {
   listInventoryItems,
+  deleteInventoryItemRemote,
   listInventoryItemsRemote,
   listStockMovements,
   listStockMovementsRemote,
@@ -25,8 +22,8 @@ import {
 export const Route = createFileRoute("/inventory/")({ component: RouteComponent });
 
 function RouteComponent() {
-  const [role, setRole] = useState<AppRole>(getCurrentUserRole());
   const [refresh, setRefresh] = useState(0);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "",
     category: "feed" as InventoryCategory,
@@ -35,7 +32,7 @@ function RouteComponent() {
     low: "",
   });
 
-  const canWrite = userHasRole(["super_admin", "farmer", "accountant"]);
+  const canWrite = userHasRole(["admin", "farm_user"]);
   const [items, setItems] = useState<Awaited<ReturnType<typeof listInventoryItems>>>([]);
   const [movements, setMovements] = useState<Awaited<ReturnType<typeof listStockMovements>>>([]);
 
@@ -68,26 +65,12 @@ function RouteComponent() {
     >
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">My Role (Demo RBAC Control)</CardTitle>
+          <CardTitle className="text-base">Access</CardTitle>
         </CardHeader>
         <CardContent>
-          <select
-            value={role}
-            onChange={(e) => {
-              const next = e.target.value as AppRole;
-              setRole(next);
-              setCurrentUserRole(next);
-            }}
-            className="h-10 w-56 rounded-md border border-input bg-background px-3 text-sm"
-          >
-            {APP_ROLES.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
+          <Badge variant="secondary">{getCurrentUserRole()}</Badge>
           <p className="mt-2 text-xs text-muted-foreground">
-            worker role is read-only for inventory operations.
+            Device administration remains admin-only; farm users can manage farm inventory.
           </p>
         </CardContent>
       </Card>
@@ -122,7 +105,9 @@ function RouteComponent() {
       {canWrite && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Add inventory item</CardTitle>
+            <CardTitle className="text-base">
+              {editingId ? "Edit inventory item" : "Add inventory item"}
+            </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 md:grid-cols-5">
             <div>
@@ -145,21 +130,6 @@ function RouteComponent() {
                 <option value="medicine">medicine</option>
                 <option value="equipment">equipment</option>
                 <option value="fuel">fuel</option>
-                <option value="consumable">consumable</option>
-              </select>
-            </div>
-            <div>
-              <Label>Category</Label>
-              <select
-                className="h-10 w-full rounded-md border border-input px-3"
-                value={form.category}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, category: e.target.value as InventoryCategory }))
-                }
-              >
-                <option value="feed">feed</option>
-                <option value="medicine">medicine</option>
-                <option value="equipment">equipment</option>
                 <option value="consumable">consumable</option>
               </select>
             </div>
@@ -189,17 +159,32 @@ function RouteComponent() {
                 onClick={() => {
                   if (!form.name.trim()) return;
                   void upsertInventoryItemRemote({
-                    name: form.name,
+                    id: editingId ?? undefined,
+                    name: form.name.trim(),
                     category: form.category,
-                    unit: form.unit,
-                    quantity: Number(form.quantity),
-                    lowStockThreshold: Number(form.low),
-                  });
-                  setRefresh((n) => n + 1);
+                    unit: form.unit.trim() || "unit",
+                    quantity: Number(form.quantity) || 0,
+                    lowStockThreshold: Number(form.low) || 0,
+                  }).then(() => setRefresh((n) => n + 1));
+                  setEditingId(null);
+                  setForm({ name: "", category: "feed", unit: "kg", quantity: "", low: "" });
                 }}
               >
-                Save Item
+                {editingId ? "Update Item" : "Save Item"}
               </Button>
+              {editingId && (
+                <Button
+                  className="ml-2"
+                  variant="outline"
+                  onClick={() => {
+                    setEditingId(null);
+                    setForm({ name: "", category: "feed", unit: "kg", quantity: "", low: "" });
+                  }}
+                >
+                  <X className="mr-1 h-4 w-4" />
+                  Cancel
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -220,6 +205,37 @@ function RouteComponent() {
               </p>
               {canWrite && (
                 <div className="mt-2 flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setEditingId(i.id);
+                      setForm({
+                        name: i.name,
+                        category: i.category,
+                        unit: i.unit,
+                        quantity: String(i.quantity),
+                        low: String(i.lowStockThreshold),
+                      });
+                    }}
+                  >
+                    <Pencil className="mr-1 h-3.5 w-3.5" />
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => {
+                      void deleteInventoryItemRemote(i.id).then(() => setRefresh((n) => n + 1));
+                      if (editingId === i.id) {
+                        setEditingId(null);
+                        setForm({ name: "", category: "feed", unit: "kg", quantity: "", low: "" });
+                      }
+                    }}
+                  >
+                    <Trash2 className="mr-1 h-3.5 w-3.5" />
+                    Delete
+                  </Button>
                   <Button
                     size="sm"
                     variant="outline"

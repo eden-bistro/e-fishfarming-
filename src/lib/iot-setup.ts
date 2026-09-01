@@ -1,8 +1,6 @@
 import {
   encodedFarmPondPath,
   firstDefined,
-  getDefaultDeviceId,
-  getDefaultFarmId,
   getDefaultPondId,
   getEnvRecord,
   jsonResponse,
@@ -11,8 +9,11 @@ import {
   type FirebaseDatabaseAuth,
   writeFirebaseJson,
 } from "@/lib/iot-firebase";
+import { getAuthorizedUser, requireAdmin } from "@/lib/server-authz";
 
-function bearerToken(request: Request): string {
+function setupToken(request: Request): string {
+  const explicit = request.headers.get("x-iot-setup-token")?.trim();
+  if (explicit) return explicit;
   const header = request.headers.get("authorization") ?? "";
   return header.replace(/^Bearer\s+/i, "").trim();
 }
@@ -33,7 +34,7 @@ function requireSetupToken(request: Request, env: unknown): Response | null {
     );
   }
 
-  if (bearerToken(request) !== expected) {
+  if (setupToken(request) !== expected) {
     return jsonResponse({ ok: false, message: "Unauthorized." }, 401, {
       "cache-control": "no-store",
     });
@@ -59,7 +60,7 @@ export async function handleIotSetup(request: Request, env: unknown): Promise<Re
     return noContentResponse(204, {
       allow: "POST, OPTIONS",
       "access-control-allow-methods": "POST, OPTIONS",
-      "access-control-allow-headers": "authorization, content-type",
+      "access-control-allow-headers": "authorization, content-type, x-iot-setup-token",
     });
   }
 
@@ -68,6 +69,11 @@ export async function handleIotSetup(request: Request, env: unknown): Promise<Re
       allow: "POST, OPTIONS",
     });
   }
+
+  const authz = await getAuthorizedUser(request, env);
+  if (!authz.ok) return authz.response;
+  const nonAdmin = requireAdmin(authz.user);
+  if (nonAdmin) return nonAdmin;
 
   const unauthorized = requireSetupToken(request, env);
   if (unauthorized) return unauthorized;
@@ -85,9 +91,9 @@ export async function handleIotSetup(request: Request, env: unknown): Promise<Re
   }
 
   const now = new Date().toISOString();
-  const farmId = String(body.farmId ?? getDefaultFarmId(env)).trim();
+  const farmId = String(body.farmId ?? "").trim();
   const pondId = String(body.pondId ?? body.cageId ?? getDefaultPondId(env)).trim();
-  const deviceId = String(body.deviceId ?? getDefaultDeviceId(env)).trim();
+  const deviceId = String(body.deviceId ?? "").trim();
   const farmName = String(body.farmName ?? "Default Farm").trim();
   const cageName = String(body.cageName ?? body.pondName ?? pondId).trim();
   const firmware = String(body.firmware ?? "unknown").trim();

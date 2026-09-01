@@ -10,6 +10,13 @@ const firebaseBaseUrl = (env.VITE_FIREBASE_DATABASE_URL ?? env.FIREBASE_DATABASE
 const supabaseUrl = (env.VITE_SUPABASE_URL ?? env.SUPABASE_URL)?.trim();
 const supabaseAnonKey = (env.VITE_SUPABASE_ANON_KEY ?? env.SUPABASE_ANON_KEY)?.trim();
 
+export const PLATFORM_DATA_CHANGED_EVENT = "aquasmart:platform-data-changed";
+
+function notifyPlatformDataChanged() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(PLATFORM_DATA_CHANGED_EVENT));
+}
+
 export type WaterReading = {
   timestamp: string;
   pondId: string;
@@ -24,15 +31,21 @@ export type WaterReading = {
 
 export type IncomeRow = {
   id?: number;
+  farm_id?: string;
   date: string;
   buyer: string;
-  quantity_kg: number;
-  price_per_kg: number;
+  income_type: string;
+  unit: string;
+  quantity: number;
+  unit_price: number;
+  quantity_kg?: number;
+  price_per_kg?: number;
   total: number;
 };
 
 export type ExpenseRow = {
   id?: number;
+  farm_id?: string;
   date: string;
   category: string;
   description: string;
@@ -41,6 +54,7 @@ export type ExpenseRow = {
 
 export type FeedingEventRow = {
   id?: number;
+  farm_id?: string;
   timestamp: string;
   pond_id: string;
   mode: string;
@@ -293,12 +307,45 @@ export async function pushManualFeedingEvent(amountKg: number): Promise<void> {
   });
 }
 
+function normalizeIncomeRow(row: Partial<IncomeRow>): IncomeRow {
+  const quantity = Number(row.quantity ?? row.quantity_kg ?? 0);
+  const unitPrice = Number(row.unit_price ?? row.price_per_kg ?? 0);
+  const unit = String(row.unit || "kg").trim() || "kg";
+  return {
+    ...row,
+    date: row.date ?? "",
+    buyer: row.buyer ?? "",
+    income_type: String(row.income_type || "Fish sale").trim() || "Fish sale",
+    unit,
+    quantity,
+    unit_price: unitPrice,
+    quantity_kg: Number(row.quantity_kg ?? (unit.toLowerCase() === "kg" ? quantity : 0)),
+    price_per_kg: Number(row.price_per_kg ?? (unit.toLowerCase() === "kg" ? unitPrice : 0)),
+    total: Number(row.total ?? quantity * unitPrice),
+  };
+}
+
+function serializeIncomeRow(row: IncomeRow): IncomeRow {
+  const quantity = Number(row.quantity);
+  const unitPrice = Number(row.unit_price);
+  return {
+    ...row,
+    income_type: row.income_type.trim(),
+    unit: row.unit.trim(),
+    quantity,
+    unit_price: unitPrice,
+    quantity_kg: row.unit.trim().toLowerCase() === "kg" ? quantity : 0,
+    price_per_kg: row.unit.trim().toLowerCase() === "kg" ? unitPrice : 0,
+    total: quantity * unitPrice,
+  };
+}
+
 export async function listIncome(): Promise<IncomeRow[]> {
   try {
     const rows = await supabaseRequest("finance_income?select=*&order=date.desc", {
       method: "GET",
     });
-    return (rows as IncomeRow[] | null) ?? [];
+    return ((rows as Partial<IncomeRow>[] | null) ?? []).map(normalizeIncomeRow);
   } catch {
     return [];
   }
@@ -306,24 +353,29 @@ export async function listIncome(): Promise<IncomeRow[]> {
 export async function addIncome(row: IncomeRow): Promise<IncomeRow> {
   const rows = await supabaseRequest("finance_income?select=*", {
     method: "POST",
-    headers: { Prefer: "return=representation" },
-    body: JSON.stringify([row]),
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify([{ ...serializeIncomeRow(row), farm_id: getActiveFarmId() }]),
   });
-  return Array.isArray(rows) && rows[0] ? (rows[0] as IncomeRow) : row;
+  const saved = Array.isArray(rows) && rows[0] ? (rows[0] as IncomeRow) : row;
+  notifyPlatformDataChanged();
+  return saved;
 }
 export async function updateIncome(id: number, row: IncomeRow): Promise<IncomeRow> {
   const rows = await supabaseRequest(`finance_income?id=eq.${id}&select=*`, {
     method: "PATCH",
-    headers: { Prefer: "return=representation" },
-    body: JSON.stringify(row),
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ ...serializeIncomeRow(row), farm_id: getActiveFarmId() }),
   });
-  return Array.isArray(rows) && rows[0] ? (rows[0] as IncomeRow) : { ...row, id };
+  const saved = Array.isArray(rows) && rows[0] ? (rows[0] as IncomeRow) : { ...row, id };
+  notifyPlatformDataChanged();
+  return saved;
 }
 export async function deleteIncome(id: number): Promise<void> {
   await supabaseRequest(`finance_income?id=eq.${id}`, {
     method: "DELETE",
     headers: { Prefer: "return=minimal" },
   });
+  notifyPlatformDataChanged();
 }
 
 export async function listExpenses(): Promise<ExpenseRow[]> {
@@ -339,22 +391,27 @@ export async function listExpenses(): Promise<ExpenseRow[]> {
 export async function addExpense(row: ExpenseRow): Promise<ExpenseRow> {
   const rows = await supabaseRequest("finance_expenses?select=*", {
     method: "POST",
-    headers: { Prefer: "return=representation" },
-    body: JSON.stringify([row]),
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify([{ ...row, farm_id: getActiveFarmId() }]),
   });
-  return Array.isArray(rows) && rows[0] ? (rows[0] as ExpenseRow) : row;
+  const saved = Array.isArray(rows) && rows[0] ? (rows[0] as ExpenseRow) : row;
+  notifyPlatformDataChanged();
+  return saved;
 }
 export async function updateExpense(id: number, row: ExpenseRow): Promise<ExpenseRow> {
   const rows = await supabaseRequest(`finance_expenses?id=eq.${id}&select=*`, {
     method: "PATCH",
-    headers: { Prefer: "return=representation" },
-    body: JSON.stringify(row),
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ ...row, farm_id: getActiveFarmId() }),
   });
-  return Array.isArray(rows) && rows[0] ? (rows[0] as ExpenseRow) : { ...row, id };
+  const saved = Array.isArray(rows) && rows[0] ? (rows[0] as ExpenseRow) : { ...row, id };
+  notifyPlatformDataChanged();
+  return saved;
 }
 export async function deleteExpense(id: number): Promise<void> {
   await supabaseRequest(`finance_expenses?id=eq.${id}`, {
     method: "DELETE",
     headers: { Prefer: "return=minimal" },
   });
+  notifyPlatformDataChanged();
 }

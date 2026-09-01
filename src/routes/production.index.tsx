@@ -2,10 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Pencil, Trash2, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  addProductionEventRemote,
+  deleteProductionEventRemote,
+  upsertProductionEventRemote,
   listProductionEventsRemote,
   type ProductionEventType,
 } from "@/services/modules/production.service";
@@ -17,6 +19,7 @@ export const Route = createFileRoute("/production/")({ component: RouteComponent
 function RouteComponent() {
   const [refresh, setRefresh] = useState(0);
   const [events, setEvents] = useState<Awaited<ReturnType<typeof listProductionEventsRemote>>>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     cageId: "Pond A",
@@ -94,7 +97,9 @@ function RouteComponent() {
     >
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Add production event</CardTitle>
+          <CardTitle className="text-base">
+            {editingId ? "Edit production event" : "Add production event"}
+          </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-6">
           <div>
@@ -145,17 +150,45 @@ function RouteComponent() {
             <Button
               onClick={() => {
                 if (!form.cageId.trim()) return;
-                void addProductionEventRemote({
+                void upsertProductionEventRemote({
+                  id: editingId ?? undefined,
                   cageId: form.cageId.trim(),
                   type: form.type,
                   fishCount: form.fishCount ? Number(form.fishCount) : undefined,
                   weightKg: form.weightKg ? Number(form.weightKg) : undefined,
                   feedKg: form.feedKg ? Number(form.feedKg) : undefined,
                 }).then(() => setRefresh((n) => n + 1));
+                setEditingId(null);
+                setForm({
+                  cageId: "Pond A",
+                  type: "stocking",
+                  fishCount: "",
+                  weightKg: "",
+                  feedKg: "",
+                });
               }}
             >
-              Save Event
+              {editingId ? "Update Event" : "Save Event"}
             </Button>
+            {editingId && (
+              <Button
+                className="ml-2"
+                variant="outline"
+                onClick={() => {
+                  setEditingId(null);
+                  setForm({
+                    cageId: "Pond A",
+                    type: "stocking",
+                    fishCount: "",
+                    weightKg: "",
+                    feedKg: "",
+                  });
+                }}
+              >
+                <X className="mr-1 h-4 w-4" />
+                Cancel
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -230,6 +263,70 @@ function RouteComponent() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Production events</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          {events.length === 0 ? (
+            <p className="text-muted-foreground">No production events yet.</p>
+          ) : (
+            events.map((event) => (
+              <div key={event.id} className="rounded border p-3">
+                <p className="font-medium">
+                  {event.cageId} · {event.type}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Fish: {event.fishCount ?? "—"} · Weight: {event.weightKg ?? "—"} kg · Feed:{" "}
+                  {event.feedKg ?? "—"} kg
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setEditingId(event.id);
+                      setForm({
+                        cageId: event.cageId,
+                        type: event.type,
+                        fishCount: event.fishCount == null ? "" : String(event.fishCount),
+                        weightKg: event.weightKg == null ? "" : String(event.weightKg),
+                        feedKg: event.feedKg == null ? "" : String(event.feedKg),
+                      });
+                    }}
+                  >
+                    <Pencil className="mr-1 h-3.5 w-3.5" />
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => {
+                      void deleteProductionEventRemote(event.id).then(() =>
+                        setRefresh((n) => n + 1),
+                      );
+                      if (editingId === event.id) {
+                        setEditingId(null);
+                        setForm({
+                          cageId: "Pond A",
+                          type: "stocking",
+                          fishCount: "",
+                          weightKg: "",
+                          feedKg: "",
+                        });
+                      }
+                    }}
+                  >
+                    <Trash2 className="mr-1 h-3.5 w-3.5" />
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
     </DashboardLayout>
   );
 }

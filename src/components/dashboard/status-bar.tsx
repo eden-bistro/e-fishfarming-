@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getCurrentUserRecord, loadCurrentUserFarmProfile, type FarmProfile } from "@/lib/auth";
+import { getCurrentUserRecord } from "@/lib/auth";
 import { listDeviceStatuses, type DeviceStatus } from "@/lib/device-firebase";
 import { CheckCircle2, Wifi, Clock, MapPin } from "lucide-react";
 
@@ -24,34 +24,14 @@ function newestDeviceUpdate(devices: DeviceStatus[]): string {
   }, "");
 }
 
-function getSystemStatus(devices: DeviceStatus[]) {
-  const online = devices.filter((device) => device.online).length;
-  const total = devices.length;
-
-  if (total === 0) {
-    return { label: "No live devices", online, total, className: "text-warning" };
-  }
-
-  if (online === total) {
-    return { label: "All Good", online, total, className: "text-success" };
-  }
-
-  return { label: "Needs Attention", online, total, className: "text-warning" };
-}
-
 export function StatusBar() {
-  const [farm, setFarm] = useState<FarmProfile | undefined>(getCurrentUserRecord()?.farm);
+  const farm = getCurrentUserRecord()?.farm;
   const farmName = farm?.name?.trim() || "No farm profile";
   const [devices, setDevices] = useState<DeviceStatus[]>([]);
   const [loadingDevices, setLoadingDevices] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
-
-    async function loadFarm() {
-      const actualFarm = await loadCurrentUserFarmProfile();
-      if (!cancelled && actualFarm) setFarm(actualFarm);
-    }
 
     async function loadDevices() {
       setLoadingDevices(true);
@@ -62,7 +42,6 @@ export function StatusBar() {
       }
     }
 
-    void loadFarm();
     void loadDevices();
     const timer = window.setInterval(loadDevices, 30_000);
     return () => {
@@ -71,22 +50,30 @@ export function StatusBar() {
     };
   }, []);
 
-  const systemStatus = useMemo(() => getSystemStatus(devices), [devices]);
+  const onlineDevices = devices.filter((device) => device.online).length;
+  const totalDevices = devices.length;
   const lastUpdated = useMemo(() => formatUpdatedAt(newestDeviceUpdate(devices)), [devices]);
+  const systemStatus =
+    totalDevices === 0
+      ? "No live devices"
+      : onlineDevices === totalDevices
+        ? "All Good"
+        : "Needs Attention";
+  const statusClass =
+    totalDevices > 0 && onlineDevices === totalDevices ? "text-success" : "text-warning";
 
   return (
     <div className="rounded-xl border bg-card px-4 py-3">
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
-          <CheckCircle2 className={`h-4 w-4 ${systemStatus.className}`} />
-          System Status:{" "}
-          <span className={`font-medium ${systemStatus.className}`}>{systemStatus.label}</span>
+          <CheckCircle2 className={`h-4 w-4 ${statusClass}`} />
+          System Status: <span className={`font-medium ${statusClass}`}>{systemStatus}</span>
         </span>
         <span className="inline-flex items-center gap-1.5">
           <Wifi className="h-4 w-4 text-info" />
           Devices Online:{" "}
           <span className="font-medium text-foreground">
-            {loadingDevices ? "Checking…" : `${systemStatus.online}/${systemStatus.total}`}
+            {loadingDevices ? "Checking…" : `${onlineDevices}/${totalDevices}`}
           </span>
         </span>
         <span className="inline-flex items-center gap-1.5">

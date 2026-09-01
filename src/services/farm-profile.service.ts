@@ -1,5 +1,5 @@
 import { getSessionUser, getAccessToken } from "@/services/auth.service";
-import type { FarmProfile } from "@/lib/farm-profile";
+import type { FarmProfile } from "@/lib/auth";
 import { hasSupabaseConfig, supabaseAnonKey, supabaseUrl } from "@/supabase/client";
 
 const TABLE = "farm_profiles";

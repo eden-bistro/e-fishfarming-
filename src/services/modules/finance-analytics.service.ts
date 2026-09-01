@@ -48,10 +48,28 @@ export function filterExpensesByDate(rows: ExpenseRow[], range: DateRange): Expe
   return rows.filter((row) => isWithinDateRange(row.date, range));
 }
 
+export function incomeQuantity(row: IncomeRow): number {
+  const quantity = Number(row.quantity ?? row.quantity_kg);
+  return Number.isFinite(quantity) ? quantity : 0;
+}
+
+export function incomeUnitPrice(row: IncomeRow): number {
+  const unitPrice = Number(row.unit_price ?? row.price_per_kg);
+  return Number.isFinite(unitPrice) ? unitPrice : 0;
+}
+
+export function incomeUnit(row: IncomeRow): string {
+  return row.unit?.trim() || "kg";
+}
+
+export function incomeType(row: IncomeRow): string {
+  return row.income_type?.trim() || "Fish sale";
+}
+
 export function incomeAmount(row: IncomeRow): number {
   const total = Number(row.total);
   if (Number.isFinite(total) && total > 0) return total;
-  return Number(row.quantity_kg) * Number(row.price_per_kg);
+  return incomeQuantity(row) * incomeUnitPrice(row);
 }
 
 export function expenseAmount(row: ExpenseRow): number {
