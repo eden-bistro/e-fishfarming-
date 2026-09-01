@@ -14,6 +14,11 @@ Optional but recommended:
 
 - `JWT_SECRET`
 
+Required for AquaSmart AI:
+
+- `OPENAI_API_KEY` as a server-side secret (never use a `VITE_` prefix)
+- Optional: `OPENAI_MODEL` to select the approved production model; the app defaults to `gpt-4.1-mini`
+
 Required for ESP32 ingest:
 
 - `IOT_INGEST_TOKEN`
@@ -52,6 +57,8 @@ Required for ESP32 ingest:
    - `FIREBASE_DATABASE_URL`
    - `IOT_INGEST_TOKEN`
    - `FIREBASE_SERVICE_ACCOUNT` (or legacy `FIREBASE_DATABASE_SECRET` / `FIREBASE_AUTH_TOKEN`)
+   - `OPENAI_API_KEY`
+   - Optional: `OPENAI_MODEL`
 4. Click path (Pages): `Workers & Pages` -> your Pages project -> `Settings` -> `Environment variables` -> add variables in both Preview and Production -> redeploy.
 5. Click path (Workers): `Workers & Pages` -> your Worker -> `Settings` -> `Variables` -> add environment variables -> deploy new version.
 6. Build and deploy locally or let `.github/workflows/cloudflare-deploy.yml` deploy from `main`.

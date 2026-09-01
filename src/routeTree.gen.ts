@@ -42,6 +42,7 @@ import { Route as ApiIotLatestRouteImport } from './routes/api.iot.latest'
 import { Route as ApiIotFeedingCommandRouteImport } from './routes/api.iot.feeding-command'
 import { Route as ApiIotDevicesRouteImport } from './routes/api.iot.devices'
 import { Route as ApiAuthActionRouteImport } from './routes/api.auth.$action'
+import { Route as ApiAiChatRouteImport } from './routes/api.ai.chat'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -208,6 +209,11 @@ const ApiAuthActionRoute = ApiAuthActionRouteImport.update({
   path: '/api/auth/$action',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAiChatRoute = ApiAiChatRouteImport.update({
+  id: '/api/ai/chat',
+  path: '/api/ai/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -238,6 +244,7 @@ export interface FileRoutesByFullPath {
   '/inventory/': typeof InventoryIndexRoute
   '/production/': typeof ProductionIndexRoute
   '/reports/': typeof ReportsIndexRoute
+  '/api/ai/chat': typeof ApiAiChatRoute
   '/api/auth/$action': typeof ApiAuthActionRoute
   '/api/iot/devices': typeof ApiIotDevicesRoute
   '/api/iot/feeding-command': typeof ApiIotFeedingCommandRoute
@@ -273,6 +280,7 @@ export interface FileRoutesByTo {
   '/inventory': typeof InventoryIndexRoute
   '/production': typeof ProductionIndexRoute
   '/reports': typeof ReportsIndexRoute
+  '/api/ai/chat': typeof ApiAiChatRoute
   '/api/auth/$action': typeof ApiAuthActionRoute
   '/api/iot/devices': typeof ApiIotDevicesRoute
   '/api/iot/feeding-command': typeof ApiIotFeedingCommandRoute
@@ -309,6 +317,7 @@ export interface FileRoutesById {
   '/inventory/': typeof InventoryIndexRoute
   '/production/': typeof ProductionIndexRoute
   '/reports/': typeof ReportsIndexRoute
+  '/api/ai/chat': typeof ApiAiChatRoute
   '/api/auth/$action': typeof ApiAuthActionRoute
   '/api/iot/devices': typeof ApiIotDevicesRoute
   '/api/iot/feeding-command': typeof ApiIotFeedingCommandRoute
@@ -346,6 +355,7 @@ export interface FileRouteTypes {
     | '/inventory/'
     | '/production/'
     | '/reports/'
+    | '/api/ai/chat'
     | '/api/auth/$action'
     | '/api/iot/devices'
     | '/api/iot/feeding-command'
@@ -381,6 +391,7 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/production'
     | '/reports'
+    | '/api/ai/chat'
     | '/api/auth/$action'
     | '/api/iot/devices'
     | '/api/iot/feeding-command'
@@ -416,6 +427,7 @@ export interface FileRouteTypes {
     | '/inventory/'
     | '/production/'
     | '/reports/'
+    | '/api/ai/chat'
     | '/api/auth/$action'
     | '/api/iot/devices'
     | '/api/iot/feeding-command'
@@ -452,6 +464,7 @@ export interface RootRouteChildren {
   InventoryIndexRoute: typeof InventoryIndexRoute
   ProductionIndexRoute: typeof ProductionIndexRoute
   ReportsIndexRoute: typeof ReportsIndexRoute
+  ApiAiChatRoute: typeof ApiAiChatRoute
   ApiAuthActionRoute: typeof ApiAuthActionRoute
   ApiIotDevicesRoute: typeof ApiIotDevicesRoute
   ApiIotFeedingCommandRoute: typeof ApiIotFeedingCommandRoute
@@ -692,6 +705,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthActionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/ai/chat': {
+      id: '/api/ai/chat'
+      path: '/api/ai/chat'
+      fullPath: '/api/ai/chat'
+      preLoaderRoute: typeof ApiAiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -724,6 +744,7 @@ const rootRouteChildren: RootRouteChildren = {
   InventoryIndexRoute: InventoryIndexRoute,
   ProductionIndexRoute: ProductionIndexRoute,
   ReportsIndexRoute: ReportsIndexRoute,
+  ApiAiChatRoute: ApiAiChatRoute,
   ApiAuthActionRoute: ApiAuthActionRoute,
   ApiIotDevicesRoute: ApiIotDevicesRoute,
   ApiIotFeedingCommandRoute: ApiIotFeedingCommandRoute,
