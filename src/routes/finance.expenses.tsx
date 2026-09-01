@@ -40,11 +40,11 @@ function Page() {
   const [rows, setRows] = useState<ExpenseRow[]>([]);
   const [editId, setEditId] = useState<number | null>(null);
   const [range, setRange] = useState<DateRange>(() => currentMonthRange());
-  const [form, setForm] = useState<ExpenseRow>({
+  const [form, setForm] = useState({
     date: "",
     category: "",
     description: "",
-    amount: 0,
+    amount: "",
   });
 
   async function load() {
@@ -69,8 +69,9 @@ function Page() {
     );
     if (!ok) return;
     await deleteExpense(row.id);
+    setRows((current) => current.filter((item) => item.id !== row.id));
     toast.success("Expense record deleted.");
-    await load();
+    void load();
   }
 
   async function save() {
@@ -87,12 +88,14 @@ function Page() {
       amount,
     };
     try {
-      if (editId) await updateExpense(editId, payload);
-      else await addExpense(payload);
+      const saved = editId ? await updateExpense(editId, payload) : await addExpense(payload);
+      setRows((current) =>
+        editId ? current.map((row) => (row.id === editId ? saved : row)) : [saved, ...current],
+      );
       toast.success(editId ? "Expense updated." : "Expense added.");
       setEditId(null);
-      setForm({ date: "", category: "", description: "", amount: 0 });
-      await load();
+      setForm({ date: "", category: "", description: "", amount: "" });
+      void load();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to save expense record.");
     }
@@ -134,7 +137,7 @@ function Page() {
             type="number"
             placeholder="Amount"
             value={form.amount}
-            onChange={(e) => setForm((f) => ({ ...f, amount: Number(e.target.value) }))}
+            onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
           />
           <Button onClick={() => void save()}>{editId ? "Update" : "Add"}</Button>
         </CardContent>
@@ -199,7 +202,12 @@ function Page() {
                       variant="outline"
                       onClick={() => {
                         setEditId(e.id ?? null);
-                        setForm(e);
+                        setForm({
+                          date: e.date,
+                          category: e.category,
+                          description: e.description,
+                          amount: String(e.amount),
+                        });
                       }}
                     >
                       Edit

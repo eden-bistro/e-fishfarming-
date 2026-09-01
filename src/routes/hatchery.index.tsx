@@ -32,7 +32,7 @@ function RouteComponent() {
 
   const [batchForm, setBatchForm] = useState({
     brooderId: "",
-    quantity: "0",
+    quantity: "",
     productionDate: new Date().toISOString().slice(0, 10),
     growthStatus: "early" as const,
   });

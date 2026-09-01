@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { Bell, Calendar, ChevronDown } from "lucide-react";
-import { getCurrentUserRecord, getSessionUser, logoutUser } from "@/lib/auth";
+import {
+  getCurrentUserRecord,
+  getSessionUser,
+  loadCurrentUserFarmProfile,
+  logoutUser,
+} from "@/lib/auth";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -53,7 +58,9 @@ export function TopNavbar() {
   const session = getSessionUser();
   const [today, setToday] = useState("Today");
   const pageTitle = titleForPath(pathname);
-  const farmName = getCurrentUserRecord()?.farm?.name?.trim() || "My Farm";
+  const [farmName, setFarmName] = useState(
+    getCurrentUserRecord()?.farm?.name?.trim() || "No farm profile",
+  );
 
   useEffect(() => {
     setToday(
@@ -63,6 +70,18 @@ export function TopNavbar() {
         year: "numeric",
       }),
     );
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadFarmName() {
+      const farm = await loadCurrentUserFarmProfile();
+      if (!cancelled) setFarmName(farm?.name?.trim() || "No farm profile");
+    }
+    void loadFarmName();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
