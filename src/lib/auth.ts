@@ -11,6 +11,7 @@ import {
   fetchFarmProfileRemote,
   saveFarmProfileRemote,
 } from "@/services/farm-profile.service";
+import type { FarmProfile } from "@/lib/farm-profile";
 
 export type { FarmProfile } from "@/lib/farm-profile";
 
@@ -69,7 +70,37 @@ export function getCurrentUserRecord(): AuthUser | null {
 
 function cacheCurrentUserFarm(userId: string, farm: FarmProfile) {
   if (!isBrowser()) return;
-  window.localStorage.setItem(`${FARM_KEY}:${userId}`, JSON.stringify(farm));
+  try {
+    window.localStorage.setItem(`${FARM_KEY}:${userId}`, JSON.stringify(farm));
+  } catch {
+    // Keep the profile available through the remote backend when local storage is unavailable.
+  }
+}
+
+function getCachedFarmProfile(userId: string): FarmProfile | undefined {
+  if (!isBrowser()) return undefined;
+
+  try {
+    const raw = window.localStorage.getItem(`${FARM_KEY}:${userId}`);
+    if (!raw) return undefined;
+
+    const profile = JSON.parse(raw) as Partial<FarmProfile>;
+    if (
+      typeof profile.name !== "string" ||
+      typeof profile.location !== "string" ||
+      typeof profile.owner !== "string" ||
+      typeof profile.currency !== "string" ||
+      (profile.totalPonds !== null && typeof profile.totalPonds !== "number") ||
+      (profile.totalStockKg !== null && typeof profile.totalStockKg !== "number")
+    ) {
+      return undefined;
+    }
+
+    return profile as FarmProfile;
+  } catch {
+    // A malformed or unavailable local-storage entry must not prevent dashboard rendering.
+    return undefined;
+  }
 }
 
 export async function loadCurrentUserFarmProfile(): Promise<FarmProfile | null> {
