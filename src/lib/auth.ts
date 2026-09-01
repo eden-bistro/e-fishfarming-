@@ -12,15 +12,7 @@ import {
   saveFarmProfileRemote,
 } from "@/services/farm-profile.service";
 
-export type FarmProfile = {
-  name: string;
-  location: string;
-  owner: string;
-  currency: string;
-  totalPonds: number | null;
-  totalStockKg: number | null;
-  cageNames?: string[];
-};
+export type { FarmProfile } from "@/lib/farm-profile";
 
 export type AuthUser = {
   id: string;
@@ -71,8 +63,7 @@ export function listUsers(): AuthUser[] {
 export function getCurrentUserRecord(): AuthUser | null {
   const session = getSessionUser();
   if (!session || !isBrowser()) return null;
-  const raw = window.localStorage.getItem(`${FARM_KEY}:${session.id}`);
-  const farm = raw ? (JSON.parse(raw) as FarmProfile) : undefined;
+  const farm = getCachedFarmProfile(session.id);
   return { id: session.id, email: session.email, name: session.email, farm };
 }
 
