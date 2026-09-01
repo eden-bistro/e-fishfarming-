@@ -45,6 +45,20 @@ create table if not exists finance_expenses (
   created_at timestamptz not null default now()
 );
 
+
+create table if not exists farm_profiles (
+  tenant_id text primary key,
+  name text not null,
+  location text not null,
+  owner text not null,
+  currency text not null,
+  total_ponds numeric,
+  total_stock_kg numeric,
+  cage_names text[] not null default '{}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists production_events (
   id uuid primary key,
   tenant_id text not null,
@@ -111,6 +125,7 @@ create table if not exists hatchery_fingerling_batches (
 create index if not exists idx_water_readings_pond_time on water_readings (pond_id, timestamp desc);
 create index if not exists idx_income_date on finance_income (date desc);
 create index if not exists idx_expenses_date on finance_expenses (date desc);
+create index if not exists idx_farm_profiles_updated_at on farm_profiles (updated_at desc);
 create index if not exists idx_production_events_tenant_time on production_events (tenant_id, created_at desc);
 create index if not exists idx_inventory_items_tenant_category on inventory_items (tenant_id, category);
 create index if not exists idx_inventory_movements_tenant_time on inventory_movements (tenant_id, created_at desc);

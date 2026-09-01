@@ -33,8 +33,8 @@ function RouteComponent() {
   const [form, setForm] = useState({
     name: "",
     location: "",
-    fishPopulation: "0",
-    biomassKg: "0",
+    fishPopulation: "",
+    biomassKg: "",
     status: "active" as Cage["status"],
   });
 
@@ -49,7 +49,7 @@ function RouteComponent() {
 
   const resetForm = () => {
     setEditingId(null);
-    setForm({ name: "", location: "", fishPopulation: "0", biomassKg: "0", status: "active" });
+    setForm({ name: "", location: "", fishPopulation: "", biomassKg: "", status: "active" });
   };
 
   const submit = () => {

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getCurrentUserRecord, saveCurrentUserFarm } from "@/lib/auth";
-import { useState } from "react";
+import { getCurrentUserRecord, loadCurrentUserFarmProfile, saveCurrentUserFarm } from "@/lib/auth";
+import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,27 @@ function Page() {
   const [message, setMessage] = useState("");
   const [saved, setSaved] = useState(false);
 
-  function saveFarm() {
+  useEffect(() => {
+    let cancelled = false;
+    async function loadFarm() {
+      const farm = await loadCurrentUserFarmProfile();
+      if (!farm || cancelled) return;
+      setForm({
+        name: farm.name ?? "",
+        location: farm.location ?? "",
+        owner: farm.owner ?? currentUser?.name ?? "",
+        currency: farm.currency ?? "",
+        totalPonds: farm.totalPonds?.toString() ?? "",
+        totalStockKg: farm.totalStockKg?.toString() ?? "",
+      });
+    }
+    void loadFarm();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser?.name]);
+
+  async function saveFarm() {
     setSaved(false);
     if (!form.name.trim() || !form.location.trim() || !form.owner.trim() || !form.currency.trim()) {
       setMessage("Farm name, location, owner and currency are required.");
@@ -45,7 +65,7 @@ function Page() {
       return;
     }
 
-    const result = saveCurrentUserFarm({
+    const result = await saveCurrentUserFarm({
       name: form.name.trim(),
       location: form.location.trim(),
       owner: form.owner.trim(),
@@ -184,7 +204,7 @@ function Page() {
       </div>
 
       <div className="space-y-2">
-        <Button onClick={saveFarm} className="min-h-11 w-full sm:w-auto">
+        <Button onClick={() => void saveFarm()} className="min-h-11 w-full sm:w-auto">
           Save Farm Profile
         </Button>
         {message && (
