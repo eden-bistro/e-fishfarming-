@@ -13,7 +13,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ReportsIndexRouteImport } from './routes/reports.index'
 import { Route as ProductionIndexRouteImport } from './routes/production.index'
 import { Route as InventoryIndexRouteImport } from './routes/inventory.index'
-import { Route as HatcheryIndexRouteImport } from './routes/hatchery.index'
 import { Route as CagesIndexRouteImport } from './routes/cages.index'
 import { Route as WaterLiveRouteImport } from './routes/water.live'
 import { Route as WaterHistoryRouteImport } from './routes/water.history'
@@ -62,11 +61,6 @@ const ProductionIndexRoute = ProductionIndexRouteImport.update({
 const InventoryIndexRoute = InventoryIndexRouteImport.update({
   id: '/inventory/',
   path: '/inventory/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HatcheryIndexRoute = HatcheryIndexRouteImport.update({
-  id: '/hatchery/',
-  path: '/hatchery/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CagesIndexRoute = CagesIndexRouteImport.update({
@@ -241,7 +235,6 @@ export interface FileRoutesByFullPath {
   '/water/history': typeof WaterHistoryRoute
   '/water/live': typeof WaterLiveRoute
   '/cages/': typeof CagesIndexRoute
-  '/hatchery/': typeof HatcheryIndexRoute
   '/inventory/': typeof InventoryIndexRoute
   '/production/': typeof ProductionIndexRoute
   '/reports/': typeof ReportsIndexRoute
@@ -277,7 +270,6 @@ export interface FileRoutesByTo {
   '/water/history': typeof WaterHistoryRoute
   '/water/live': typeof WaterLiveRoute
   '/cages': typeof CagesIndexRoute
-  '/hatchery': typeof HatcheryIndexRoute
   '/inventory': typeof InventoryIndexRoute
   '/production': typeof ProductionIndexRoute
   '/reports': typeof ReportsIndexRoute
@@ -314,7 +306,6 @@ export interface FileRoutesById {
   '/water/history': typeof WaterHistoryRoute
   '/water/live': typeof WaterLiveRoute
   '/cages/': typeof CagesIndexRoute
-  '/hatchery/': typeof HatcheryIndexRoute
   '/inventory/': typeof InventoryIndexRoute
   '/production/': typeof ProductionIndexRoute
   '/reports/': typeof ReportsIndexRoute
@@ -352,7 +343,6 @@ export interface FileRouteTypes {
     | '/water/history'
     | '/water/live'
     | '/cages/'
-    | '/hatchery/'
     | '/inventory/'
     | '/production/'
     | '/reports/'
@@ -388,7 +378,6 @@ export interface FileRouteTypes {
     | '/water/history'
     | '/water/live'
     | '/cages'
-    | '/hatchery'
     | '/inventory'
     | '/production'
     | '/reports'
@@ -424,7 +413,6 @@ export interface FileRouteTypes {
     | '/water/history'
     | '/water/live'
     | '/cages/'
-    | '/hatchery/'
     | '/inventory/'
     | '/production/'
     | '/reports/'
@@ -461,7 +449,6 @@ export interface RootRouteChildren {
   WaterHistoryRoute: typeof WaterHistoryRoute
   WaterLiveRoute: typeof WaterLiveRoute
   CagesIndexRoute: typeof CagesIndexRoute
-  HatcheryIndexRoute: typeof HatcheryIndexRoute
   InventoryIndexRoute: typeof InventoryIndexRoute
   ProductionIndexRoute: typeof ProductionIndexRoute
   ReportsIndexRoute: typeof ReportsIndexRoute
@@ -500,13 +487,6 @@ declare module '@tanstack/react-router' {
       path: '/inventory'
       fullPath: '/inventory/'
       preLoaderRoute: typeof InventoryIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/hatchery/': {
-      id: '/hatchery/'
-      path: '/hatchery'
-      fullPath: '/hatchery/'
-      preLoaderRoute: typeof HatcheryIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cages/': {
@@ -741,7 +721,6 @@ const rootRouteChildren: RootRouteChildren = {
   WaterHistoryRoute: WaterHistoryRoute,
   WaterLiveRoute: WaterLiveRoute,
   CagesIndexRoute: CagesIndexRoute,
-  HatcheryIndexRoute: HatcheryIndexRoute,
   InventoryIndexRoute: InventoryIndexRoute,
   ProductionIndexRoute: ProductionIndexRoute,
   ReportsIndexRoute: ReportsIndexRoute,

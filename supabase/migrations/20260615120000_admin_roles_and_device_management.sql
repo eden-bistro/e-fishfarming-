@@ -217,37 +217,3 @@ with check (tenant_id = auth.uid()::text or public.is_admin());
 drop policy if exists "cages_delete" on public.cages;
 create policy "cages_delete" on public.cages
 for delete using (tenant_id = auth.uid()::text or public.is_admin());
-
-drop policy if exists "hatchery_brooders_select" on public.hatchery_brooders;
-create policy "hatchery_brooders_select" on public.hatchery_brooders
-for select using (tenant_id = auth.uid()::text or public.is_admin());
-
-drop policy if exists "hatchery_brooders_insert" on public.hatchery_brooders;
-create policy "hatchery_brooders_insert" on public.hatchery_brooders
-for insert with check (tenant_id = auth.uid()::text or public.is_admin());
-
-drop policy if exists "hatchery_brooders_update" on public.hatchery_brooders;
-create policy "hatchery_brooders_update" on public.hatchery_brooders
-for update using (tenant_id = auth.uid()::text or public.is_admin())
-with check (tenant_id = auth.uid()::text or public.is_admin());
-
-drop policy if exists "hatchery_brooders_delete" on public.hatchery_brooders;
-create policy "hatchery_brooders_delete" on public.hatchery_brooders
-for delete using (tenant_id = auth.uid()::text or public.is_admin());
-
-drop policy if exists "hatchery_fingerling_batches_select" on public.hatchery_fingerling_batches;
-create policy "hatchery_fingerling_batches_select" on public.hatchery_fingerling_batches
-for select using (tenant_id = auth.uid()::text or public.is_admin());
-
-drop policy if exists "hatchery_fingerling_batches_insert" on public.hatchery_fingerling_batches;
-create policy "hatchery_fingerling_batches_insert" on public.hatchery_fingerling_batches
-for insert with check (tenant_id = auth.uid()::text or public.is_admin());
-
-drop policy if exists "hatchery_fingerling_batches_update" on public.hatchery_fingerling_batches;
-create policy "hatchery_fingerling_batches_update" on public.hatchery_fingerling_batches
-for update using (tenant_id = auth.uid()::text or public.is_admin())
-with check (tenant_id = auth.uid()::text or public.is_admin());
-
-drop policy if exists "hatchery_fingerling_batches_delete" on public.hatchery_fingerling_batches;
-create policy "hatchery_fingerling_batches_delete" on public.hatchery_fingerling_batches
-for delete using (tenant_id = auth.uid()::text or public.is_admin());

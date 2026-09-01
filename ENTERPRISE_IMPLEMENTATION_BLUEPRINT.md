@@ -79,10 +79,6 @@ src/
 │   │   ├── auto.tsx
 │   │   ├── hybrid.tsx
 │   │   └── logs.tsx
-│   ├── hatchery/
-│   │   ├── brooders.tsx
-│   │   ├── fingerling-production.tsx
-│   │   └── fingerling-sales.tsx
 │   ├── production/
 │   │   ├── batches.tsx
 │   │   ├── growth.tsx
@@ -184,12 +180,6 @@ src/
 - `/feeding/automatic`
 - `/feeding/hybrid`
 - `/feeding/logs`
-
-### Hatchery
-
-- `/hatchery/brooders`
-- `/hatchery/fingerling-production`
-- `/hatchery/fingerling-sales`
 
 ### Fish Production
 
@@ -337,14 +327,6 @@ src/
   - `harvested_at date`
   - `quantity_kg numeric`
   - `revenue numeric`
-
-### Hatchery
-
-- `brooders`
-- `fingerling_production`
-- `fingerling_sales`
-
-(Use same mandatory columns pattern: `id`, `farm_id`, business fields, `created_at`.)
 
 ### Finance
 
@@ -507,7 +489,7 @@ Exit criteria:
 
 Goals:
 
-1. Hatchery and production modules.
+1. Production modules.
 2. Finance ledger/cashflow/report datasets.
 3. Reports center (financial/production/water/sales) with export jobs.
 4. Alert rules engine UI and history.
