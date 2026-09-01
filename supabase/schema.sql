@@ -106,26 +106,6 @@ create table if not exists cages (
   created_at timestamptz not null default now()
 );
 
-create table if not exists hatchery_brooders (
-  id uuid primary key,
-  tenant_id text not null,
-  name text not null,
-  species text not null,
-  status text not null check (status in ('active', 'paused')),
-  created_at timestamptz not null default now()
-);
-
-create table if not exists hatchery_fingerling_batches (
-  id uuid primary key,
-  tenant_id text not null,
-  brooder_id uuid references hatchery_brooders(id) on delete set null,
-  quantity numeric not null,
-  production_date date not null,
-  growth_status text not null check (growth_status in ('early', 'mid', 'ready_for_transfer')),
-  transferred_to_cage text,
-  created_at timestamptz not null default now()
-);
-
 create index if not exists idx_water_readings_pond_time on water_readings (pond_id, timestamp desc);
 create index if not exists idx_income_date on finance_income (date desc);
 create index if not exists idx_expenses_date on finance_expenses (date desc);
@@ -134,5 +114,3 @@ create index if not exists idx_production_events_tenant_time on production_event
 create index if not exists idx_inventory_items_tenant_category on inventory_items (tenant_id, category);
 create index if not exists idx_inventory_movements_tenant_time on inventory_movements (tenant_id, created_at desc);
 create index if not exists idx_cages_tenant_status on cages (tenant_id, status);
-create index if not exists idx_hatchery_brooders_tenant_status on hatchery_brooders (tenant_id, status);
-create index if not exists idx_hatchery_batches_tenant_status on hatchery_fingerling_batches (tenant_id, growth_status);

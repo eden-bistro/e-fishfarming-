@@ -39,7 +39,6 @@ const PAGE_TITLES: Array<[string, string]> = [
   ["/ai/insights", "AI Insights"],
   ["/production", "Production"],
   ["/inventory", "Inventory"],
-  ["/hatchery", "Hatchery"],
   ["/cages", "Cages"],
   ["/reports", "Reports"],
   ["/", "Dashboard"],

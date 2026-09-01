@@ -46,7 +46,6 @@ The initial migration creates:
 - Finance tables: `finance_income`, `finance_expenses`
 - Enterprise production tables: `production_events`, `cages`
 - Inventory tables: `inventory_items`, `inventory_movements`
-- Hatchery tables: `hatchery_brooders`, `hatchery_fingerling_batches`
 - Indexes for tenant/time/category/status lookup patterns
 - Row-level security policies for tenant-scoped access
 
