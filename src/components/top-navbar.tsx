@@ -55,6 +55,10 @@ export function TopNavbar() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const session = getSessionUser();
+  const accountName =
+    session?.name?.trim() && session.name.toLowerCase() !== session.email.toLowerCase()
+      ? session.name.trim()
+      : session?.email?.split("@")[0] || "User";
   const [today, setToday] = useState("Today");
   const pageTitle = titleForPath(pathname);
   const [farmName, setFarmName] = useState(
@@ -88,9 +92,7 @@ export function TopNavbar() {
       <SidebarTrigger className="icon-pill shrink-0 md:-ml-1" aria-label="Open navigation menu" />
       <div className="min-w-0 flex-1">
         <h1 className="truncate text-base font-semibold leading-tight sm:text-lg">{pageTitle}</h1>
-        <p className="truncate text-xs text-muted-foreground">
-          Welcome back, {session?.name ?? "User"}
-        </p>
+        <p className="truncate text-xs text-muted-foreground">Welcome back, {accountName}</p>
       </div>
 
       <div className="ml-auto flex shrink-0 items-center gap-2">
@@ -154,7 +156,7 @@ export function TopNavbar() {
             >
               <Avatar className="h-9 w-9 md:h-8 md:w-8">
                 <AvatarFallback className="bg-brand text-xs text-brand-foreground">
-                  {(session?.name ?? "U")
+                  {accountName
                     .split(" ")
                     .map((s) => s[0])
                     .join("")
@@ -162,11 +164,9 @@ export function TopNavbar() {
                 </AvatarFallback>
               </Avatar>
               <div className="hidden max-w-44 text-left md:block">
-                <div className="truncate text-sm font-medium leading-tight">
-                  {session?.name ?? "User"}
-                </div>
-                <div className="truncate text-[11px] text-muted-foreground">
-                  {session?.email ?? ""}
+                <div className="truncate text-sm font-medium leading-tight">{accountName}</div>
+                <div className="text-[11px] text-muted-foreground">
+                  {session?.role === "admin" ? "Admin" : "User"}
                 </div>
               </div>
               <ChevronDown className="hidden h-4 w-4 text-muted-foreground md:block" />
