@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AquaSmart — Hydro Victoria theme preview</title>
+    <style>
+      :root {
+        --hydro-950: #06324a;
+        --hydro-800: #075b7b;
+        --hydro-700: #087ea4;
+        --hydro-600: #0b9ac2;
+        --hydro-100: #d9f2f8;
+        --aqua-700: #08765a;
+        --aqua-600: #0b9170;
+        --aqua-100: #d8f4e8;
+        --surface: #f5fafb;
+        --card: #ffffff;
+        --ink: #102a36;
+        --muted: #58717d;
+        --line: #c8e0e6;
+        --warning: #a75c00;
+        --warning-bg: #fff1d6;
+        --danger: #b9382b;
+        --danger-bg: #fee8e4;
+        --shadow: 0 8px 24px rgba(6, 50, 74, .09);
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-width: 1100px; font: 14px/1.45 Inter, ui-sans-serif, system-ui, sans-serif; background: var(--surface); color: var(--ink); }
+      .app { display: grid; grid-template-columns: 244px 1fr; min-height: 100vh; }
+      aside { color: #eaf8fb; background: linear-gradient(180deg, var(--hydro-950), var(--hydro-800)); padding: 24px 14px; }
+      .brand { display: flex; gap: 10px; align-items: center; padding: 2px 10px 24px; font-size: 19px; font-weight: 750; }
+      .brand-mark { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 10px; color: var(--hydro-950); background: #58d6d1; }
+      .eyebrow { margin: 0; color: var(--hydro-700); font-size: 11px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; }
+      .side-label { margin: 16px 10px 6px; color: #9fd6e4; font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+      .nav { display: flex; gap: 3px; align-items: center; padding: 10px; border-radius: 8px; color: #d7f0f5; }
+      .nav.active { color: white; background: rgba(88, 214, 209, .22); box-shadow: inset 3px 0 #58d6d1; }
+      .nav span:first-child { width: 18px; color: #58d6d1; text-align: center; }
+      main { padding: 26px 32px 48px; }
+      header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+      h1 { margin: 2px 0; font-size: 26px; letter-spacing: -.03em; }
+      .muted { color: var(--muted); }
+      .top-actions, .chip-row { display: flex; align-items: center; gap: 9px; }
+      button, .button { border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; color: var(--hydro-800); background: white; font: inherit; font-weight: 700; }
+      .button.primary { border-color: var(--hydro-700); color: white; background: var(--hydro-700); }
+      .section { margin-top: 25px; }
+      .section-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 11px; }
+      h2 { margin: 0; font-size: 16px; }
+      .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+      .split { display: grid; grid-template-columns: 1.35fr .9fr; gap: 14px; }
+      .triple { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+      .card { border: 1px solid var(--line); border-radius: 12px; background: var(--card); box-shadow: var(--shadow); }
+      .kpi { padding: 16px; }
+      .icon { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 10px; font-size: 18px; }
+      .water { color: var(--hydro-800); background: var(--hydro-100); }.green { color: var(--aqua-700); background: var(--aqua-100); }.amber { color: var(--warning); background: var(--warning-bg); }.red { color: var(--danger); background: var(--danger-bg); }
+      .value { margin-top: 13px; font-size: 24px; font-weight: 760; letter-spacing: -.03em; }.card small { color: var(--muted); }
+      .card-head { display: flex; justify-content: space-between; align-items: start; padding: 16px 16px 0; }.card-body { padding: 14px 16px 16px; }
+      .badge { display: inline-block; border-radius: 100px; padding: 3px 8px; font-size: 11px; font-weight: 800; }.badge.ok { color: var(--aqua-700); background: var(--aqua-100); }.badge.live { color: var(--hydro-800); background: var(--hydro-100); }.badge.attn { color: var(--warning); background: var(--warning-bg); }
+      .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }.metric { padding: 10px; border: 1px solid var(--line); border-radius: 8px; }.metric b { display: block; margin: 3px 0; font-size: 18px; }
+      .chart { position: relative; height: 166px; margin-top: 8px; overflow: hidden; border-radius: 8px; background: repeating-linear-gradient(to bottom, transparent 0 40px, #e7f1f4 40px 41px); }.chart svg { width: 100%; height: 100%; }.legend { display: flex; gap: 12px; color: var(--muted); font-size: 12px; }.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; background: var(--hydro-600); }.dot.green { background: var(--aqua-600); }
+      table { width: 100%; border-collapse: collapse; font-size: 12px; } th { padding: 0 0 9px; color: var(--muted); text-align: left; font-weight: 700; } td { padding: 10px 0; border-top: 1px solid var(--line); } .status { color: var(--aqua-700); font-weight: 750; }
+      .form { display: grid; gap: 10px; }.field { border: 1px solid var(--line); border-radius: 7px; padding: 9px; color: var(--muted); background: #fff; }.alert { display: flex; gap: 10px; align-items: center; padding: 12px; border: 1px solid #f0ca87; border-radius: 9px; color: #744400; background: var(--warning-bg); }.ai { color: #f3ffff; background: linear-gradient(135deg, var(--hydro-800), #0d786f); }.ai .muted { color: #c0eaeb; }.ai .eyebrow { color: #9fe6dc; }
+      footer { margin-top: 24px; color: var(--muted); font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside><div class="brand"><div class="brand-mark">◒</div>AquaSmart</div><p class="side-label">Farm operations</p><div class="nav active"><span>▦</span>Dashboard</div><div class="nav"><span>◌</span>Water Quality</div><div class="nav"><span>◈</span>Feeding System</div><div class="nav"><span>◒</span>Hatchery Management</div><div class="nav"><span>⌁</span>IoT Devices</div><p class="side-label">Intelligence</p><div class="nav"><span>✦</span>AI Insights</div><div class="nav"><span>!</span>Alerts</div><div class="nav"><span>▤</span>Reports</div></aside>
+      <main>
+        <header><div><p class="eyebrow">Hydro Victoria-inspired preview</p><h1>Farm dashboard</h1><div class="muted">Lake Victoria Fish Farm · Monday, 13 September</div></div><div class="top-actions"><button>◌ 12 devices online</button><span class="badge ok">● All systems healthy</span><button class="button primary">+ Log feeding</button></div></header>
+        <section class="grid"><article class="card kpi"><div class="icon water">◌</div><small>Water quality</small><div class="value">Healthy</div><span class="badge live">Live sensor data</span></article><article class="card kpi"><div class="icon green">◈</div><small>Today's feed</small><div class="value">142.5 kg</div><span class="badge ok">On schedule</span></article><article class="card kpi"><div class="icon water">◒</div><small>Active stock</small><div class="value">24,680</div><small>Fish across 8 ponds</small></article><article class="card kpi"><div class="icon amber">▣</div><small>Open alerts</small><div class="value">2</div><span class="badge attn">Review required</span></article></section>
+        <section class="section split"><article class="card"><div class="card-head"><div><h2>Water-quality monitoring</h2><small>Latest reading · Pond 04</small></div><span class="badge ok">● Safe range</span></div><div class="card-body"><div class="metrics"><div class="metric"><small>Temperature</small><b>27.4°C</b><span class="status">Optimal</span></div><div class="metric"><small>Dissolved oxygen</small><b>6.8 mg/L</b><span class="status">Optimal</span></div><div class="metric"><small>pH level</small><b>7.3</b><span class="status">Optimal</span></div></div><div class="chart"><svg viewBox="0 0 600 160" preserveAspectRatio="none"><defs><linearGradient id="water" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#0b9ac2" stop-opacity=".28"/><stop offset="1" stop-color="#0b9ac2" stop-opacity="0"/></linearGradient></defs><path d="M0,105 C50,96 80,108 125,88 S195,65 240,79 S300,103 350,72 S440,66 490,57 S550,70 600,34 L600,160 L0,160Z" fill="url(#water)"/><path d="M0,105 C50,96 80,108 125,88 S195,65 240,79 S300,103 350,72 S440,66 490,57 S550,70 600,34" fill="none" stroke="#087ea4" stroke-width="3"/></svg></div><div class="legend"><span><i class="dot"></i>Dissolved oxygen</span><span>Safe target: 5–9 mg/L</span></div></div></article><article class="card"><div class="card-head"><div><h2>Alerts</h2><small>Prioritized by farm impact</small></div><span class="badge attn">2 open</span></div><div class="card-body"><div class="alert"><b>!</b><div><b>Feed inventory low</b><br/><small>3 days of tilapia feed remaining.</small></div></div><div style="height:10px"></div><div class="alert"><b>!</b><div><b>Sensor calibration due</b><br/><small>Pond 02 pH probe due tomorrow.</small></div></div></div></article></section>
+        <section class="section triple"><article class="card"><div class="card-head"><div><h2>Fish feeding</h2><small>Today's schedule</small></div><span class="badge ok">4 / 5 complete</span></div><div class="card-body"><table><tr><th>Time</th><th>Pond</th><th>Amount</th><th>Status</th></tr><tr><td>08:00</td><td>04</td><td>32 kg</td><td class="status">Complete</td></tr><tr><td>12:00</td><td>02</td><td>28 kg</td><td class="status">Complete</td></tr><tr><td>16:00</td><td>06</td><td>35 kg</td><td><span class="badge live">Upcoming</span></td></tr></table></div></article><article class="card"><div class="card-head"><div><h2>Hatchery management</h2><small>Batch health overview</small></div><span class="badge live">3 batches</span></div><div class="card-body"><div class="metrics"><div class="metric"><small>Fry survival</small><b>96.4%</b><span class="status">+1.2%</span></div><div class="metric"><small>Ready to grade</small><b>4,200</b><small>Fingerlings</small></div><div class="metric"><small>Tank temp.</small><b>28.1°C</b><span class="status">Stable</span></div></div></div></article><article class="card"><div class="card-head"><div><h2>IoT devices</h2><small>Telemetry coverage</small></div><span class="badge ok">12 online</span></div><div class="card-body"><table><tr><th>Device</th><th>Location</th><th>Last seen</th></tr><tr><td>Water probe 04</td><td>Pond 04</td><td class="status">Now</td></tr><tr><td>Feeder 02</td><td>Pond 02</td><td class="status">1m ago</td></tr><tr><td>Tank monitor</td><td>Hatchery</td><td class="status">2m ago</td></tr></table></div></article></section>
+        <section class="section split"><article class="card ai"><div class="card-head"><div><p class="eyebrow">AquaSmart intelligence</p><h2>AI insight: optimize tomorrow's feeding</h2></div><span class="badge live">High confidence</span></div><div class="card-body"><p class="muted">Water temperature is expected to rise after 14:00. Shift 8% of the afternoon feed to the morning window to support appetite and reduce waste.</p><div class="chip-row"><button>View rationale</button><button class="button primary">Apply suggestion</button></div></div></article><article class="card"><div class="card-head"><div><h2>Log a feeding event</h2><small>Preview of a standard form state</small></div></div><div class="card-body form"><div class="field">Pond 04 ▾</div><div class="field">32.0 kg</div><div class="field">16:00 ▾</div><button class="button primary">Record feeding</button></div></article></section>
+        <footer>Preview artifact only — it does not load application code, call APIs, or alter the current AquaSmart implementation.</footer>
+      </main>
+    </div>
+  </body>
+</html>
