@@ -1,5 +1,6 @@
 import { getAuthorizedUser } from "@/lib/server-authz";
 import { getEnvRecord, jsonResponse } from "@/lib/iot-firebase";
+import { buildAiFarmContext } from "@/lib/ai-farm-context";
 
 type ChatMessage = { role: "user" | "assistant"; text: string };
 
@@ -76,18 +77,17 @@ export async function handleAiChat(request: Request, env: unknown): Promise<Resp
     );
   }
 
-  const farmContext = String(body.farmContext ?? "No current farm context was supplied.").slice(
-    0,
-    MAX_MESSAGE_LENGTH,
-  );
   const history = parseMessages(body.history);
+  const farmContext = await buildAiFarmContext(request, env, authorization.user, question, history);
   const model = getEnvRecord(env).OPENAI_MODEL?.trim() || "gpt-4.1-mini";
   const instructions = [
-    "You are AquaSmart AI, a live assistant for fish-farm operators.",
-    "Answer the operator's actual question, using the supplied current farm context and conversation history.",
-    "Do not invent readings, farm records, device states, or actions. Say clearly when data is unavailable.",
-    "Give practical, concise steps. For disease, medicine, or mortality issues, recommend professional fish-health support instead of presenting a diagnosis or dosage as certain.",
-    `Current farm context: ${farmContext}`,
+    "You are AquaSmart AI, an intelligent aquaculture and farm-management assistant.",
+    "Have natural, concise conversations: greet users warmly, answer thanks normally, and explain that you can help with aquaculture, water quality, feeding, production, alerts, and farm analysis when asked what you can do.",
+    "Answer general aquaculture questions from your knowledge without claiming they are the operator's farm data. State when recommendations depend on species, fish size, culture system, water conditions, or local practice.",
+    "Use only the relevant controlled FARM DATA sections below for AquaSmart-specific facts. Never invent readings, records, device states, production, financial figures, or actions. A section marked unavailable means the data cannot be verified.",
+    "Use conversation history to resolve follow-ups such as 'is that okay?' or 'why?'. Do not mention unavailable telemetry for greetings or purely general questions.",
+    "For disease, mortality, medicine, antibiotics, or chemical treatments, avoid definitive diagnosis and dosage. Ask for observations where useful and recommend fish-health or veterinary support when warranted.",
+    `FARM DATA (controlled server-side results):\n${JSON.stringify(farmContext, null, 2).slice(0, MAX_MESSAGE_LENGTH * 3)}`,
   ].join("\n");
   const conversation = history
     .map((message) => `${message.role === "assistant" ? "Assistant" : "Operator"}: ${message.text}`)
