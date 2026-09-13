@@ -1,4 +1,4 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   ChevronDown,
   Cpu,
@@ -6,6 +6,7 @@ import {
   Fish,
   LayoutDashboard,
   LineChart,
+  LogOut,
   ShieldCheck,
   Settings,
   Wallet,
@@ -14,6 +15,7 @@ import { useState } from "react";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -108,6 +110,7 @@ function displayNameForUser(name?: string, email?: string) {
 
 export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
   const { isMobile, setOpenMobile } = useSidebar();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     Production: path.startsWith("/production") || path.startsWith("/inventory"),
