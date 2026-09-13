@@ -5,12 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getCurrentUserRecord } from "@/lib/auth";
 import { getAccessToken } from "@/services/auth.service";
-import { getLatestOnlineWaterReading, type WaterReading } from "@/lib/platform-clients";
 
 type Message = { role: "user" | "assistant"; text: string };
 
 const HISTORY_LIMIT = 12;
-const numberFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 });
 
 function historyKey() {
   return `aquasmart_ai_chat:${getCurrentUserRecord()?.id ?? "anonymous"}`;
@@ -45,32 +43,6 @@ function writeHistory(messages: Message[]) {
   }
 }
 
-function formatReading(reading: WaterReading | null) {
-  if (!reading) return "No live water telemetry is currently available.";
-
-  const values = [
-    ["temperature", reading.temperature, "°C"],
-    ["pH", reading.ph, ""],
-    ["dissolved oxygen", reading.dissolvedOxygen, " mg/L"],
-    ["ammonia", reading.ammonia, " mg/L"],
-    ["nitrite", reading.nitrite, " mg/L"],
-    ["turbidity", reading.turbidity, ""],
-  ] as const;
-  const measurements = values
-    .filter(([, value]) => Number.isFinite(Number(value)))
-    .map(([label, value, unit]) => `${label}: ${numberFormatter.format(Number(value))}${unit}`);
-
-  return `Latest water telemetry (${reading.timestamp}, pond ${reading.pondId}): ${measurements.join(", ") || "no usable measurements"}.`;
-}
-
-async function getFarmContext() {
-  try {
-    return formatReading(await getLatestOnlineWaterReading());
-  } catch (error) {
-    return `Live water telemetry could not be read: ${error instanceof Error ? error.message : String(error)}`;
-  }
-}
-
 export function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -97,14 +69,14 @@ export function ChatWidget() {
     setIsThinking(true);
 
     try {
-      const [accessToken, farmContext] = await Promise.all([getAccessToken(), getFarmContext()]);
+      const accessToken = await getAccessToken();
       const response = await fetch("/api/ai/chat", {
         method: "POST",
         headers: {
           "content-type": "application/json",
           ...(accessToken ? { authorization: `Bearer ${accessToken}` } : {}),
         },
-        body: JSON.stringify({ question, history: priorMessages, farmContext }),
+        body: JSON.stringify({ question, history: priorMessages }),
       });
       const payload = (await response.json().catch(() => null)) as {
         answer?: string;
@@ -161,8 +133,7 @@ export function ChatWidget() {
           <div className="flex-1 space-y-3 overflow-y-auto bg-muted/30 p-3">
             {messages.length === 0 && (
               <p className="rounded-lg border bg-card p-3 text-sm text-muted-foreground">
-                Ask a question about your farm. Answers use the current conversation and live
-                telemetry.
+                Ask about aquaculture, your farm, water quality, feeding, or farm management.
               </p>
             )}
             {messages.map((message, index) => (
