@@ -61,9 +61,9 @@ Required for ESP32 ingest:
    - `FIREBASE_DATABASE_URL`
    - `IOT_INGEST_TOKEN`
    - `FIREBASE_SERVICE_ACCOUNT` (or legacy `FIREBASE_DATABASE_SECRET` / `FIREBASE_AUTH_TOKEN`)
-   - `AI_PROVIDER=groq` (non-secret variable)
-   - Optional: `AI_MODEL=llama-3.3-70b-versatile` (non-secret variable)
-   - `AI_API_KEY` (**Cloudflare Worker secret**; Groq key, never `VITE_AI_API_KEY`)
+   - `AI_API_KEY` (**secret**)
+   - `AI_PROVIDER=groq` (variable)
+   - Optional: `AI_MODEL` (variable)
 4. Click path (Pages): `Workers & Pages` -> your Pages project -> `Settings` -> `Environment variables` -> add variables in both Preview and Production -> redeploy.
 5. Click path (Workers): `Workers & Pages` -> your Worker -> `Settings` -> `Variables` -> add environment variables -> deploy new version.
 6. Build and deploy locally or let `.github/workflows/cloudflare-deploy.yml` deploy from `main`.
