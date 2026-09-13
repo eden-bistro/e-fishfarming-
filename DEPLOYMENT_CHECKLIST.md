@@ -16,8 +16,11 @@ Optional but recommended:
 
 Required for AquaSmart AI:
 
-- `OPENAI_API_KEY` as a server-side secret (never use a `VITE_` prefix)
-- Optional: `OPENAI_MODEL` to select the approved production model; the app defaults to `gpt-4.1-mini`
+- `AI_API_KEY` as a **server-side Cloudflare Worker secret** (never use a `VITE_` prefix). This is a Groq API key and must not be added to `.env` in Git, React code, or client-side JavaScript.
+- `AI_PROVIDER=groq` as a non-secret Worker variable. Groq is used through its OpenAI-compatible HTTPS chat-completions API, so no provider SDK is required in the Worker.
+- Optional non-secret `AI_MODEL` to select the approved model; the app defaults to `llama-3.3-70b-versatile`.
+
+Groq's development free tier is suitable for development and testing but has provider-managed request/token rate limits and model availability. Configure monitoring and a paid plan or alternate approved provider before depending on it for high-volume production traffic.
 
 Required for ESP32 ingest:
 
@@ -48,20 +51,27 @@ Required for ESP32 ingest:
 ## 5) Cloudflare deployment
 
 1. Confirm `wrangler.jsonc` is valid for your account/project.
-2. For GitHub deployment, add repository secrets:
+2. **GitHub Actions deployment secrets** — add these repository secrets so GitHub Actions and Wrangler can deploy the Worker. They are not Worker runtime bindings:
    - `CLOUDFLARE_API_TOKEN`
    - `CLOUDFLARE_ACCOUNT_ID`
-3. Configure durable runtime variables/secrets in Cloudflare. Prefer the server-style names below because the Supabase auth proxy reads them at Worker runtime:
+     Without either secret, the workflow still builds, typechecks, and tests the application, then reports a successful deployment skip.
+3. **AquaSmart Worker runtime configuration** — these are separate from the GitHub deployment secrets. `wrangler.jsonc` deploys the non-secret AI defaults below; configure all other bindings in the deployed Cloudflare Worker. Prefer the server-style names below because the Supabase auth proxy reads them at Worker runtime:
    - `SUPABASE_URL`
    - `SUPABASE_ANON_KEY`
    - `FIREBASE_DATABASE_URL`
    - `IOT_INGEST_TOKEN`
    - `FIREBASE_SERVICE_ACCOUNT` (or legacy `FIREBASE_DATABASE_SECRET` / `FIREBASE_AUTH_TOKEN`)
-   - `OPENAI_API_KEY`
-   - Optional: `OPENAI_MODEL`
-4. Click path (Pages): `Workers & Pages` -> your Pages project -> `Settings` -> `Environment variables` -> add variables in both Preview and Production -> redeploy.
-5. Click path (Workers): `Workers & Pages` -> your Worker -> `Settings` -> `Variables` -> add environment variables -> deploy new version.
-6. Build and deploy locally or let `.github/workflows/cloudflare-deploy.yml` deploy from `main`.
+   - `AI_PROVIDER=groq` (non-secret Worker variable)
+   - `AI_MODEL=llama-3.3-70b-versatile` (non-secret Worker variable)
+   - `AI_API_KEY` (**Cloudflare Worker secret**; Groq key, never `VITE_AI_API_KEY`)
+4. Set the production Groq key once with an authenticated Cloudflare CLI session, then deploy (or set the same key in the Worker dashboard under **Settings → Variables and Secrets**):
+   ```bash
+   npx wrangler secret put AI_API_KEY
+   ```
+   Paste the real Groq API key only when prompted. Do not add it to `wrangler.jsonc`, `.env.example`, GitHub deployment secrets, or a `VITE_` variable.
+5. Click path (Pages): `Workers & Pages` -> your Pages project -> `Settings` -> `Environment variables` -> add variables in both Preview and Production -> redeploy.
+6. Click path (Workers): `Workers & Pages` -> your Worker -> `Settings` -> `Variables` -> add environment variables -> deploy new version.
+7. Build and deploy locally or let `.github/workflows/cloudflare-deploy.yml` deploy from `main`.
 
 ## 6) Health checks
 
