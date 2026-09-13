@@ -5,12 +5,7 @@ import { buildAiFarmContext } from "@/lib/ai-farm-context";
 type ChatMessage = { role: "user" | "assistant"; text: string };
 type AiProvider = "groq";
 type AiResponse = { answer: string };
-type ProviderFailure =
-  | "configuration"
-  | "rate_limit"
-  | "unavailable"
-  | "invalid_response"
-  | "invalid_request";
+type ProviderFailure = "configuration" | "rate_limit" | "unavailable" | "invalid_response";
 
 const MAX_QUESTION_LENGTH = 2_000;
 const MAX_HISTORY_MESSAGES = 12;
@@ -67,8 +62,6 @@ function providerFailureMessage(failure: ProviderFailure): string {
       return "AquaSmart AI could not reach the model right now. Please try again.";
     case "invalid_response":
       return "AquaSmart AI returned an incomplete answer. Please try again.";
-    case "invalid_request":
-      return "AquaSmart AI's server-side model configuration needs attention. Please ask your administrator to verify the Groq model setting.";
   }
 }
 
@@ -104,18 +97,10 @@ async function generateAiResponse({
   try {
     response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
-      headers: {
-        authorization: `Bearer ${apiKey}`,
-        "content-type": "application/json",
-        "user-agent": "AquaSmart-AI/1.0",
-      },
-      body: JSON.stringify({ model, messages, max_completion_tokens: 700, temperature: 0.3 }),
+      headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
+      body: JSON.stringify({ model, messages, max_tokens: 700, temperature: 0.3 }),
     });
-  } catch (error) {
-    // Keep connection details in Worker logs only; the browser receives a generic message.
-    console.error("[ai-chat] Groq network request failed", {
-      name: error instanceof Error ? error.name : "UnknownError",
-    });
+  } catch {
     return { ok: false, failure: "unavailable" };
   }
 
@@ -129,9 +114,7 @@ async function generateAiResponse({
           ? "configuration"
           : response.status === 429
             ? "rate_limit"
-            : response.status === 400 || response.status === 404
-              ? "invalid_request"
-              : "unavailable",
+            : "unavailable",
     };
   }
 

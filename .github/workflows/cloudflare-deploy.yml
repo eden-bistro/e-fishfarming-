@@ -86,7 +86,6 @@ jobs:
 
       - name: Build
         if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
-        # Jobs have separate workspaces, so the deploy job needs its own build artifacts.
         run: npm run build
 
       - name: Deploy with Wrangler
