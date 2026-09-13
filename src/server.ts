@@ -825,7 +825,7 @@ export default {
       return envHealthResponse(env);
     }
     // TanStack route handlers do not receive Cloudflare Worker bindings directly.
-    // Handle the AI endpoint here so OPENAI_API_KEY and data-source bindings remain server-only.
+    // Handle the AI endpoint here so AI and data-source bindings remain server-only.
     if (url.pathname === "/api/ai/chat") {
       return handleAiChat(request, env);
     }
