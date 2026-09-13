@@ -49,6 +49,12 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm run test
+
   deploy:
     name: Deploy Worker to Cloudflare (when configured)
     needs: build

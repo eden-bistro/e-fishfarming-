@@ -51,10 +51,11 @@ Required for ESP32 ingest:
 ## 5) Cloudflare deployment
 
 1. Confirm `wrangler.jsonc` is valid for your account/project.
-2. For GitHub deployment, add repository secrets:
+2. **GitHub Actions deployment secrets** — add these repository secrets so GitHub Actions and Wrangler can deploy the Worker. They are not Worker runtime bindings:
    - `CLOUDFLARE_API_TOKEN`
    - `CLOUDFLARE_ACCOUNT_ID`
-3. Configure durable runtime variables/secrets in Cloudflare. Prefer the server-style names below because the Supabase auth proxy reads them at Worker runtime:
+     Without either secret, the workflow still builds, typechecks, and tests the application, then reports a successful deployment skip.
+3. **AquaSmart Worker runtime configuration** — configure these separately in the deployed Cloudflare Worker. Prefer the server-style names below because the Supabase auth proxy reads them at Worker runtime:
    - `SUPABASE_URL`
    - `SUPABASE_ANON_KEY`
    - `FIREBASE_DATABASE_URL`
