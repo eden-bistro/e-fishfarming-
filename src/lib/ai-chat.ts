@@ -3,6 +3,9 @@ import { getEnvRecord, jsonResponse } from "@/lib/iot-firebase";
 import { buildAiFarmContext } from "@/lib/ai-farm-context";
 
 type ChatMessage = { role: "user" | "assistant"; text: string };
+type AiProvider = "groq";
+type AiResponse = { answer: string };
+type ProviderFailure = "configuration" | "rate_limit" | "unavailable" | "invalid_response";
 
 const MAX_QUESTION_LENGTH = 2_000;
 const MAX_HISTORY_MESSAGES = 12;
@@ -24,26 +27,99 @@ function parseMessages(value: unknown): ChatMessage[] {
     .map((message) => ({ ...message, text: message.text.slice(0, MAX_MESSAGE_LENGTH) }));
 }
 
-function outputText(payload: unknown): string {
+function groqOutputText(payload: unknown): string {
   if (!payload || typeof payload !== "object") return "";
-  const response = payload as { output_text?: unknown; output?: unknown };
-  if (typeof response.output_text === "string") return response.output_text.trim();
-  if (!Array.isArray(response.output)) return "";
+  const choices = (payload as { choices?: unknown }).choices;
+  if (!Array.isArray(choices)) return "";
+  const content = (choices[0] as { message?: { content?: unknown } } | undefined)?.message?.content;
+  if (typeof content === "string") return content.trim();
+  if (!Array.isArray(content)) return "";
 
-  return response.output
-    .flatMap((item) => {
-      if (
-        !item ||
-        typeof item !== "object" ||
-        !Array.isArray((item as { content?: unknown }).content)
-      )
-        return [];
-      return (item as { content: Array<{ type?: unknown; text?: unknown }> }).content;
-    })
-    .filter((item) => item.type === "output_text" && typeof item.text === "string")
-    .map((item) => item.text as string)
+  return content
+    .filter(
+      (part): part is { text: string } =>
+        Boolean(part) &&
+        typeof part === "object" &&
+        typeof (part as { text?: unknown }).text === "string",
+    )
+    .map((part) => part.text)
     .join("\n")
     .trim();
+}
+
+function getAiProvider(env: unknown): AiProvider | null {
+  const configured = (getEnvRecord(env).AI_PROVIDER ?? "groq").trim().toLowerCase();
+  return configured === "groq" ? "groq" : null;
+}
+
+function providerFailureMessage(failure: ProviderFailure): string {
+  switch (failure) {
+    case "configuration":
+      return "AquaSmart AI is not configured. Ask your administrator to configure the server-side AI provider.";
+    case "rate_limit":
+      return "AquaSmart AI is temporarily busy. Please try again in a moment.";
+    case "unavailable":
+      return "AquaSmart AI could not reach the model right now. Please try again.";
+    case "invalid_response":
+      return "AquaSmart AI returned an incomplete answer. Please try again.";
+  }
+}
+
+/**
+ * Provider boundary: callers pass controlled server-side context, never browser-supplied farm IDs.
+ * Groq offers an OpenAI-compatible HTTPS chat-completions API and is called with native fetch so
+ * this remains compatible with the Cloudflare Worker runtime without a provider SDK.
+ */
+async function generateAiResponse({
+  env,
+  systemInstructions,
+  history,
+  question,
+}: {
+  env: unknown;
+  systemInstructions: string;
+  history: ChatMessage[];
+  question: string;
+}): Promise<{ ok: true; value: AiResponse } | { ok: false; failure: ProviderFailure }> {
+  const config = getEnvRecord(env);
+  const provider = getAiProvider(env);
+  const apiKey = config.AI_API_KEY?.trim();
+  if (!provider || !apiKey) return { ok: false, failure: "configuration" };
+
+  const model = config.AI_MODEL?.trim() || "llama-3.3-70b-versatile";
+  const messages = [
+    { role: "system", content: systemInstructions },
+    ...history.map((message) => ({ role: message.role, content: message.text })),
+    { role: "user" as const, content: question },
+  ];
+
+  let response: Response;
+  try {
+    response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
+      body: JSON.stringify({ model, messages, max_tokens: 700, temperature: 0.3 }),
+    });
+  } catch {
+    return { ok: false, failure: "unavailable" };
+  }
+
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    console.error("[ai-chat] Groq model request failed", response.status);
+    return {
+      ok: false,
+      failure:
+        response.status === 401 || response.status === 403
+          ? "configuration"
+          : response.status === 429
+            ? "rate_limit"
+            : "unavailable",
+    };
+  }
+
+  const answer = groqOutputText(payload);
+  return answer ? { ok: true, value: { answer } } : { ok: false, failure: "invalid_response" };
 }
 
 export async function handleAiChat(request: Request, env: unknown): Promise<Response> {
@@ -69,17 +145,8 @@ export async function handleAiChat(request: Request, env: unknown): Promise<Resp
     .slice(0, MAX_QUESTION_LENGTH);
   if (!question) return jsonResponse({ message: "A farm question is required." }, 400);
 
-  const apiKey = getEnvRecord(env).OPENAI_API_KEY?.trim();
-  if (!apiKey) {
-    return jsonResponse(
-      { message: "AquaSmart AI is not configured. Set OPENAI_API_KEY on the server." },
-      503,
-    );
-  }
-
   const history = parseMessages(body.history);
   const farmContext = await buildAiFarmContext(request, env, authorization.user, question, history);
-  const model = getEnvRecord(env).OPENAI_MODEL?.trim() || "gpt-4.1-mini";
   const instructions = [
     "You are AquaSmart AI, an intelligent aquaculture and farm-management assistant.",
     "Have natural, concise conversations: greet users warmly, answer thanks normally, and explain that you can help with aquaculture, water quality, feeding, production, alerts, and farm analysis when asked what you can do.",
@@ -89,46 +156,18 @@ export async function handleAiChat(request: Request, env: unknown): Promise<Resp
     "For disease, mortality, medicine, antibiotics, or chemical treatments, avoid definitive diagnosis and dosage. Ask for observations where useful and recommend fish-health or veterinary support when warranted.",
     `FARM DATA (controlled server-side results):\n${JSON.stringify(farmContext, null, 2).slice(0, MAX_MESSAGE_LENGTH * 3)}`,
   ].join("\n");
-  const conversation = history
-    .map((message) => `${message.role === "assistant" ? "Assistant" : "Operator"}: ${message.text}`)
-    .join("\n");
-  const input = [
-    {
-      role: "user",
-      content: [
-        {
-          type: "input_text",
-          text: `${conversation ? `Conversation so far:\n${conversation}\n\n` : ""}Current operator question: ${question}`,
-        },
-      ],
-    },
-  ];
-
-  let response: Response;
-  try {
-    response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
-      body: JSON.stringify({ model, instructions, input, max_output_tokens: 700 }),
+  const generated = await generateAiResponse({
+    env,
+    systemInstructions: instructions,
+    history,
+    question,
+  });
+  if (!generated.ok) {
+    const status = generated.failure === "configuration" ? 503 : 502;
+    return jsonResponse({ message: providerFailureMessage(generated.failure) }, status, {
+      "cache-control": "no-store",
     });
-  } catch {
-    return jsonResponse(
-      { message: "AquaSmart AI could not reach the model. Please try again." },
-      502,
-    );
   }
 
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    console.error("[ai-chat] model request failed", response.status, payload);
-    return jsonResponse(
-      { message: "AquaSmart AI could not complete that request. Please try again." },
-      502,
-    );
-  }
-
-  const answer = outputText(payload);
-  if (!answer)
-    return jsonResponse({ message: "AquaSmart AI returned no answer. Please try again." }, 502);
-  return jsonResponse({ answer }, 200, { "cache-control": "no-store" });
+  return jsonResponse(generated.value, 200, { "cache-control": "no-store" });
 }
