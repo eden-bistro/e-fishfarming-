@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { handleAiChat } from "./lib/ai-chat";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -822,6 +823,11 @@ export default {
     }
     if (url.pathname === "/api/health/env") {
       return envHealthResponse(env);
+    }
+    // TanStack route handlers do not receive Cloudflare Worker bindings directly.
+    // Handle the AI endpoint here so AI and data-source bindings remain server-only.
+    if (url.pathname === "/api/ai/chat") {
+      return handleAiChat(request, env);
     }
 
     const authProxyAction = getSupabaseAuthProxyAction(url.pathname);

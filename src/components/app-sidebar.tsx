@@ -20,6 +20,15 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { getCurrentUserRecord, getSessionUser, logoutUser } from "@/lib/auth";
 import { isAdminUser } from "@/contexts/rbac";
 
 const navItems = [
@@ -88,8 +97,18 @@ const navItems = [
   },
 ] as const;
 
+function displayNameForUser(name?: string, email?: string) {
+  const preferredName = name?.trim();
+  if (preferredName && preferredName.toLowerCase() !== email?.trim().toLowerCase()) {
+    return preferredName;
+  }
+
+  return email?.split("@")[0] || "User";
+}
+
 export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
   const { isMobile, setOpenMobile } = useSidebar();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     Production: path.startsWith("/production") || path.startsWith("/inventory"),
@@ -105,6 +124,16 @@ export function AppSidebar() {
   };
 
   const canSeeAdmin = isAdminUser();
+  const session = getSessionUser();
+  const currentUser = getCurrentUserRecord();
+  const displayName = displayNameForUser(session?.name ?? currentUser?.name, session?.email);
+  const accountRole = session?.role === "admin" ? "Admin" : "User";
+  const initials = displayName
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <Sidebar collapsible="icon">
@@ -187,6 +216,47 @@ export function AppSidebar() {
           })}
         </SidebarMenu>
       </SidebarContent>
+
+      <SidebarFooter>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left outline-none transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+              aria-label="Open account menu"
+            >
+              <Avatar className="h-8 w-8 shrink-0">
+                <AvatarFallback className="bg-sidebar-primary text-xs text-sidebar-primary-foreground">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <span className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+                <span className="block truncate text-sm font-medium">{displayName}</span>
+                <span className="block text-xs text-sidebar-foreground/60">{accountRole}</span>
+              </span>
+              <ChevronDown className="h-4 w-4 shrink-0 group-data-[collapsible=icon]:hidden" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="top" align="start" className="w-48">
+            <DropdownMenuItem onClick={() => navigate({ to: "/settings/profile" })}>
+              Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate({ to: "/settings/preferences" })}>
+              Settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => {
+                logoutUser();
+                closeMobileSidebar();
+                navigate({ to: "/auth/login" });
+              }}
+            >
+              <LogOut className="h-4 w-4" />
+              Log out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }
