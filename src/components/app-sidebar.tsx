@@ -1,4 +1,4 @@
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import {
   ChevronDown,
   Cpu,
@@ -6,7 +6,6 @@ import {
   Fish,
   LayoutDashboard,
   LineChart,
-  LogOut,
   ShieldCheck,
   Settings,
   Wallet,
@@ -15,7 +14,6 @@ import { useState } from "react";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
