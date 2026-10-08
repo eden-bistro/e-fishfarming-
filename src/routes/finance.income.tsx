@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Download, TrendingUp } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,7 +22,7 @@ import {
 } from "@/lib/platform-clients";
 import { toast } from "sonner";
 import {
-  currentMonthRange,
+  allTimeRange,
   filterIncomeByDate,
   formatCurrency,
   incomeAmount,
@@ -42,7 +42,9 @@ export const Route = createFileRoute("/finance/income")({
 function Page() {
   const [rows, setRows] = useState<IncomeRow[]>([]);
   const [editId, setEditId] = useState<number | null>(null);
-  const [range, setRange] = useState<DateRange>(() => currentMonthRange());
+  const [range, setRange] = useState<DateRange>(() => allTimeRange());
+  const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false);
   const emptyForm = {
     date: "",
     buyer: "",
@@ -64,7 +66,6 @@ function Page() {
     }
   }
   useEffect(() => {
-    setRange(currentMonthRange());
     void load();
   }, []);
 
@@ -111,6 +112,10 @@ function Page() {
   }
 
   async function save() {
+    if (savingRef.current) return;
+    savingRef.current = true;
+    setIsSaving(true);
+
     const qty = Number(form.quantity);
     const price = Number(form.unit_price);
     if (
@@ -149,6 +154,9 @@ function Page() {
       await load();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to save income record.");
+    } finally {
+      savingRef.current = false;
+      setIsSaving(false);
     }
   }
 
@@ -210,8 +218,8 @@ function Page() {
               }}
             />
           </div>
-          <Button className="md:self-end" onClick={() => void save()}>
-            {editId ? "Update" : "Add"}
+          <Button className="md:self-end" onClick={() => void save()} disabled={isSaving} aria-busy={isSaving}>
+            {isSaving ? "Saving..." : editId ? "Update" : "Add"}
           </Button>
           <div className="rounded-md border bg-muted/30 p-3 text-sm md:col-span-5">
             <p className="font-medium">You are recording</p>
@@ -228,6 +236,9 @@ function Page() {
           <CardTitle className="text-base">Income Controls</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
+          <p className="text-xs text-muted-foreground md:col-span-3">
+            Leave both dates empty to show all recorded income.
+          </p>
           <div>
             <p className="mb-1 text-xs text-muted-foreground">Start date</p>
             <Input
