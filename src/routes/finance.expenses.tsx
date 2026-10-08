@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,7 +22,7 @@ import {
 } from "@/lib/platform-clients";
 import { toast } from "sonner";
 import {
-  currentMonthRange,
+  allTimeRange,
   expenseAmount,
   filterExpensesByDate,
   formatCurrency,
@@ -38,7 +38,9 @@ export const Route = createFileRoute("/finance/expenses")({
 function Page() {
   const [rows, setRows] = useState<ExpenseRow[]>([]);
   const [editId, setEditId] = useState<number | null>(null);
-  const [range, setRange] = useState<DateRange>(() => currentMonthRange());
+  const [range, setRange] = useState<DateRange>(() => allTimeRange());
+  const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false);
   const [form, setForm] = useState({
     date: "",
     category: "",
@@ -54,7 +56,6 @@ function Page() {
     }
   }
   useEffect(() => {
-    setRange(currentMonthRange());
     void load();
   }, []);
 
@@ -75,6 +76,10 @@ function Page() {
   }
 
   async function save() {
+    if (savingRef.current) return;
+    savingRef.current = true;
+    setIsSaving(true);
+
     const amount = Number(form.amount);
     if (!form.date || !form.category.trim() || !form.description.trim() || amount <= 0) {
       toast.error("Please provide date, category, description and amount greater than zero.");
@@ -98,6 +103,9 @@ function Page() {
       await load();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to save expense record.");
+    } finally {
+      savingRef.current = false;
+      setIsSaving(false);
     }
   }
 
@@ -150,8 +158,8 @@ function Page() {
               onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
             />
           </div>
-          <Button className="md:self-end" onClick={() => void save()}>
-            {editId ? "Update" : "Add"}
+          <Button className="md:self-end" onClick={() => void save()} disabled={isSaving} aria-busy={isSaving}>
+            {isSaving ? "Saving..." : editId ? "Update" : "Add"}
           </Button>
           <div className="rounded-md border bg-muted/30 p-3 text-sm md:col-span-5">
             <p className="font-medium">You are recording</p>
@@ -168,6 +176,9 @@ function Page() {
           <CardTitle className="text-base">Expense Controls</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-3 md:items-end">
+          <p className="text-xs text-muted-foreground md:col-span-3">
+            Leave both dates empty to show all recorded expenses.
+          </p>
           <div>
             <p className="mb-1 text-xs text-muted-foreground">Start date</p>
             <Input

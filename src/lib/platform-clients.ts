@@ -353,20 +353,22 @@ export async function listIncome(): Promise<IncomeRow[]> {
 export async function addIncome(row: IncomeRow): Promise<IncomeRow> {
   const rows = await supabaseRequest("finance_income?select=*", {
     method: "POST",
-    headers: { Prefer: "return=minimal" },
+    headers: { Prefer: "return=representation" },
     body: JSON.stringify([{ ...serializeIncomeRow(row), farm_id: getActiveFarmId() }]),
   });
-  const saved = Array.isArray(rows) && rows[0] ? (rows[0] as IncomeRow) : row;
+  const saved = Array.isArray(rows) && rows[0] ? normalizeIncomeRow(rows[0] as Partial<IncomeRow>) : row;
   notifyPlatformDataChanged();
   return saved;
 }
 export async function updateIncome(id: number, row: IncomeRow): Promise<IncomeRow> {
   const rows = await supabaseRequest(`finance_income?id=eq.${id}&select=*`, {
     method: "PATCH",
-    headers: { Prefer: "return=minimal" },
+    headers: { Prefer: "return=representation" },
     body: JSON.stringify({ ...serializeIncomeRow(row), farm_id: getActiveFarmId() }),
   });
-  const saved = Array.isArray(rows) && rows[0] ? (rows[0] as IncomeRow) : { ...row, id };
+  const saved = Array.isArray(rows) && rows[0]
+    ? normalizeIncomeRow(rows[0] as Partial<IncomeRow>)
+    : { ...row, id };
   notifyPlatformDataChanged();
   return saved;
 }
@@ -391,7 +393,7 @@ export async function listExpenses(): Promise<ExpenseRow[]> {
 export async function addExpense(row: ExpenseRow): Promise<ExpenseRow> {
   const rows = await supabaseRequest("finance_expenses?select=*", {
     method: "POST",
-    headers: { Prefer: "return=minimal" },
+    headers: { Prefer: "return=representation" },
     body: JSON.stringify([{ ...row, farm_id: getActiveFarmId() }]),
   });
   const saved = Array.isArray(rows) && rows[0] ? (rows[0] as ExpenseRow) : row;
@@ -401,7 +403,7 @@ export async function addExpense(row: ExpenseRow): Promise<ExpenseRow> {
 export async function updateExpense(id: number, row: ExpenseRow): Promise<ExpenseRow> {
   const rows = await supabaseRequest(`finance_expenses?id=eq.${id}&select=*`, {
     method: "PATCH",
-    headers: { Prefer: "return=minimal" },
+    headers: { Prefer: "return=representation" },
     body: JSON.stringify({ ...row, farm_id: getActiveFarmId() }),
   });
   const saved = Array.isArray(rows) && rows[0] ? (rows[0] as ExpenseRow) : { ...row, id };

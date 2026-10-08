@@ -25,6 +25,10 @@ export type ExpenseCategorySummary = {
   share: number;
 };
 
+export function allTimeRange(): DateRange {
+  return { startDate: "", endDate: "" };
+}
+
 export function currentMonthRange(today = new Date()): DateRange {
   const year = today.getFullYear();
   const month = today.getMonth();
