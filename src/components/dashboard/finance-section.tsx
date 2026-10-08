@@ -21,6 +21,7 @@ import {
   type DateRange,
 } from "@/services/modules/finance-analytics.service";
 import { Input } from "@/components/ui/input";
+import { ExpenseChart } from "@/components/dashboard/expense-chart";
 
 function StatBlock({
   label,
@@ -194,5 +195,6 @@ export function FinanceSection() {
         </div>
       </CardContent>
     </Card>
+    <ExpenseChart rows={filteredExpenses} range={range} />
   );
 }
