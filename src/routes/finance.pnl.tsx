@@ -6,7 +6,7 @@ import { ExpenseChart } from "@/components/dashboard/expense-chart";
 export const Route = createFileRoute("/finance/pnl")({
   head: () => ({ meta: [{ title: "Profit & Loss — AquaSmart" }] }),
   component: () => (
-    <DashboardLayout title="Profit & Loss" subtitle="Net financial performance this month.">
+    <DashboardLayout title="Profit & Loss" subtitle="Financial performance across all recorded transactions.">
       <FinanceSection />
       <ExpenseChart />
     </DashboardLayout>
