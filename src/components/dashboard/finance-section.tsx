@@ -11,7 +11,7 @@ import { Area, AreaChart, ResponsiveContainer } from "recharts";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import {
   buildDailySeries,
-  currentMonthRange,
+  allTimeRange,
   filterExpensesByDate,
   filterIncomeByDate,
   formatCurrency,
@@ -82,7 +82,7 @@ function StatBlock({
 export function FinanceSection() {
   const [incomeRows, setIncomeRows] = useState<IncomeRow[]>([]);
   const [expenseRows, setExpenseRows] = useState<ExpenseRow[]>([]);
-  const [range, setRange] = useState<DateRange>(() => currentMonthRange());
+  const [range, setRange] = useState<DateRange>(() => allTimeRange());
 
   const load = useCallback(async () => {
     const [income, expenses] = await Promise.all([listIncome(), listExpenses()]);
@@ -135,7 +135,7 @@ export function FinanceSection() {
         <div>
           <CardTitle className="text-base">Profit &amp; Loss Overview</CardTitle>
           <p className="text-xs text-muted-foreground">
-            Filter by date range for monthly or custom reporting.
+            Showing all recorded financial transactions. Use the date fields for monthly or custom reporting.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
