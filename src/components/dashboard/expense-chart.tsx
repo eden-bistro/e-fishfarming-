@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { listExpenses, PLATFORM_DATA_CHANGED_EVENT, type ExpenseRow } from "@/lib/platform-clients";
 import {
-  currentMonthRange,
+  allTimeRange,
   filterExpensesByDate,
   formatCurrency,
   summarizeExpensesByCategory,
@@ -17,7 +17,7 @@ type ExpenseChartProps = {
 
 export function ExpenseChart({
   rows,
-  range = currentMonthRange(),
+  range = allTimeRange(),
   title = "Expenses Breakdown",
 }: ExpenseChartProps) {
   const [loadedRows, setLoadedRows] = useState<ExpenseRow[]>([]);
@@ -52,7 +52,7 @@ export function ExpenseChart({
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-base">{title}</CardTitle>
         <span className="text-xs text-muted-foreground">
-          {range.startDate} → {range.endDate}
+          {range.startDate || range.endDate ? `${range.startDate || "Start"} → ${range.endDate || "End"}` : "All recorded transactions"}
         </span>
       </CardHeader>
       <CardContent>
