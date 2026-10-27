@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Bot, MessageCircle, Send, Sparkles, X } from "lucide-react";
+import { Bot, ImagePlus, MessageCircle, Send, Sparkles, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,6 +48,9 @@ export function ChatWidget() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isThinking, setIsThinking] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [uploadError, setUploadError] = useState("");
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -60,35 +63,66 @@ export function ChatWidget() {
 
   const send = async (text: string) => {
     const question = text.trim();
-    if (!question || isThinking) return;
+    const image = selectedImage;
+    if ((!question && !image) || isThinking) return;
 
+    const prompt = question || "Please analyze this aquaculture image.";
     const priorMessages = messages.slice(-HISTORY_LIMIT);
-    const nextMessages = [...priorMessages, { role: "user" as const, text: question }];
+    const userText = image ? `${prompt} [Image: ${image.name}]` : prompt;
+    const nextMessages = [...priorMessages, { role: "user" as const, text: userText }];
     setMessages(nextMessages);
     setInput("");
+    setSelectedImage(null);
+    setUploadError("");
     setIsThinking(true);
 
     try {
       const accessToken = await getAccessToken();
-      const response = await fetch("/api/ai/chat", {
+      let endpoint = "/api/ai/chat";
+      let requestBody: Record<string, unknown> = { question: prompt, history: priorMessages };
+
+      if (image) {
+        endpoint = "/api/ai/analyze-image";
+        const imageDataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () =>
+            typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Could not read image."));
+          reader.onerror = () => reject(new Error("Could not read image."));
+          reader.readAsDataURL(image);
+        });
+        const separator = imageDataUrl.indexOf(",");
+        if (separator < 0) throw new Error("The selected image could not be encoded.");
+        requestBody = {
+          question: prompt,
+          mimeType: image.type,
+          imageBase64: imageDataUrl.slice(separator + 1),
+        };
+      }
+
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "content-type": "application/json",
           ...(accessToken ? { authorization: `Bearer ${accessToken}` } : {}),
         },
-        body: JSON.stringify({ question, history: priorMessages }),
+        body: JSON.stringify(requestBody),
       });
       const payload = (await response.json().catch(() => null)) as {
         answer?: string;
+        analysis?: string;
         message?: string;
+        notice?: string;
       } | null;
-      if (!response.ok || !payload?.answer) {
+      const resultText = image
+        ? [payload?.analysis, payload?.notice].filter(Boolean).join("\\n\\n")
+        : payload?.answer;
+      if (!response.ok || !resultText) {
         throw new Error(payload?.message ?? `The AI request failed (${response.status}).`);
       }
 
       const completedMessages = [
         ...nextMessages,
-        { role: "assistant" as const, text: payload.answer },
+        { role: "assistant" as const, text: resultText },
       ];
       setMessages(completedMessages);
       writeHistory(completedMessages);
@@ -106,6 +140,25 @@ export function ChatWidget() {
     } finally {
       setIsThinking(false);
     }
+  };
+
+  const selectImage = (file?: File) => {
+    setUploadError("");
+    if (!file) {
+      setSelectedImage(null);
+      return;
+    }
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setSelectedImage(null);
+      setUploadError("Choose a JPEG, PNG, or WebP image.");
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      setSelectedImage(null);
+      setUploadError("Image must be 4 MB or smaller.");
+      return;
+    }
+    setSelectedImage(file);
   };
 
   return (
@@ -161,6 +214,16 @@ export function ChatWidget() {
             <div ref={endRef} />
           </div>
 
+          {selectedImage && (
+            <div className="flex items-center gap-2 border-t bg-card px-3 py-2 text-xs">
+              <ImagePlus className="h-4 w-4 shrink-0 text-brand" />
+              <span className="min-w-0 flex-1 truncate">{selectedImage.name}</span>
+              <button type="button" onClick={() => selectImage(undefined)} className="text-muted-foreground hover:text-foreground" aria-label="Remove selected image">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+          {uploadError && <p className="px-3 pb-1 text-xs text-destructive">{uploadError}</p>}
           <form
             onSubmit={(event) => {
               event.preventDefault();
@@ -168,10 +231,29 @@ export function ChatWidget() {
             }}
             className="flex items-center gap-2 border-t bg-card p-2"
           >
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(event) => selectImage(event.target.files?.[0])}
+            />
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              className="h-9 w-9 shrink-0"
+              disabled={isThinking}
+              onClick={() => imageInputRef.current?.click()}
+              aria-label="Attach an image for analysis"
+              title="Analyze an image"
+            >
+              <ImagePlus className="h-4 w-4" />
+            </Button>
             <Input
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              placeholder="Ask AquaSmart AI…"
+              placeholder={selectedImage ? "Ask about this image…" : "Ask AquaSmart AI…"}
               className="h-9"
               disabled={isThinking}
             />
@@ -179,7 +261,7 @@ export function ChatWidget() {
               size="icon"
               type="submit"
               className="h-9 w-9 bg-brand hover:bg-brand/90"
-              disabled={isThinking || !input.trim()}
+              disabled={isThinking || (!input.trim() && !selectedImage)}
             >
               <Send className="h-4 w-4" />
             </Button>
