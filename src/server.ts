@@ -488,7 +488,7 @@ function getDeviceRegistry(env: unknown): { mode: 'disabled' } | { mode: 'invali
   } catch { return { mode: 'invalid' }; }
 }
 function isSafePathId(value: string): boolean { return /^[A-Za-z0-9_-]{1,80}$/.test(value); }
-function isFiniteNumberInRange(value: unknown, minimum: number, maximum: number): boolean { return typeof value === 'number' && Number.isFinite(value) && value >= minimum && value <= maximum; }
+function isFiniteNumberInRange(value: unknown, minimum: number, maximum: number): value is number { return typeof value === 'number' && Number.isFinite(value) && value >= minimum && value <= maximum; }
 
 async function handleIotIngest(request: Request, env: unknown): Promise<Response> {
   const envRecord = getEnvRecord(env);
