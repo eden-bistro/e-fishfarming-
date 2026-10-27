@@ -529,7 +529,9 @@ function isSafePathId(value: string): boolean {
 }
 
 function isFiniteNumberInRange(value: unknown, minimum: number, maximum: number): value is number {
-  return typeof value === "number" && Number.isFinite(value) && value >= minimum && value <= maximum;
+  return (
+    typeof value === "number" && Number.isFinite(value) && value >= minimum && value <= maximum
+  );
 }
 
 async function handleIotIngest(request: Request, env: unknown): Promise<Response> {
