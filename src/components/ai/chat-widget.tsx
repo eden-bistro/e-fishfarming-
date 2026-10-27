@@ -114,7 +114,7 @@ export function ChatWidget() {
         notice?: string;
       } | null;
       const resultText = image
-        ? [payload?.analysis, payload?.notice].filter(Boolean).join("\\n\\n")
+        ? [payload?.analysis, payload?.notice].filter(Boolean).join("\n\n")
         : payload?.answer;
       if (!response.ok || !resultText) {
         throw new Error(payload?.message ?? `The AI request failed (${response.status}).`);
