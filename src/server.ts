@@ -492,7 +492,7 @@ function isFiniteNumberInRange(value: unknown, minimum: number, maximum: number)
 
 async function handleIotIngest(request: Request, env: unknown): Promise<Response> {
   const envRecord = getEnvRecord(env);
-  const expectedToken = envRecord.IOT_INGEST_TOKEN;
+  const expectedToken = envRecord.IOT_INGEST_TOKEN?.trim();
   const firebaseConfig = getFirebaseDatabaseConfig(env);
   const firebaseBaseUrl = firebaseConfig.baseUrl;
 
@@ -512,7 +512,7 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
   }
 
   const authHeader = request.headers.get("authorization") ?? "";
-  const incomingToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+  const incomingToken = authHeader.match(/^Bearer\\s+(.+)$/i)?.[1]?.trim() ?? "";
   if (!incomingToken) {
     return serverJsonResponse({ ok: false, message: "Unauthorized ingest token." }, 401);
   }
