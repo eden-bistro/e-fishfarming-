@@ -528,17 +528,8 @@ function isSafePathId(value: string): boolean {
   return /^[A-Za-z0-9_-]{1,80}$/.test(value);
 }
 
-function isFiniteNumberInRange(
-  value: unknown,
-  minimum: number,
-  maximum: number,
-): value is number {
-  return (
-    typeof value === "number" &&
-    Number.isFinite(value) &&
-    value >= minimum &&
-    value <= maximum
-  );
+function isFiniteNumberInRange(value: unknown, minimum: number, maximum: number): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= minimum && value <= maximum;
 }
 
 async function handleIotIngest(request: Request, env: unknown): Promise<Response> {
@@ -651,10 +642,7 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
 
   const temperature = body.temperature;
   const ph = body.ph;
-  if (
-    !isFiniteNumberInRange(temperature, -5, 60) ||
-    !isFiniteNumberInRange(ph, 0, 14)
-  ) {
+  if (!isFiniteNumberInRange(temperature, -5, 60) || !isFiniteNumberInRange(ph, 0, 14)) {
     return serverJsonResponse(
       {
         ok: false,
@@ -673,8 +661,7 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
       return serverJsonResponse(
         {
           ok: false,
-          message:
-            field + " must be a finite number between " + minimum + " and " + maximum + ".",
+          message: field + " must be a finite number between " + minimum + " and " + maximum + ".",
         },
         400,
       );
@@ -902,12 +889,7 @@ async function handleIotLatest(request: Request, env: unknown): Promise<Response
   const url = new URL(request.url);
   const farmId = (url.searchParams.get("farmId") ?? "").trim();
   const pondId = (url.searchParams.get("pondId") || getDefaultPondId(env)).trim();
-  if (
-    !farmId ||
-    !pondId ||
-    !isSafePathId(farmId) ||
-    !isSafePathId(pondId)
-  ) {
+  if (!farmId || !pondId || !isSafePathId(farmId) || !isSafePathId(pondId)) {
     return serverJsonResponse(
       { ok: false, message: "Valid farmId and pondId are required." },
       400,
