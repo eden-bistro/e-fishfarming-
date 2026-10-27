@@ -28,13 +28,18 @@ function relevantQuestion(question: string, history: ChatMessage[]) {
     normalized.split(/\s+/).length <= 5 &&
     /\b(that|it|this|why|good|okay|safe|normal)\b/.test(normalized)
   ) {
-    return `${history.slice(-2).map((message) => message.text).join(" ")} ${normalized}`.toLowerCase();
+    return `${history
+      .slice(-2)
+      .map((message) => message.text)
+      .join(" ")} ${normalized}`.toLowerCase();
   }
   return normalized;
 }
 
 function asksAboutTelemetry(question: string) {
-  return /\b(water|temperature|temp|ph|oxygen|dissolved oxygen|ammonia|nitrite|turbidity|sensor|telemetry|iot reading|pond condition|water quality|alert|farm status|farm doing|fish stressed|fish gasping|water reading|current reading|latest reading|reading history)\b/i.test(question);
+  return /\b(water|temperature|temp|ph|oxygen|dissolved oxygen|ammonia|nitrite|turbidity|sensor|telemetry|iot reading|pond condition|water quality|alert|farm status|farm doing|fish stressed|fish gasping|water reading|current reading|latest reading|reading history)\b/i.test(
+    question,
+  );
 }
 
 async function safely(section: () => Promise<unknown>): Promise<ContextSection> {
@@ -73,7 +78,11 @@ async function firebaseWaterContext(user: AuthorizedUser, env: unknown) {
 
   const pondId = getDefaultPondId(env);
   const path = encodedFarmPondPath(user.farmId, pondId);
-  const latestResponse = await readFirebaseJson(firebase.baseUrl, `${path}/water/latest`, firebase.auth);
+  const latestResponse = await readFirebaseJson(
+    firebase.baseUrl,
+    `${path}/water/latest`,
+    firebase.auth,
+  );
   if (!latestResponse.ok) throw new Error("No current water telemetry is available.");
 
   const latest = normalizeWaterReading(await latestResponse.json().catch(() => null), pondId);
