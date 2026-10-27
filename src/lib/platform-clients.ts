@@ -356,7 +356,8 @@ export async function addIncome(row: IncomeRow): Promise<IncomeRow> {
     headers: { Prefer: "return=representation" },
     body: JSON.stringify([{ ...serializeIncomeRow(row), farm_id: getActiveFarmId() }]),
   });
-  const saved = Array.isArray(rows) && rows[0] ? normalizeIncomeRow(rows[0] as Partial<IncomeRow>) : row;
+  const saved =
+    Array.isArray(rows) && rows[0] ? normalizeIncomeRow(rows[0] as Partial<IncomeRow>) : row;
   notifyPlatformDataChanged();
   return saved;
 }
@@ -366,9 +367,10 @@ export async function updateIncome(id: number, row: IncomeRow): Promise<IncomeRo
     headers: { Prefer: "return=representation" },
     body: JSON.stringify({ ...serializeIncomeRow(row), farm_id: getActiveFarmId() }),
   });
-  const saved = Array.isArray(rows) && rows[0]
-    ? normalizeIncomeRow(rows[0] as Partial<IncomeRow>)
-    : { ...row, id };
+  const saved =
+    Array.isArray(rows) && rows[0]
+      ? normalizeIncomeRow(rows[0] as Partial<IncomeRow>)
+      : { ...row, id };
   notifyPlatformDataChanged();
   return saved;
 }
