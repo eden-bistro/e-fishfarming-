@@ -221,7 +221,12 @@ export async function handleIotLatest(request: Request, env: unknown): Promise<R
   const url = new URL(request.url);
   const farmId = (url.searchParams.get("farmId") ?? "").trim();
   const pondId = (url.searchParams.get("pondId") || getDefaultPondId(env)).trim();
-  if (!farmId || !pondId || !/^[A-Za-z0-9_-]{1,80}$/.test(farmId) || !/^[A-Za-z0-9_-]{1,80}$/.test(pondId)) {
+  if (
+    !farmId ||
+    !pondId ||
+    !/^[A-Za-z0-9_-]{1,80}$/.test(farmId) ||
+    !/^[A-Za-z0-9_-]{1,80}$/.test(pondId)
+  ) {
     return jsonResponse({ ok: false, message: "Valid farmId and pondId are required." }, 400, {
       "cache-control": "no-store",
     });
