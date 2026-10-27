@@ -133,68 +133,68 @@ export function FinanceSection() {
   return (
     <>
       <Card>
-      <CardHeader className="flex flex-col gap-3 space-y-0 pb-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <CardTitle className="text-base">Profit &amp; Loss Overview</CardTitle>
-          <p className="text-xs text-muted-foreground">
-            Showing all recorded financial transactions. Use the date fields for monthly or custom reporting.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Input
-            type="date"
-            className="h-8 w-auto"
-            value={range.startDate}
-            onChange={(e) => setRange((current) => ({ ...current, startDate: e.target.value }))}
-          />
-          <Input
-            type="date"
-            className="h-8 w-auto"
-            value={range.endDate}
-            onChange={(e) => setRange((current) => ({ ...current, endDate: e.target.value }))}
-          />
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-          <StatBlock
-            id="g-income"
-            label="Total Income"
-            value={formatCurrency(totalIncome)}
-            delta="Range"
-            positive
-            series={incomeSeries}
-            color="var(--success)"
-          />
-          <StatBlock
-            id="g-exp"
-            label="Total Expenses"
-            value={formatCurrency(totalExpenses)}
-            delta="Range"
-            positive={false}
-            series={expenseSeries}
-            color="var(--destructive)"
-          />
-          <StatBlock
-            id="g-profit"
-            label="Net Profit"
-            value={formatCurrency(totalProfit)}
-            delta="Range"
-            positive={totalProfit >= 0}
-            series={profitSeries}
-            color="var(--brand)"
-          />
-          <StatBlock
-            id="g-margin"
-            label="Profit Margin"
-            value={`${(margin * 100).toFixed(1)}%`}
-            delta="Margin"
-            positive={margin >= 0}
-            series={profitSeries}
-            color="var(--warning)"
-          />
-        </div>
-      </CardContent>
+        <CardHeader className="flex flex-col gap-3 space-y-0 pb-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <CardTitle className="text-base">Profit &amp; Loss Overview</CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Showing all recorded financial transactions. Use the date fields for monthly or custom reporting.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              type="date"
+              className="h-8 w-auto"
+              value={range.startDate}
+              onChange={(e) => setRange((current) => ({ ...current, startDate: e.target.value }))}
+            />
+            <Input
+              type="date"
+              className="h-8 w-auto"
+              value={range.endDate}
+              onChange={(e) => setRange((current) => ({ ...current, endDate: e.target.value }))}
+            />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+            <StatBlock
+              id="g-income"
+              label="Total Income"
+              value={formatCurrency(totalIncome)}
+              delta="Range"
+              positive
+              series={incomeSeries}
+              color="var(--success)"
+            />
+            <StatBlock
+              id="g-exp"
+              label="Total Expenses"
+              value={formatCurrency(totalExpenses)}
+              delta="Range"
+              positive={false}
+              series={expenseSeries}
+              color="var(--destructive)"
+            />
+            <StatBlock
+              id="g-profit"
+              label="Net Profit"
+              value={formatCurrency(totalProfit)}
+              delta="Range"
+              positive={totalProfit >= 0}
+              series={profitSeries}
+              color="var(--brand)"
+            />
+            <StatBlock
+              id="g-margin"
+              label="Profit Margin"
+              value={`${(margin * 100).toFixed(1)}%`}
+              delta="Margin"
+              positive={margin >= 0}
+              series={profitSeries}
+              color="var(--warning)"
+            />
+          </div>
+        </CardContent>
       </Card>
       <ExpenseChart rows={filteredExpenses} range={range} />
     </>
