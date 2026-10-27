@@ -137,7 +137,8 @@ export function FinanceSection() {
           <div>
             <CardTitle className="text-base">Profit &amp; Loss Overview</CardTitle>
             <p className="text-xs text-muted-foreground">
-              Showing all recorded financial transactions. Use the date fields for monthly or custom reporting.
+              Showing all recorded financial transactions. Use the date fields for monthly or custom
+              reporting.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
