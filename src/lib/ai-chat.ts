@@ -98,7 +98,7 @@ async function generateAiResponse({
     response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
-      body: JSON.stringify({ model, messages, max_tokens: 700, temperature: 0.3 }),
+      body: JSON.stringify({ model, messages, max_completion_tokens: 700, temperature: 0.3 }),
     });
   } catch {
     return { ok: false, failure: "unavailable" };
