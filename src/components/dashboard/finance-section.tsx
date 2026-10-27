@@ -131,7 +131,8 @@ export function FinanceSection() {
   );
 
   return (
-    <Card>
+    <>
+      <Card>
       <CardHeader className="flex flex-col gap-3 space-y-0 pb-2 md:flex-row md:items-center md:justify-between">
         <div>
           <CardTitle className="text-base">Profit &amp; Loss Overview</CardTitle>
@@ -194,7 +195,8 @@ export function FinanceSection() {
           />
         </div>
       </CardContent>
-    </Card>
-    <ExpenseChart rows={filteredExpenses} range={range} />
+      </Card>
+      <ExpenseChart rows={filteredExpenses} range={range} />
+    </>
   );
 }
