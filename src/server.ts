@@ -512,7 +512,7 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
   }
 
   const authHeader = request.headers.get("authorization") ?? "";
-  const incomingToken = authHeader.match(/^Bearer\\s+(.+)$/i)?.[1]?.trim() ?? "";
+  const incomingToken = authHeader.match(/^Bearer +(.+)$/i)?.[1]?.trim() ?? "";
   if (!incomingToken) {
     return serverJsonResponse({ ok: false, message: "Unauthorized ingest token." }, 401);
   }
