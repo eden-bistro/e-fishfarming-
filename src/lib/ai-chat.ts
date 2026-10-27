@@ -86,7 +86,7 @@ async function generateAiResponse({
   const apiKey = config.AI_API_KEY?.trim();
   if (!provider || !apiKey) return { ok: false, failure: "configuration" };
 
-  const model = config.AI_MODEL?.trim() || "llama-3.3-70b-versatile";
+  const model = config.AI_MODEL?.trim() || "openai/gpt-oss-120b";
   const messages = [
     { role: "system", content: systemInstructions },
     ...history.map((message) => ({ role: message.role, content: message.text })),
