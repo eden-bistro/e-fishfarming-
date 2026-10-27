@@ -7,5 +7,6 @@
   "vars": {
     "AI_PROVIDER": "groq",
     "AI_MODEL": "llama-3.3-70b-versatile",
+    "AI_VISION_MODEL": "qwen/qwen3.8-27b",
   },
 }
