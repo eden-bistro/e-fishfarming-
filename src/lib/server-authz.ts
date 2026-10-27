@@ -102,7 +102,12 @@ export async function getAuthorizedUser(
     };
   }
 
-  const role = normalizeRole(appMetadata.role ?? userMetadata.role);
+  // Keep the designated admin email aligned with the database migration.
+  // Verified authentication is required above before this allowlist is applied.
+  const isConfiguredAdmin = email.trim().toLowerCase() === "fishhydro1@gmail.com";
+  const role = isConfiguredAdmin
+    ? "admin"
+    : normalizeRole(appMetadata.role ?? userMetadata.role);
 
   if (!id || !email) {
     return {
