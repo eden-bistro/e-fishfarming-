@@ -120,9 +120,11 @@ export async function handleAiImageAnalysis(request: Request, env: unknown): Pro
   }
 
   if (!isSupportedImage(bytes, mimeType)) {
-    return jsonResponse({ message: "The file content does not match the selected image type." }, 415, {
-      "cache-control": "no-store",
-    });
+    return jsonResponse(
+      { message: "The file content does not match the selected image type." },
+      415,
+      { "cache-control": "no-store" },
+    );
   }
 
   const config = getEnvRecord(env);
@@ -169,15 +171,17 @@ export async function handleAiImageAnalysis(request: Request, env: unknown): Pro
             ],
           },
         ],
-        max_tokens: 800,
+        max_completion_tokens: 800,
         temperature: 0.2,
       }),
       signal: AbortSignal.timeout(25_000),
     });
   } catch {
-    return jsonResponse({ message: "Image AI is temporarily unavailable. Please try again." }, 502, {
-      "cache-control": "no-store",
-    });
+    return jsonResponse(
+      { message: "Image AI is temporarily unavailable. Please try again." },
+      502,
+      { "cache-control": "no-store" },
+    );
   }
 
   const payload = (await response.json().catch(() => null)) as {
@@ -217,9 +221,11 @@ export async function handleAiImageAnalysis(request: Request, env: unknown): Pro
         : "";
 
   if (!analysis) {
-    return jsonResponse({ message: "Image AI returned no usable findings. Please try again." }, 502, {
-      "cache-control": "no-store",
-    });
+    return jsonResponse(
+      { message: "Image AI returned no usable findings. Please try again." },
+      502,
+      { "cache-control": "no-store" },
+    );
   }
 
   return jsonResponse(
