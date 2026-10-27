@@ -467,28 +467,79 @@ function iotIngestInfoResponse(): Response {
 function safeTokenEquals(candidate: string, expected: string): boolean {
   if (!candidate || !expected || candidate.length !== expected.length) return false;
   let difference = 0;
-  for (let index = 0; index < candidate.length; index += 1) difference |= candidate.charCodeAt(index) ^ expected.charCodeAt(index);
+  for (let index = 0; index < candidate.length; index += 1) {
+    difference |= candidate.charCodeAt(index) ^ expected.charCodeAt(index);
+  }
   return difference === 0;
 }
-type RegisteredIotDevice = { token: string; farmId: string; pondId: string; enabled?: boolean };
-function getDeviceRegistry(env: unknown): { mode: 'disabled' } | { mode: 'invalid' } | { mode: 'configured'; devices: Record<string, RegisteredIotDevice> } {
+
+type RegisteredIotDevice = {
+  token: string;
+  farmId: string;
+  pondId: string;
+  enabled?: boolean;
+};
+
+type DeviceRegistry =
+  | { mode: "disabled" }
+  | { mode: "invalid" }
+  | { mode: "configured"; devices: Record<string, RegisteredIotDevice> };
+
+function getDeviceRegistry(env: unknown): DeviceRegistry {
   const raw = getEnvRecord(env).IOT_DEVICE_REGISTRY_JSON?.trim();
-  if (!raw) return { mode: 'disabled' };
+  if (!raw) return { mode: "disabled" };
+
   try {
     const parsed = JSON.parse(raw) as Record<string, unknown>;
-    if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') return { mode: 'invalid' };
+    if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
+      return { mode: "invalid" };
+    }
+
     const devices: Record<string, RegisteredIotDevice> = {};
     for (const [deviceId, value] of Object.entries(parsed)) {
-      if (!value || Array.isArray(value) || typeof value !== 'object') return { mode: 'invalid' };
+      if (!value || Array.isArray(value) || typeof value !== "object") {
+        return { mode: "invalid" };
+      }
       const record = value as Record<string, unknown>;
-      if (typeof record.token !== 'string' || record.token.length < 24 || typeof record.farmId !== 'string' || typeof record.pondId !== 'string' || (record.enabled !== undefined && typeof record.enabled !== 'boolean')) return { mode: 'invalid' };
-      devices[deviceId] = { token: record.token, farmId: record.farmId, pondId: record.pondId, enabled: record.enabled !== false };
+      if (
+        typeof record.token !== "string" ||
+        record.token.length < 24 ||
+        typeof record.farmId !== "string" ||
+        typeof record.pondId !== "string" ||
+        (record.enabled !== undefined && typeof record.enabled !== "boolean")
+      ) {
+        return { mode: "invalid" };
+      }
+
+      devices[deviceId] = {
+        token: record.token,
+        farmId: record.farmId,
+        pondId: record.pondId,
+        enabled: record.enabled !== false,
+      };
     }
-    return { mode: 'configured', devices };
-  } catch { return { mode: 'invalid' }; }
+    return { mode: "configured", devices };
+  } catch {
+    return { mode: "invalid" };
+  }
 }
-function isSafePathId(value: string): boolean { return /^[A-Za-z0-9_-]{1,80}$/.test(value); }
-function isFiniteNumberInRange(value: unknown, minimum: number, maximum: number): value is number { return typeof value === 'number' && Number.isFinite(value) && value >= minimum && value <= maximum; }
+
+function isSafePathId(value: string): boolean {
+  return /^[A-Za-z0-9_-]{1,80}$/.test(value);
+}
+
+function isFiniteNumberInRange(
+  value: unknown,
+  minimum: number,
+  maximum: number,
+): value is number {
+  return (
+    typeof value === "number" &&
+    Number.isFinite(value) &&
+    value >= minimum &&
+    value <= maximum
+  );
+}
 
 async function handleIotIngest(request: Request, env: unknown): Promise<Response> {
   const envRecord = getEnvRecord(env);
@@ -543,13 +594,19 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
   }
 
   const contentLength = Number(request.headers.get("content-length") ?? "0");
-  if (Number.isFinite(contentLength) && contentLength > 16384) return serverJsonResponse({ ok: false, message: "Payload exceeds the 16 KB limit." }, 413);
+  if (Number.isFinite(contentLength) && contentLength > 16384) {
+    return serverJsonResponse({ ok: false, message: "Payload exceeds the 16 KB limit." }, 413);
+  }
   let body: Record<string, unknown>;
   try {
     const rawBody = await request.text();
-    if (new TextEncoder().encode(rawBody).byteLength > 16384) return serverJsonResponse({ ok: false, message: "Payload exceeds the 16 KB limit." }, 413);
+    if (new TextEncoder().encode(rawBody).byteLength > 16384) {
+      return serverJsonResponse({ ok: false, message: "Payload exceeds the 16 KB limit." }, 413);
+    }
     const parsed = JSON.parse(rawBody) as unknown;
-    if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") return serverJsonResponse({ ok: false, message: "Body must be a JSON object." }, 400);
+    if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
+      return serverJsonResponse({ ok: false, message: "Body must be a JSON object." }, 400);
+    }
     body = parsed as Record<string, unknown>;
   } catch {
     return serverJsonResponse({ ok: false, message: "Body must be valid JSON." }, 400);
@@ -558,7 +615,16 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
   const deviceId = typeof body.deviceId === "string" ? body.deviceId.trim() : "";
   const farmId = typeof body.farmId === "string" ? body.farmId.trim() : "";
   const pondId = typeof body.pondId === "string" ? body.pondId.trim() : "";
-  if (![deviceId, farmId, pondId].every(isSafePathId)) return serverJsonResponse({ ok: false, message: "deviceId, farmId and pondId must use 1–80 letters, numbers, underscores or hyphens." }, 400);
+  if (![deviceId, farmId, pondId].every(isSafePathId)) {
+    return serverJsonResponse(
+      {
+        ok: false,
+        message:
+          "deviceId, farmId and pondId must use 1–80 letters, numbers, underscores or hyphens.",
+      },
+      400,
+    );
+  }
 
   const registry = getDeviceRegistry(env);
   if (registry.mode === "invalid") {
@@ -567,8 +633,17 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
   }
   if (registry.mode === "configured") {
     const device = registry.devices[deviceId];
-    if (!device || device.enabled === false || !safeTokenEquals(incomingToken, device.token) || device.farmId !== farmId || device.pondId !== pondId) {
-      return serverJsonResponse({ ok: false, message: "Device is not authorized for this farm and pond." }, 403);
+    if (
+      !device ||
+      device.enabled === false ||
+      !safeTokenEquals(incomingToken, device.token) ||
+      device.farmId !== farmId ||
+      device.pondId !== pondId
+    ) {
+      return serverJsonResponse(
+        { ok: false, message: "Device is not authorized for this farm and pond." },
+        403,
+      );
     }
   } else if (!safeTokenEquals(incomingToken, expectedToken)) {
     return serverJsonResponse({ ok: false, message: "Unauthorized ingest token." }, 401);
@@ -576,12 +651,51 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
 
   const temperature = body.temperature;
   const ph = body.ph;
-  if (!isFiniteNumberInRange(temperature, -5, 60) || !isFiniteNumberInRange(ph, 0, 14)) return serverJsonResponse({ ok: false, message: "temperature must be between -5 and 60 °C and ph between 0 and 14." }, 400);
-  for (const [field, minimum, maximum] of [["dissolvedOxygen", 0, 30], ["ammonia", 0, 100], ["nitrite", 0, 100], ["turbidity", 0, 100000]] as Array<[string, number, number]>) {
-    if (body[field] !== undefined && !isFiniteNumberInRange(body[field], minimum, maximum)) return serverJsonResponse({ ok: false, message: field + " must be a finite number between " + minimum + " and " + maximum + "." }, 400);
+  if (
+    !isFiniteNumberInRange(temperature, -5, 60) ||
+    !isFiniteNumberInRange(ph, 0, 14)
+  ) {
+    return serverJsonResponse(
+      {
+        ok: false,
+        message: "temperature must be between -5 and 60 °C and ph between 0 and 14.",
+      },
+      400,
+    );
+  }
+  for (const [field, minimum, maximum] of [
+    ["dissolvedOxygen", 0, 30],
+    ["ammonia", 0, 100],
+    ["nitrite", 0, 100],
+    ["turbidity", 0, 100000],
+  ] as Array<[string, number, number]>) {
+    if (body[field] !== undefined && !isFiniteNumberInRange(body[field], minimum, maximum)) {
+      return serverJsonResponse(
+        {
+          ok: false,
+          message:
+            field + " must be a finite number between " + minimum + " and " + maximum + ".",
+        },
+        400,
+      );
+    }
   }
   const timestampValue = body.timestamp === undefined ? new Date().toISOString() : body.timestamp;
-  if (typeof timestampValue !== "string" || !Number.isFinite(Date.parse(timestampValue)) || Date.parse(timestampValue) > Date.now() + 300000 || Date.parse(timestampValue) < Date.now() - 30 * 24 * 60 * 60 * 1000) return serverJsonResponse({ ok: false, message: "timestamp must be a valid date within the last 30 days and no more than 5 minutes in the future." }, 400);
+  if (
+    typeof timestampValue !== "string" ||
+    !Number.isFinite(Date.parse(timestampValue)) ||
+    Date.parse(timestampValue) > Date.now() + 300000 ||
+    Date.parse(timestampValue) < Date.now() - 30 * 24 * 60 * 60 * 1000
+  ) {
+    return serverJsonResponse(
+      {
+        ok: false,
+        message:
+          "timestamp must be a valid date within the last 30 days and no more than 5 minutes in the future.",
+      },
+      400,
+    );
+  }
   const timestamp = timestampValue;
   const dissolvedOxygen = typeof body.dissolvedOxygen === "number" ? body.dissolvedOxygen : 0;
   const ammonia = typeof body.ammonia === "number" ? body.ammonia : 0;
@@ -669,8 +783,14 @@ async function handleIotIngest(request: Request, env: unknown): Promise<Response
     await write(`devices/status/${encodeURIComponent(deviceId)}`, {
       firmware: typeof body.firmware === "string" ? body.firmware.slice(0, 100) : "unknown",
       online: true,
-      rssi: typeof body.rssi === "number" && Number.isFinite(body.rssi) ? Math.max(-200, Math.min(100, body.rssi)) : 0,
-      freeHeap: typeof body.freeHeap === "number" && Number.isFinite(body.freeHeap) ? Math.max(0, Math.min(2000000, body.freeHeap)) : 0,
+      rssi:
+        typeof body.rssi === "number" && Number.isFinite(body.rssi)
+          ? Math.max(-200, Math.min(100, body.rssi))
+          : 0,
+      freeHeap:
+        typeof body.freeHeap === "number" && Number.isFinite(body.freeHeap)
+          ? Math.max(0, Math.min(2000000, body.freeHeap))
+          : 0,
       updatedAt: timestamp,
     });
   } catch (error) {
@@ -782,10 +902,17 @@ async function handleIotLatest(request: Request, env: unknown): Promise<Response
   const url = new URL(request.url);
   const farmId = (url.searchParams.get("farmId") ?? "").trim();
   const pondId = (url.searchParams.get("pondId") || getDefaultPondId(env)).trim();
-  if (!farmId || !pondId || !isSafePathId(farmId) || !isSafePathId(pondId)) {
-    return serverJsonResponse({ ok: false, message: "Valid farmId and pondId are required." }, 400, {
-      "cache-control": "no-store",
-    });
+  if (
+    !farmId ||
+    !pondId ||
+    !isSafePathId(farmId) ||
+    !isSafePathId(pondId)
+  ) {
+    return serverJsonResponse(
+      { ok: false, message: "Valid farmId and pondId are required." },
+      400,
+      { "cache-control": "no-store" },
+    );
   }
   const accessDenied = requireFarmAccess(authorization.user, farmId);
   if (accessDenied) return accessDenied;
