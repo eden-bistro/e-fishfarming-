@@ -10,7 +10,7 @@
 
 ## Required deployment configuration
 
-The image endpoint reuses the existing server-side `AI_API_KEY` and `AI_PROVIDER=groq` configuration. The existing text-chat model remains unchanged. The default is `qwen/qwen3.8-27b`, which Groq currently documents as a vision-capable model. Configure `AI_VISION_MODEL` as a Cloudflare Worker variable if you want to select another supported model. Re-check the provider's model documentation before deployment because model availability can change.
+The image endpoint reuses the existing server-side `AI_API_KEY` and `AI_PROVIDER=groq` configuration. The text-chat model is configured separately from the vision model in `wrangler.jsonc`. The default is `qwen/qwen3.8-27b`, which Groq currently documents as a vision-capable model. Configure `AI_VISION_MODEL` as a Cloudflare Worker variable if you want to select another supported model. Re-check the provider's model documentation before deployment because model availability can change.
 
 Set provider secrets using the deployment platform's secret management, not in browser-exposed variables or committed files. Confirm the selected vision model is currently enabled for the account before releasing.
 
