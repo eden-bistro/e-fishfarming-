@@ -218,7 +218,12 @@ function Page() {
               }}
             />
           </div>
-          <Button className="md:self-end" onClick={() => void save()} disabled={isSaving} aria-busy={isSaving}>
+          <Button
+            className="md:self-end"
+            onClick={() => void save()}
+            disabled={isSaving}
+            aria-busy={isSaving}
+          >
             {isSaving ? "Saving..." : editId ? "Update" : "Add"}
           </Button>
           <div className="rounded-md border bg-muted/30 p-3 text-sm md:col-span-5">

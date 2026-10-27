@@ -3,6 +3,7 @@ import "./lib/error-capture";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { handleAiChat } from "./lib/ai-chat";
+import { handleAiImageAnalysis } from "./lib/ai-image-analysis";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -828,6 +829,9 @@ export default {
     // Handle the AI endpoint here so AI and data-source bindings remain server-only.
     if (url.pathname === "/api/ai/chat") {
       return handleAiChat(request, env);
+    }
+    if (url.pathname === "/api/ai/analyze-image") {
+      return handleAiImageAnalysis(request, env);
     }
 
     const authProxyAction = getSupabaseAuthProxyAction(url.pathname);

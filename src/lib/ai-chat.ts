@@ -86,7 +86,7 @@ async function generateAiResponse({
   const apiKey = config.AI_API_KEY?.trim();
   if (!provider || !apiKey) return { ok: false, failure: "configuration" };
 
-  const model = config.AI_MODEL?.trim() || "llama-3.3-70b-versatile";
+  const model = config.AI_MODEL?.trim() || "openai/gpt-oss-120b";
   const messages = [
     { role: "system", content: systemInstructions },
     ...history.map((message) => ({ role: message.role, content: message.text })),
@@ -98,7 +98,7 @@ async function generateAiResponse({
     response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
-      body: JSON.stringify({ model, messages, max_tokens: 700, temperature: 0.3 }),
+      body: JSON.stringify({ model, messages, max_completion_tokens: 700, temperature: 0.3 }),
     });
   } catch {
     return { ok: false, failure: "unavailable" };
