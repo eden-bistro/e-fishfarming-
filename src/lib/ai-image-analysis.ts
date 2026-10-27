@@ -130,8 +130,7 @@ export async function handleAiImageAnalysis(request: Request, env: unknown): Pro
   const config = getEnvRecord(env);
   const provider = (config.AI_PROVIDER ?? "groq").trim().toLowerCase();
   const apiKey = config.AI_API_KEY?.trim();
-  const model =
-    config.AI_VISION_MODEL?.trim() || "qwen/qwen3.8-27b";
+  const model = config.AI_VISION_MODEL?.trim() || "qwen/qwen3.8-27b";
   if (provider !== "groq" || !apiKey) {
     return jsonResponse(
       {
