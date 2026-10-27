@@ -126,3 +126,23 @@ The backend writes device status from ingest payload telemetry:
 - `listFeedingCommands(...)`
 
 These are implemented in `src/lib/device-firebase.ts`.
+
+
+## Device authorization and Firebase rules
+
+Production deployments should configure the Cloudflare Worker secret `IOT_DEVICE_REGISTRY_JSON` with a unique high-entropy token and fixed `farmId`/`pondId` for every registered `deviceId`. Example shape:
+
+```json
+{
+  "ESP32_001": {
+    "token": "UNIQUE_RANDOM_DEVICE_SECRET",
+    "farmId": "user_abc123",
+    "pondId": "cage_001",
+    "enabled": true
+  }
+}
+```
+
+The device must send the token registered for its own ID. The backend rejects mismatched IDs, tokens, farms, and ponds. Keep `IOT_INGEST_TOKEN` set during migration; when the device registry is absent, legacy shared-token mode remains available for compatibility and is less secure. After registering devices and updating firmware, keep the registry enabled.
+
+Realtime Database rules in `firebase/database.rules.json` deny direct client reads and writes. Cloudflare accesses Firebase using server-side credentials, which may bypass these rules; enforce authorization in the backend and never expose service-account credentials to the browser.

@@ -136,8 +136,10 @@ export async function getLatestWaterReading(): Promise<WaterReading | null> {
 
   const params = new URLSearchParams(tenantPair);
   try {
+    const accessToken = (await getAccessToken())?.trim();
+    if (!accessToken) return null;
     const response = await fetch(`/api/iot/latest?${params.toString()}`, {
-      headers: { accept: "application/json" },
+      headers: { accept: "application/json", authorization: `Bearer ${accessToken}` },
     });
     const contentType = response.headers.get("content-type") ?? "";
     if (response.ok && contentType.includes("application/json")) {

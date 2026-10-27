@@ -1,3 +1,5 @@
+import { getAuthorizedUser, requireFarmAccess } from "@/lib/server-authz";
+
 type ServiceAccount = {
   client_email: string;
   private_key: string;
@@ -173,6 +175,9 @@ export async function handleIotLatest(request: Request, env: unknown): Promise<R
     });
   }
 
+  const authorization = await getAuthorizedUser(request, env);
+  if (!authorization.ok) return authorization.response;
+
   const firebaseConfig = getFirebaseDatabaseConfig(env);
   if (!firebaseConfig.baseUrl) {
     return jsonResponse(
@@ -216,11 +221,18 @@ export async function handleIotLatest(request: Request, env: unknown): Promise<R
   const url = new URL(request.url);
   const farmId = (url.searchParams.get("farmId") ?? "").trim();
   const pondId = (url.searchParams.get("pondId") || getDefaultPondId(env)).trim();
-  if (!farmId || !pondId) {
-    return jsonResponse({ ok: false, message: "farmId and pondId are required." }, 400, {
+  if (
+    !farmId ||
+    !pondId ||
+    !/^[A-Za-z0-9_-]{1,80}$/.test(farmId) ||
+    !/^[A-Za-z0-9_-]{1,80}$/.test(pondId)
+  ) {
+    return jsonResponse({ ok: false, message: "Valid farmId and pondId are required." }, 400, {
       "cache-control": "no-store",
     });
   }
+  const accessDenied = requireFarmAccess(authorization.user, farmId);
+  if (accessDenied) return accessDenied;
 
   const path = `farms/${encodeURIComponent(farmId)}/ponds/${encodeURIComponent(pondId)}/water/latest`;
   const readUrl = firebaseDatabaseUrl(firebaseConfig.baseUrl, path, firebaseReadAuth);

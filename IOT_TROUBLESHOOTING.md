@@ -37,6 +37,29 @@ Content-Type: application/json
 
 If the token mismatches, the backend returns `401 Unauthorized ingest token`.
 
+## 3a) Recommended strict device authorization
+
+For production, configure the Cloudflare Worker secret/variable `IOT_DEVICE_REGISTRY_JSON` as a JSON object keyed by each device's exact `deviceId`. Each record must contain a unique random `token`, assigned `farmId`, assigned `pondId`, and optional `enabled` boolean.
+
+```json
+{
+  "ESP32_001": {
+    "token": "REPLACE_WITH_A_UNIQUE_RANDOM_SECRET_AT_LEAST_24_CHARACTERS",
+    "farmId": "user_abc123",
+    "pondId": "cage_001",
+    "enabled": true
+  }
+}
+```
+
+Use a different high-entropy token for every ESP32 and update that device's firmware secret. Once this registry is configured, the backend rejects unregistered/disabled devices, token mismatches, and attempts to send a reading to a different farm or pond. If the registry is absent, the endpoint temporarily supports the legacy shared `IOT_INGEST_TOKEN` for migration compatibility; that mode does not bind a token to one device or tenant. The existing shared token remains a required fallback secret during this transition.
+
+The endpoint limits request bodies to 16 KB; validates identifier characters, temperature (-5 to 60 °C), pH (0 to 14), supplied optional sensor ranges, and timestamps (last 30 days to 5 minutes in the future). Omitted optional sensor values are still stored as zero for firmware compatibility; update the payload contract before treating zero as a missing-sensor marker.
+
+## 3b) Firebase Realtime Database rules
+
+The repository's `firebase/database.rules.json` now denies direct client reads and writes. The Cloudflare backend uses server-side Firebase credentials, which may bypass RTDB rules; therefore the Worker must enforce authorization itself. Confirm all browser access to RTDB goes through authorized backend endpoints before deploying rules. Do not put Firebase service-account JSON, database secrets, or per-device tokens in public frontend variables or Git.
+
 ## 4) Validate required payload fields
 
 The backend requires:
