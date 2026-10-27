@@ -86,7 +86,9 @@ export function ChatWidget() {
         const imageDataUrl = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () =>
-            typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Could not read image."));
+            typeof reader.result === "string"
+              ? resolve(reader.result)
+              : reject(new Error("Could not read image."));
           reader.onerror = () => reject(new Error("Could not read image."));
           reader.readAsDataURL(image);
         });
@@ -120,10 +122,7 @@ export function ChatWidget() {
         throw new Error(payload?.message ?? `The AI request failed (${response.status}).`);
       }
 
-      const completedMessages = [
-        ...nextMessages,
-        { role: "assistant" as const, text: resultText },
-      ];
+      const completedMessages = [...nextMessages, { role: "assistant" as const, text: resultText }];
       setMessages(completedMessages);
       writeHistory(completedMessages);
     } catch (error) {
@@ -218,7 +217,12 @@ export function ChatWidget() {
             <div className="flex items-center gap-2 border-t bg-card px-3 py-2 text-xs">
               <ImagePlus className="h-4 w-4 shrink-0 text-brand" />
               <span className="min-w-0 flex-1 truncate">{selectedImage.name}</span>
-              <button type="button" onClick={() => selectImage(undefined)} className="text-muted-foreground hover:text-foreground" aria-label="Remove selected image">
+              <button
+                type="button"
+                onClick={() => selectImage(undefined)}
+                className="text-muted-foreground hover:text-foreground"
+                aria-label="Remove selected image"
+              >
                 <X className="h-4 w-4" />
               </button>
             </div>
