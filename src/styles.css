@@ -155,16 +155,20 @@
 
   body {
     background-color: var(--color-background);
-    background-image:
-      radial-gradient(ellipse at 8% 0%, oklch(0.94 0.035 220 / 0.55), transparent 38%),
-      radial-gradient(ellipse at 95% 100%, oklch(0.95 0.045 175 / 0.42), transparent 36%);
-    background-attachment: fixed;
     color: var(--color-foreground);
     min-height: 100vh;
   }
 }
 
 @layer components {
+  .aquasmart-dashboard-background {
+    background-color: var(--color-background);
+    background-image:
+      radial-gradient(ellipse at 8% 0%, oklch(0.94 0.035 220 / 0.55), transparent 38%),
+      radial-gradient(ellipse at 95% 100%, oklch(0.95 0.045 175 / 0.42), transparent 36%);
+    background-attachment: fixed;
+  }
+
   .icon-pill {
     @apply rounded-md border border-border/60 bg-gradient-to-br from-muted/80 to-background p-1.5 text-muted-foreground shadow-sm transition-all duration-200;
   }
