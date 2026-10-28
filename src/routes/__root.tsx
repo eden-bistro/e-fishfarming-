@@ -132,7 +132,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       {
         rel: "icon",
-        href: "/favicon.ico",
+        href: "/icons/Fish%20logo.png",
       },
       {
         rel: "manifest",
@@ -140,7 +140,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       {
         rel: "apple-touch-icon",
-        href: "/icons/aquasmart-icon.svg",
+        href: "/icons/Fish%20logo.png",
       },
       {
         rel: "stylesheet",
