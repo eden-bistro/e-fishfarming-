@@ -31,7 +31,7 @@ function Page() {
     void load();
 
     const timer = window.setInterval(() => {
-      void load();
+      if (document.visibilityState === "visible") void load();
     }, 30_000);
 
     return () => {
