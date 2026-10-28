@@ -84,11 +84,19 @@ export function FinanceSection() {
   const [incomeRows, setIncomeRows] = useState<IncomeRow[]>([]);
   const [expenseRows, setExpenseRows] = useState<ExpenseRow[]>([]);
   const [range, setRange] = useState<DateRange>(() => allTimeRange());
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [income, expenses] = await Promise.all([listIncome(), listExpenses()]);
-    setIncomeRows(income);
-    setExpenseRows(expenses);
+    try {
+      const [income, expenses] = await Promise.all([listIncome(), listExpenses()]);
+      setIncomeRows(income);
+      setExpenseRows(expenses);
+      setLoadError(null);
+    } catch (error) {
+      setLoadError(
+        error instanceof Error ? error.message : "Financial data could not be loaded.",
+      );
+    }
   }, []);
 
   useEffect(() => {
@@ -132,6 +140,11 @@ export function FinanceSection() {
 
   return (
     <>
+      {loadError && (
+        <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+          Financial data is unavailable: {loadError}
+        </p>
+      )}
       <Card>
         <CardHeader className="flex flex-col gap-3 space-y-0 pb-2 md:flex-row md:items-center md:justify-between">
           <div>
