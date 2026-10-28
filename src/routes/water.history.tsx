@@ -50,7 +50,9 @@ function Chart({
       setData((prev) => [...prev.slice(-23), row]);
     }
     void tick();
-    const timer = setInterval(() => void tick(), 10000);
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") void tick();
+    }, 30_000);
     return () => {
       mounted = false;
       clearInterval(timer);
