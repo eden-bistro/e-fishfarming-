@@ -141,7 +141,10 @@ export function FinanceSection() {
   return (
     <>
       {loadError && (
-        <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+        <p
+          role="alert"
+          className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+        >
           Financial data is unavailable: {loadError}
         </p>
       )}
