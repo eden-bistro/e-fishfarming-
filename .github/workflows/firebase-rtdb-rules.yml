@@ -32,9 +32,12 @@ jobs:
           node -e "JSON.parse(require('fs').readFileSync('firebase/database.rules.json', 'utf8'))"
 
   deploy-rtdb-rules:
-    name: Deploy Realtime Database rules
+    name: Deploy Realtime Database rules (manual approval only)
     needs: validate
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    # Deliberately manual-only: the deny-all rules can break current browser reads
+    # and ESP32 feeding-command flows until all callers have migrated to authorized
+    # backend endpoints. Do not deploy until that migration has been tested.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -49,7 +52,7 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
         run: |
-          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
+          test -n "$FIREBASE_SERVICE_ACCOUNT_JSON" || { echo "::error::Missing repository secret FIREBASE_SERVICE_ACCOUNT_JSON."; exit 1; }
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
 
@@ -57,5 +60,5 @@ jobs:
         env:
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
         run: |
-          test -n "$FIREBASE_PROJECT_ID"
+          test -n "$FIREBASE_PROJECT_ID" || { echo "::error::Missing repository secret FIREBASE_PROJECT_ID."; exit 1; }
           npx -y firebase-tools@latest deploy --only database --project "$FIREBASE_PROJECT_ID" --non-interactive
