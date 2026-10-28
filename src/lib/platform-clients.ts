@@ -99,7 +99,9 @@ function mergeHeaders(base: Record<string, string>, extra?: HeadersInit): Header
 
 async function supabaseRequest(path: string, init: RequestInit) {
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.");
+    throw new Error(
+      "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
+    );
   }
   const accessToken = (await getAccessToken())?.trim();
   const authToken = accessToken || supabaseAnonKey;
