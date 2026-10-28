@@ -8,6 +8,7 @@ import { handleIotDevices } from "./lib/iot-devices";
 import { handleIotFeedingCommand } from "./lib/iot-feeding-command";
 import { handleIotAlerts } from "./lib/iot-alerts";
 import { handleIotFeedingEvent } from "./lib/iot-feeding-event";
+import { handleIotDeviceCommands } from "./lib/iot-device-commands";
 import { getAuthorizedUser, requireFarmAccess } from "./lib/server-authz";
 
 type ServerEntry = {
@@ -1024,6 +1025,9 @@ export default {
     }
     if (url.pathname === "/api/iot/feeding-event") {
       return handleIotFeedingEvent(request, env);
+    }
+    if (url.pathname === "/api/iot/device-commands") {
+      return handleIotDeviceCommands(request, env);
     }
 
     if (isIotIngestPath(url.pathname)) {
