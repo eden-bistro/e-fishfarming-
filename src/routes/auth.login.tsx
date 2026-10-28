@@ -8,52 +8,101 @@ import { loginUser } from "@/lib/auth";
 
 export const Route = createFileRoute("/auth/login")({ component: Page });
 
+const cageBackgroundUrl =
+  "https://images.pexels.com/photos/5285503/pexels-photo-5285503.jpeg?auto=compress&cs=tinysrgb&w=2200";
+
 function Page() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSubmitting) return;
+
     setError("");
-    const result = await loginUser(email, password);
-    if (!result.ok) {
-      setError(result.message);
-      return;
+    setIsSubmitting(true);
+    try {
+      const result = await loginUser(email, password);
+      if (!result.ok) {
+        setError(result.message);
+        return;
+      }
+      await navigate({ to: "/" });
+    } catch {
+      setError("We couldn't sign you in right now. Check your connection and try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-    navigate({ to: "/" });
   }
 
   return (
     <main className="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-[#041b2b] p-4 sm:p-8">
       <div
         aria-hidden="true"
-        className="absolute inset-0 -z-20 bg-cover bg-center"
-        style={{
-          backgroundImage:
-            "url('https://images.unsplash.com/photo-1530053969600-caed2596d242?auto=format&fit=crop&w=2400&q=85')",
-        }}
+        className="absolute inset-0 z-0 bg-cover bg-center"
+        style={{ backgroundImage: `url("${cageBackgroundUrl}")` }}
       />
       <div
         aria-hidden="true"
-        className="absolute inset-0 -z-10 bg-gradient-to-br from-[#031725]/90 via-[#062c42]/75 to-[#031725]/90"
+        className="absolute inset-0 z-[1] bg-gradient-to-br from-[#031725]/90 via-[#062c42]/75 to-[#031725]/90"
       />
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 -z-10 opacity-30"
-        style={{
-          backgroundImage:
-            "radial-gradient(ellipse at 20% 20%, rgba(45,212,191,.32), transparent 35%), radial-gradient(ellipse at 85% 80%, rgba(56,189,248,.24), transparent 38%)",
-        }}
-      />
+      <div aria-hidden="true" className="aquasmart-fish-layer">
+        <span className="aquasmart-fish aquasmart-fish-one" />
+        <span className="aquasmart-fish aquasmart-fish-two" />
+        <span className="aquasmart-fish aquasmart-fish-three" />
+        <span className="aquasmart-fish aquasmart-fish-four" />
+      </div>
 
-      <div className="grid w-full max-w-5xl items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+      <style>{`
+        @keyframes aquasmart-fish-swim {
+          from { transform: translate3d(-12rem, 0, 0); }
+          45% { transform: translate3d(48vw, -1rem, 0); }
+          to { transform: translate3d(calc(100vw + 12rem), 1rem, 0); }
+        }
+        .aquasmart-fish-layer {
+          position: absolute;
+          inset: 0;
+          z-index: 2;
+          overflow: hidden;
+          pointer-events: none;
+        }
+        .aquasmart-fish {
+          position: absolute;
+          left: 0;
+          display: block;
+          width: 5rem;
+          height: 2.25rem;
+          opacity: .25;
+          background:
+            radial-gradient(circle at 23% 42%, rgba(3, 23, 37, .95) 0 2px, transparent 2.5px),
+            linear-gradient(180deg, rgba(125, 211, 252, .9), rgba(45, 212, 191, .82));
+          clip-path: polygon(0 50%, 13% 25%, 48% 17%, 72% 32%, 100% 8%, 94% 50%, 100% 92%, 72% 68%, 48% 83%, 13% 75%);
+          animation: aquasmart-fish-swim 32s linear infinite;
+          filter: drop-shadow(0 3px 8px rgba(0, 0, 0, .2));
+        }
+        .aquasmart-fish-one { top: 58%; animation-duration: 34s; }
+        .aquasmart-fish-two { top: 72%; width: 3.5rem; height: 1.6rem; animation-delay: -13s; animation-duration: 28s; opacity: .19; }
+        .aquasmart-fish-three { top: 84%; width: 4.2rem; height: 1.8rem; animation-delay: -21s; animation-duration: 38s; opacity: .22; }
+        .aquasmart-fish-four { top: 64%; width: 2.8rem; height: 1.25rem; animation-delay: -7s; animation-duration: 25s; opacity: .15; }
+        @media (prefers-reduced-motion: reduce) {
+          .aquasmart-fish { animation: none; left: 12%; }
+          .aquasmart-fish-two { left: 55%; }
+          .aquasmart-fish-three { left: 74%; }
+          .aquasmart-fish-four { left: 36%; }
+        }
+      `}</style>
+
+      <div className="relative z-10 grid w-full max-w-5xl items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
         <section className="hidden text-white lg:block">
           <div className="mb-8 flex items-center gap-4">
             <img
-              src="/icons/aquasmart-icon.svg"
+              src="/icons/aquasmart-icon.png"
               alt="AquaSmart logo"
+              width={64}
+              height={64}
               className="h-16 w-16 rounded-2xl shadow-lg shadow-black/20"
             />
             <div>
@@ -87,12 +136,14 @@ function Page() {
           </div>
         </section>
 
-        <Card className="w-full border border-white/20 bg-slate-950/65 text-white shadow-2xl shadow-black/30 backdrop-blur-xl">
+        <Card className="w-full border border-white/20 bg-slate-950/75 text-white shadow-2xl shadow-black/30 backdrop-blur-xl">
           <CardHeader className="space-y-4 pb-2">
             <div className="flex items-center gap-3 lg:hidden">
               <img
-                src="/icons/aquasmart-icon.svg"
+                src="/icons/aquasmart-icon.png"
                 alt="AquaSmart logo"
+                width={48}
+                height={48}
                 className="h-12 w-12 rounded-xl"
               />
               <div>
@@ -112,7 +163,11 @@ function Page() {
             </div>
           </CardHeader>
           <CardContent className="pt-4">
-            <form className="space-y-5" onSubmit={(event) => void submit(event)}>
+            <form
+              className="space-y-5"
+              onSubmit={(event) => void submit(event)}
+              aria-busy={isSubmitting}
+            >
               <div className="space-y-2">
                 <Label htmlFor="login-email" className="text-slate-200">
                   Email
@@ -121,11 +176,17 @@ function Page() {
                   id="login-email"
                   type="email"
                   autoComplete="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="border-white/15 bg-white/10 text-white placeholder:text-slate-400 focus-visible:ring-teal-400"
+                  onChange={(event) => {
+                    setEmail(event.target.value);
+                    if (error) setError("");
+                  }}
+                  className="border-white/20 bg-white/10 text-white placeholder:text-slate-400 focus-visible:ring-teal-400"
                   placeholder="you@example.com"
+                  disabled={isSubmitting}
                 />
               </div>
               <div className="space-y-2">
@@ -138,21 +199,26 @@ function Page() {
                   autoComplete="current-password"
                   required
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="border-white/15 bg-white/10 text-white placeholder:text-slate-400 focus-visible:ring-teal-400"
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+                    if (error) setError("");
+                  }}
+                  className="border-white/20 bg-white/10 text-white placeholder:text-slate-400 focus-visible:ring-teal-400"
                   placeholder="Enter your password"
+                  disabled={isSubmitting}
                 />
               </div>
               {error && (
-                <p role="alert" className="text-sm text-rose-300">
+                <p role="alert" aria-live="polite" className="text-sm text-rose-300">
                   {error}
                 </p>
               )}
               <Button
                 type="submit"
+                disabled={isSubmitting}
                 className="w-full bg-teal-400 font-semibold text-slate-950 hover:bg-teal-300"
               >
-                Log in
+                {isSubmitting ? "Signing in…" : "Log in"}
               </Button>
             </form>
             <div className="mt-5 flex flex-col gap-3 text-sm text-slate-300 sm:flex-row sm:items-center sm:justify-between">
