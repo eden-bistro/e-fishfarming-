@@ -20,9 +20,12 @@ function registerServiceWorker() {
   if (!isProduction || !("serviceWorker" in navigator)) return;
 
   const register = () => {
-    navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).then((registration) => registration.update()).catch((error: unknown) => {
-      console.error("AquaSmart service worker registration failed", error);
-    });
+    navigator.serviceWorker
+      .register("/sw.js", { updateViaCache: "none" })
+      .then((registration) => registration.update())
+      .catch((error: unknown) => {
+        console.error("AquaSmart service worker registration failed", error);
+      });
   };
 
   if (document.readyState === "complete") {
