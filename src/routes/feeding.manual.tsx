@@ -4,158 +4,123 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Hand, Play } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Hand } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { getLatestOnlineWaterReading, pushManualFeedingEvent } from "@/lib/platform-clients";
-import { consumeFeedInventory } from "@/services/modules/inventory.service";
-import { addProductionEventRemote } from "@/services/modules/production.service";
+import { getActivePondId } from "@/lib/tenant";
+import { listFeedingEvents, pushManualFeedingEvent, type FeedingEventRow } from "@/lib/platform-clients";
 
 export const Route = createFileRoute("/feeding/manual")({
-  head: () => ({ meta: [{ title: "Manual Feeding — AquaSmart" }] }),
+  head: () => ({ meta: [{ title: "Record Manual Feeding — AquaSmart" }] }),
   component: Page,
 });
 
-function waterQualityStatus(reading: Awaited<ReturnType<typeof getLatestOnlineWaterReading>>) {
-  if (!reading) {
-    return {
-      canFeed: false,
-      label: "No live water data",
-      message: "Connect an online water sensor before feeding.",
-    };
-  }
-
-  const canFeed =
-    reading.dissolvedOxygen >= 5 &&
-    reading.ph >= 6.5 &&
-    reading.ph <= 8.5 &&
-    reading.ammonia <= 0.05;
-
-  return {
-    canFeed,
-    label: canFeed ? "Safe to feed" : "Water quality not safe",
-    message: canFeed
-      ? "Dissolved oxygen, pH, and ammonia are in the feeding-safe range."
-      : "Feeding is blocked until dissolved oxygen, pH, and ammonia return to safe levels.",
-  };
+function formatEventTime(value: string) {
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date.toLocaleString() : value;
 }
 
 function Page() {
   const [amount, setAmount] = useState([2.5]);
-  const [pond, setPond] = useState("Pond A");
-  const [quality, setQuality] = useState({
-    canFeed: false,
-    label: "Checking water quality...",
-    message: "Checking the latest online water sensor before feeding.",
-  });
+  const [events, setEvents] = useState<FeedingEventRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingEvents, setLoadingEvents] = useState(true);
+  const pondId = getActivePondId();
+
+  const refreshEvents = useCallback(async () => {
+    setLoadingEvents(true);
+    try {
+      const rows = await listFeedingEvents();
+      setEvents(rows.filter((row) => row.pond_id === pondId).slice(0, 10));
+    } finally {
+      setLoadingEvents(false);
+    }
+  }, [pondId]);
 
   useEffect(() => {
-    let mounted = true;
-    async function loadQuality() {
-      const status = waterQualityStatus(await getLatestOnlineWaterReading());
-      if (mounted) setQuality(status);
+    void refreshEvents();
+  }, [refreshEvents]);
+
+  async function recordManualFeeding() {
+    if (!pondId) {
+      toast.error("Select an active pond before recording a feeding.");
+      return;
     }
-    void loadQuality();
-    const timer = window.setInterval(() => void loadQuality(), 30_000);
-    return () => {
-      mounted = false;
-      window.clearInterval(timer);
-    };
-  }, []);
+
+    setLoading(true);
+    try {
+      await pushManualFeedingEvent(amount[0]);
+      toast.success("Manual feeding event recorded.");
+      await refreshEvents();
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? `${error.message} Check the recent records before retrying to avoid a duplicate entry.`
+          : "Could not confirm the feeding record. Check recent records before retrying.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <DashboardLayout
-      title="Manual Feeding"
-      subtitle="Trigger an immediate feed cycle for any pond."
+      title="Record Manual Feeding"
+      subtitle="Record feed that has already been dispensed manually. This page does not control a feeder device."
     >
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Dispense Feed</CardTitle>
+            <CardTitle className="text-base">Record Completed Manual Feeding</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
-            <div className="space-y-2">
-              <Label>Pond</Label>
-              <Select
-                defaultValue="a"
-                onValueChange={(v) =>
-                  setPond(v === "a" ? "Pond A" : v === "b" ? "Pond B" : "Pond C")
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="a">Pond A — Tilapia</SelectItem>
-                  <SelectItem value="b">Pond B — Catfish</SelectItem>
-                  <SelectItem value="c">Pond C — Fingerlings</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="rounded-md border p-3 text-sm">
+              <p className="font-medium">Active pond</p>
+              <p className="mt-1 text-muted-foreground">{pondId || "No pond selected"}</p>
+            </div>
+            <div className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">
+              Only submit this form after feed has actually been dispensed by a person. It does not send a command to the ESP32 or feeder.
             </div>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <Label>Amount</Label>
-                <span className="text-sm font-mono">{amount[0].toFixed(1)} kg</span>
+                <Label>Amount actually dispensed</Label>
+                <span className="font-mono text-sm">{amount[0].toFixed(1)} kg</span>
               </div>
-              <Slider value={amount} onValueChange={setAmount} min={0.5} max={10} step={0.1} />
+              <Slider value={amount} onValueChange={setAmount} min={0.1} max={10} step={0.1} />
             </div>
-            <div
-              className={`rounded-md border p-3 text-sm ${quality.canFeed ? "bg-success/10 text-success" : "bg-warning/10 text-warning"}`}
-            >
-              <p className="font-medium">{quality.label}</p>
-              <p className="mt-1 text-xs">{quality.message}</p>
-            </div>
-            <Button
-              className="w-full gap-2"
-              disabled={!quality.canFeed}
-              onClick={async () => {
-                if (!quality.canFeed) {
-                  toast.error(quality.message);
-                  return;
-                }
-                await pushManualFeedingEvent(amount[0]);
-                consumeFeedInventory(amount[0], "Manual feed");
-                await addProductionEventRemote({
-                  cageId: pond,
-                  type: "feeding",
-                  feedKg: amount[0],
-                });
-                toast.success(`Dispensed ${amount[0].toFixed(1)}kg and deducted from inventory`);
-              }}
-            >
-              <Play className="h-4 w-4" /> Start Feeding Now
+            <Button className="w-full gap-2" disabled={loading || !pondId} onClick={() => void recordManualFeeding()}>
+              <Hand className="h-4 w-4" />
+              {loading ? "Recording..." : "Record Manual Feeding"}
             </Button>
+            <p className="text-xs text-muted-foreground">
+              This records the event only. Inventory deduction is not performed here because stock persistence and event recording are not yet a single atomic operation.
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Recent Manual Feeds</CardTitle>
+            <CardTitle className="text-base">Recent Manual Feeding Records</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            {[
-              { t: "Today 09:14", kg: 1.5, pond: "Pond A", by: "John" },
-              { t: "Yesterday 17:02", kg: 3.0, pond: "Pond B", by: "Mary" },
-              { t: "May 13 10:40", kg: 2.0, pond: "Pond A", by: "John" },
-            ].map((r, i) => (
-              <div key={i} className="flex items-center gap-3 rounded-lg border p-3">
-                <Hand className="h-4 w-4 text-brand" />
-                <div className="flex-1">
-                  <p className="font-medium">
-                    {r.pond} · {r.kg} kg
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {r.t} · by {r.by}
-                  </p>
+            {loadingEvents ? (
+              <p className="text-muted-foreground">Loading saved feeding records...</p>
+            ) : events.length === 0 ? (
+              <p className="text-muted-foreground">No saved feeding records found for the active pond.</p>
+            ) : (
+              events.map((event, index) => (
+                <div key={event.id ?? `${event.timestamp}-${index}`} className="flex items-center gap-3 rounded-lg border p-3">
+                  <Hand className="h-4 w-4 text-brand" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">
+                      {event.pond_id} · {Number(event.amount_kg).toFixed(1)} kg
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatEventTime(event.timestamp)} · {event.mode || "manual"} · {event.status || "recorded"}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </CardContent>
         </Card>
       </div>
