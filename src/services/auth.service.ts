@@ -71,15 +71,11 @@ function roleFromUserPayload(userObj: Record<string, unknown>): SessionUser["rol
     userObj.app_metadata && typeof userObj.app_metadata === "object"
       ? (userObj.app_metadata as Record<string, unknown>)
       : {};
-  const userMetadata =
-    userObj.user_metadata && typeof userObj.user_metadata === "object"
-      ? (userObj.user_metadata as Record<string, unknown>)
-      : {};
   const email = String(userObj.email ?? "")
     .trim()
     .toLowerCase();
   const isConfiguredAdmin = email === "fishhydro1@gmail.com";
-  return isConfiguredAdmin || appMetadata.role === "admin" || userMetadata.role === "admin"
+  return isConfiguredAdmin || appMetadata.role === "admin"
     ? "admin"
     : "farm_user";
 }
