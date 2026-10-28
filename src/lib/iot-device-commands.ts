@@ -35,11 +35,9 @@ function resolveRegisteredDevice(
   if (!raw) {
     return {
       ok: false,
-      response: jsonResponse(
-        { ok: false, message: "Device registry is not configured." },
-        503,
-        { "cache-control": "no-store" },
-      ),
+      response: jsonResponse({ ok: false, message: "Device registry is not configured." }, 503, {
+        "cache-control": "no-store",
+      }),
     };
   }
 
@@ -53,11 +51,9 @@ function resolveRegisteredDevice(
   } catch {
     return {
       ok: false,
-      response: jsonResponse(
-        { ok: false, message: "Device registry is invalid." },
-        500,
-        { "cache-control": "no-store" },
-      ),
+      response: jsonResponse({ ok: false, message: "Device registry is invalid." }, 500, {
+        "cache-control": "no-store",
+      }),
     };
   }
 
@@ -65,11 +61,9 @@ function resolveRegisteredDevice(
   if (!rawDevice || Array.isArray(rawDevice) || typeof rawDevice !== "object") {
     return {
       ok: false,
-      response: jsonResponse(
-        { ok: false, message: "Device is not registered." },
-        403,
-        { "cache-control": "no-store" },
-      ),
+      response: jsonResponse({ ok: false, message: "Device is not registered." }, 403, {
+        "cache-control": "no-store",
+      }),
     };
   }
 
@@ -87,11 +81,9 @@ function resolveRegisteredDevice(
   ) {
     return {
       ok: false,
-      response: jsonResponse(
-        { ok: false, message: "Device is not authorized." },
-        403,
-        { "cache-control": "no-store" },
-      ),
+      response: jsonResponse({ ok: false, message: "Device is not authorized." }, 403, {
+        "cache-control": "no-store",
+      }),
     };
   }
 
@@ -134,11 +126,9 @@ export async function handleIotDeviceCommands(request: Request, env: unknown): P
   const url = new URL(request.url);
   const deviceId = (url.searchParams.get("deviceId") ?? "").trim();
   if (!/^[A-Za-z0-9_-]{1,80}$/.test(deviceId)) {
-    return jsonResponse(
-      { ok: false, message: "A valid deviceId is required." },
-      400,
-      { "cache-control": "no-store" },
-    );
+    return jsonResponse({ ok: false, message: "A valid deviceId is required." }, 400, {
+      "cache-control": "no-store",
+    });
   }
 
   const registered = resolveRegisteredDevice(env, deviceId, requestToken(request));
@@ -161,16 +151,15 @@ export async function handleIotDeviceCommands(request: Request, env: unknown): P
       cache: "no-store",
     });
     if (!response.ok) {
-      return jsonResponse(
-        { ok: false, message: "Failed to read device commands." },
-        502,
-        { "cache-control": "no-store" },
-      );
+      return jsonResponse({ ok: false, message: "Failed to read device commands." }, 502, {
+        "cache-control": "no-store",
+      });
     }
 
-    const raw = (await response.json().catch(() => null)) as
-      | Record<string, Record<string, unknown>>
-      | null;
+    const raw = (await response.json().catch(() => null)) as Record<
+      string,
+      Record<string, unknown>
+    > | null;
     const commands =
       raw && typeof raw === "object"
         ? Object.entries(raw)
@@ -212,9 +201,10 @@ export async function handleIotDeviceCommands(request: Request, env: unknown): P
     });
   }
 
-  const existing = (await existingResponse.json().catch(() => null)) as
-    | Record<string, unknown>
-    | null;
+  const existing = (await existingResponse.json().catch(() => null)) as Record<
+    string,
+    unknown
+  > | null;
   if (!existing) {
     return jsonResponse({ ok: false, message: "Command not found." }, 404, {
       "cache-control": "no-store",
