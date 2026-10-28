@@ -85,10 +85,6 @@ export async function getAuthorizedUser(
 
   const id = String(payload.id ?? "");
   const email = String(payload.email ?? "");
-  const userMetadata =
-    payload.user_metadata && typeof payload.user_metadata === "object"
-      ? (payload.user_metadata as Record<string, unknown>)
-      : {};
   const appMetadata =
     payload.app_metadata && typeof payload.app_metadata === "object"
       ? (payload.app_metadata as Record<string, unknown>)
@@ -105,7 +101,7 @@ export async function getAuthorizedUser(
   // Keep the designated admin email aligned with the database migration.
   // Verified authentication is required above before this allowlist is applied.
   const isConfiguredAdmin = email.trim().toLowerCase() === "fishhydro1@gmail.com";
-  const role = isConfiguredAdmin ? "admin" : normalizeRole(appMetadata.role ?? userMetadata.role);
+  const role = isConfiguredAdmin ? "admin" : normalizeRole(appMetadata.role);
 
   if (!id || !email) {
     return {
