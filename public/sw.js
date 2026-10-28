@@ -32,7 +32,7 @@ self.addEventListener("fetch", (event) => {
     // Always request the latest app shell for page navigation. Do not cache
     // route HTML, which can make an installed PWA show an outdated login page.
     event.respondWith(
-      fetch(new Request(request, { cache: "no-store" })).catch(() => caches.match("/").then((cached) => cached || Response.error())),
+      fetch(request, { cache: "no-store" }).catch(() => caches.match("/").then((cached) => cached || Response.error())),
     );
     return;
   }
