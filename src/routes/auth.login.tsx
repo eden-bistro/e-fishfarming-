@@ -8,9 +8,6 @@ import { loginUser } from "@/lib/auth";
 
 export const Route = createFileRoute("/auth/login")({ component: Page });
 
-const cageBackgroundUrl =
-  "https://images.pexels.com/photos/5285503/pexels-photo-5285503.jpeg?auto=compress&cs=tinysrgb&w=2200";
-
 function Page() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -42,7 +39,7 @@ function Page() {
     <main className="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-[#041b2b] p-4 sm:p-8">
       <div
         aria-hidden="true"
-        className="absolute inset-0 z-0 bg-cover bg-center"
+        className="absolute inset-0 z-0 hidden bg-cover bg-center lg:block"
         style={{ backgroundImage: `url("${cageBackgroundUrl}")` }}
       />
       <div
