@@ -38,15 +38,12 @@ Required for ESP32 ingest:
 
 ## 3) Firebase Realtime Database
 
-1. Apply `firebase/database.rules.json` manually or let GitHub Actions deploy it from `firebase.json`.
-2. For GitHub deployment, add repository secrets:
-   - `FIREBASE_PROJECT_ID`
-   - `FIREBASE_SERVICE_ACCOUNT_JSON`
-3. Ensure direct Firebase device tokens include:
-   - `device: true` for sensor/device writes
-   - `admin: true` for admin writes
-4. For backend ESP32 ingest, configure `IOT_INGEST_TOKEN` and one server-side Firebase write-auth option.
-5. Confirm RTDB URL matches `FIREBASE_DATABASE_URL`.
+1. Keep the browser and ESP32 from accessing Realtime Database directly. The frontend must use authenticated Cloudflare Worker APIs; ESP32 telemetry must use `/api/iot/ingest`, and command polling/status updates must use `/api/iot/device-commands`.
+2. Configure the Worker runtime with `FIREBASE_DATABASE_URL` and preferably `FIREBASE_SERVICE_ACCOUNT`. Treat the service-account JSON and private key as secrets; never expose them with a `VITE_` prefix or commit them.
+3. Configure `IOT_DEVICE_REGISTRY_JSON` as a **Cloudflare Worker secret**. Each device entry must bind a unique high-entropy token to a fixed `deviceId`, `farmId`, and `pondId`. Keep the legacy `IOT_INGEST_TOKEN` only during migration; per-device registry mode is preferred.
+4. The repository rules file denies all direct RTDB reads and writes. The Firebase workflow intentionally requires manual dispatch. **Do not deploy deny-all rules until the updated Worker version is deployed and tested** for water latest, alerts, device status, feeding command list/queue, manual feeding events, and ESP32 command polling/status updates.
+5. After testing, deploy the rules from GitHub Actions using manual `workflow_dispatch` or the Firebase Console. Verify in the Firebase Rules Playground that unauthenticated and ordinary client requests cannot read or write RTDB paths.
+6. Confirm RTDB URL matches `FIREBASE_DATABASE_URL`.
 
 ## 5) Cloudflare deployment
 
@@ -60,7 +57,8 @@ Required for ESP32 ingest:
    - `SUPABASE_ANON_KEY`
    - `FIREBASE_DATABASE_URL`
    - `IOT_INGEST_TOKEN`
-   - `FIREBASE_SERVICE_ACCOUNT` (or legacy `FIREBASE_DATABASE_SECRET` / `FIREBASE_AUTH_TOKEN`)
+   - `FIREBASE_SERVICE_ACCOUNT` (preferred; legacy `FIREBASE_DATABASE_SECRET` / `FIREBASE_AUTH_TOKEN` only during migration)
+   - `IOT_DEVICE_REGISTRY_JSON` (**secret**, per-device credentials and fixed farm/pond binding)
    - `AI_API_KEY` (**secret**)
    - `AI_PROVIDER=groq` (variable)
    - Optional: `AI_MODEL` (variable)
