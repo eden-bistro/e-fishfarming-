@@ -4,6 +4,7 @@ import {
 } from "@/lib/device-firebase";
 import { getActiveFarmId, getActivePondId } from "@/lib/tenant";
 import { getAccessToken } from "@/services/auth.service";
+const env = import.meta.env as Record<string, string | undefined>;
 
 const supabaseUrl = (env.VITE_SUPABASE_URL ?? env.SUPABASE_URL)?.trim();
 const supabaseAnonKey = (env.VITE_SUPABASE_ANON_KEY ?? env.SUPABASE_ANON_KEY)?.trim();
