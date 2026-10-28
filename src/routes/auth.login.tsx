@@ -36,22 +36,24 @@ function Page() {
   }
 
   return (
-    <main className="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-sky-50 via-white to-cyan-100 p-4 sm:p-8">
+    <main className="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-slate-950 via-blue-950 to-cyan-950 p-4 sm:p-8">
       <div
         aria-hidden="true"
-        className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top_left,rgba(14,165,233,0.13),transparent_45%),radial-gradient(ellipse_at_bottom_right,rgba(20,184,166,0.14),transparent_45%)]"
+        className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top_left,rgba(14,165,233,0.35),transparent_48%),radial-gradient(ellipse_at_bottom_right,rgba(20,184,166,0.25),transparent_48%)]"
       />
       <div
         aria-hidden="true"
-        className="absolute -right-24 -top-24 z-[1] h-80 w-80 rounded-full bg-sky-200/40 blur-3xl"
+        className="absolute -right-24 -top-24 z-[1] h-80 w-80 rounded-full bg-sky-400/20 blur-3xl"
       />
       <div
         aria-hidden="true"
-        className="absolute -bottom-28 -left-20 z-[1] h-96 w-96 rounded-full bg-teal-200/40 blur-3xl"
+        className="absolute -bottom-28 -left-20 z-[1] h-96 w-96 rounded-full bg-teal-400/20 blur-3xl"
       />
 
+      <div aria-hidden="true" className="absolute inset-0 z-[2] bg-blue-950/70" />
+
       <div className="relative z-10 grid w-full max-w-5xl items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="hidden text-slate-900 lg:block">
+        <section className="hidden text-white lg:block">
           <div className="mb-8 flex items-center gap-4">
             <img
               src="/icons/Fish%20logo.png?v=2"
@@ -62,7 +64,7 @@ function Page() {
             />
             <div>
               <p className="text-3xl font-bold tracking-tight">AquaSmart</p>
-              <p className="text-sm font-medium tracking-[0.22em] text-teal-700">
+              <p className="text-sm font-medium tracking-[0.22em] text-cyan-200">
                 SMART AQUACULTURE
               </p>
             </div>
@@ -72,14 +74,14 @@ function Page() {
             <br />
             Healthier fish.
             <br />
-            <span className="text-teal-700">Smarter farming.</span>
+            <span className="text-cyan-200">Smarter farming.</span>
           </h1>
-          <p className="mt-6 max-w-lg text-lg leading-8 text-slate-600">
+          <p className="mt-6 max-w-lg text-lg leading-8 text-blue-100">
             Monitor your farm, track water quality, and make confident decisions for every stage of
             fish production.
           </p>
-          <div className="mt-10 flex flex-wrap gap-3 text-sm text-slate-700">
-            <span className="rounded-full border border-sky-200 bg-white/75 px-4 py-2 text-slate-700 shadow-sm">
+          <div className="mt-10 flex flex-wrap gap-3 text-sm text-white">
+            <span className="rounded-full border border-white/25 bg-white/10 px-4 py-2 text-white shadow-sm backdrop-blur">
               Water quality
             </span>
             <span className="rounded-full border border-sky-200 bg-white/75 px-4 py-2 text-slate-700 shadow-sm">
@@ -108,7 +110,7 @@ function Page() {
             </div>
             <div>
               <CardTitle className="text-2xl font-semibold text-slate-900">Welcome back</CardTitle>
-              <p className="mt-2 text-sm text-slate-300">
+              <p className="mt-2 text-sm text-slate-600">
                 Sign in to continue to your farm dashboard.
               </p>
             </div>
@@ -160,14 +162,14 @@ function Page() {
                 />
               </div>
               {error && (
-                <p role="alert" aria-live="polite" className="text-sm text-rose-300">
+                <p role="alert" aria-live="polite" className="text-sm text-rose-600">
                   {error}
                 </p>
               )}
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-sky-700 font-semibold text-white hover:bg-sky-800"
+                className="w-fit min-w-32 px-8 bg-sky-700 font-semibold text-white hover:bg-sky-800"
               >
                 {isSubmitting ? "Signing in…" : "Log in"}
               </Button>
