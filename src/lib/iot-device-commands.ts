@@ -110,7 +110,7 @@ function requestToken(request: Request): string {
   return (
     request.headers
       .get("authorization")
-      ?.match(/^Bearer\\s+(.+)$/i)?.[1]
+      ?.match(/^Bearer\s+(.+)$/i)?.[1]
       ?.trim() ?? ""
   );
 }
