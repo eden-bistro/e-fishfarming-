@@ -28,7 +28,9 @@ function Page() {
       setEnterpriseAlerts(listEnterpriseAlerts());
     };
     void load();
-    const timer = setInterval(() => void load(), 10000);
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") void load();
+    }, 30_000);
     return () => {
       mounted = false;
       clearInterval(timer);
