@@ -8,6 +8,9 @@ import { loginUser } from "@/lib/auth";
 
 export const Route = createFileRoute("/auth/login")({ component: Page });
 
+const cageBackgroundUrl =
+  "https://images.pexels.com/photos/5285503/pexels-photo-5285503.jpeg?auto=compress&cs=tinysrgb&w=2200";
+
 function Page() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
