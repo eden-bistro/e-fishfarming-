@@ -130,7 +130,8 @@ function Page() {
                 {activePondId || "No pond selected"}
               </p>
               <p className="text-xs text-muted-foreground">
-                The command targets the active pond configured in AquaSmart. The pond selector must be changed in farm/device settings.
+                The command targets the active pond configured in AquaSmart. The pond selector must be changed in
+                farm/device settings.
               </p>
             </div>
             <div className="space-y-2">
@@ -152,8 +153,8 @@ function Page() {
               onClick={async () => {
                 if (!quality.canFeed || !activePondId) {
                   toast.error(
-                  "Cannot queue feeding: verify the active pond and live water quality first.",
-                );
+                    "Cannot queue feeding: verify the active pond and live water quality first.",
+                  );
                   return;
                 }
                 setSubmitting(true);
@@ -183,7 +184,8 @@ function Page() {
               {submitting ? "Queuing command…" : "Queue Feeding Command"}
             </Button>
             <p className="text-xs text-muted-foreground">
-              Queuing a command does not mean feed was dispensed. Inventory and production records are not updated here; those should only be reconciled against confirmed execution.
+              Queuing a command does not mean feed was dispensed. Inventory and production records are not updated
+              here; those should only be reconciled against confirmed execution.
             </p>
           </CardContent>
         </Card>
@@ -217,10 +219,7 @@ function Page() {
               </p>
             ) : (
               commands.map((command) => (
-                <div
-                  key={command.id}
-                  className="flex items-start gap-3 rounded-lg border p-3"
-                >
+                <div key={command.id} className="flex items-start gap-3 rounded-lg border p-3">
                   <Hand className="mt-0.5 h-4 w-4 text-brand" />
                   <div className="min-w-0 flex-1">
                     <p className="font-medium">
