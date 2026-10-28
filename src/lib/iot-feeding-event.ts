@@ -47,10 +47,17 @@ export async function handleIotFeedingEvent(request: Request, env: unknown): Pro
   }
 
   const amountKg = body.amountKg;
-  if (typeof amountKg !== "number" || !Number.isFinite(amountKg) || amountKg <= 0 || amountKg > 1000) {
-    return jsonResponse({ ok: false, message: "amountKg must be a number greater than 0 and no more than 1000." }, 400, {
-      "cache-control": "no-store",
-    });
+  if (
+    typeof amountKg !== "number" ||
+    !Number.isFinite(amountKg) ||
+    amountKg <= 0 ||
+    amountKg > 1000
+  ) {
+    return jsonResponse(
+      { ok: false, message: "amountKg must be a number greater than 0 and no more than 1000." },
+      400,
+      { "cache-control": "no-store" },
+    );
   }
 
   const firebase = await resolveFirebaseDatabase(env);
@@ -75,12 +82,16 @@ export async function handleIotFeedingEvent(request: Request, env: unknown): Pro
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    return jsonResponse({
-      ok: false,
-      message: "Failed to record manual feeding event.",
-      status: response.status,
-      detail: detail.slice(0, 200),
-    }, 502, { "cache-control": "no-store" });
+    return jsonResponse(
+      {
+        ok: false,
+        message: "Failed to record manual feeding event.",
+        status: response.status,
+        detail: detail.slice(0, 200),
+      },
+      502,
+      { "cache-control": "no-store" },
+    );
   }
 
   const result = (await response.json().catch(() => ({}))) as { name?: string };
