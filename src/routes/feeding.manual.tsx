@@ -106,7 +106,9 @@ function Page() {
       }
     }
     void loadCommands();
-    const timer = window.setInterval(() => void loadCommands(), 15_000);
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void loadCommands();
+    }, 30_000);
     return () => {
       mounted = false;
       window.clearInterval(timer);
