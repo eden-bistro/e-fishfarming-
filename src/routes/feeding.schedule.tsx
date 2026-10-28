@@ -191,7 +191,9 @@ function Page() {
       }
     };
     void load();
-    const timer = setInterval(() => void load(), 7000);
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") void load();
+    }, 30_000);
     return () => {
       mounted = false;
       clearInterval(timer);
