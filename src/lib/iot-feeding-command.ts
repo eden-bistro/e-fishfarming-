@@ -17,6 +17,7 @@ export type IotFeedingCommand = {
   targetPondId: string;
   requestedBy: string;
   requestedAt: string;
+  scheduledFor?: string;
   status: "queued" | "ack" | "done" | "failed";
 };
 
@@ -24,13 +25,26 @@ function commandPath(farmId: string, pondId: string) {
   return `${encodedFarmPondPath(farmId, pondId)}/feeding/commands`;
 }
 
-function normalizeCommandBody(body: Record<string, unknown>): Omit<IotFeedingCommand, "id"> | null {
+function normalizeCommandBody(
+  body: Record<string, unknown>,
+  authenticatedEmail: string,
+  selectedPondId: string,
+): Omit<IotFeedingCommand, "id"> | null {
   const action = body.action === "dispense_feed" ? body.action : "dispense_feed";
   const amountKg = Number(body.amountKg);
   const targetPondId = String(body.targetPondId ?? body.pondId ?? "").trim();
-  const requestedBy = String(body.requestedBy ?? "operator").trim();
+  const scheduledFor = typeof body.scheduledFor === "string" ? body.scheduledFor.trim() : "";
 
-  if (!Number.isFinite(amountKg) || amountKg <= 0 || !targetPondId || !requestedBy) {
+  if (
+    !Number.isFinite(amountKg) ||
+    amountKg <= 0 ||
+    amountKg > 1000 ||
+    !/^[A-Za-z0-9_-]{1,80}$/.test(targetPondId) ||
+    targetPondId !== selectedPondId ||
+    !authenticatedEmail ||
+    (body.scheduledFor !== undefined &&
+      (!scheduledFor || !Number.isFinite(Date.parse(scheduledFor))))
+  ) {
     return null;
   }
 
@@ -38,8 +52,9 @@ function normalizeCommandBody(body: Record<string, unknown>): Omit<IotFeedingCom
     action,
     amountKg,
     targetPondId,
-    requestedBy,
+    requestedBy: authenticatedEmail,
     requestedAt: new Date().toISOString(),
+    ...(scheduledFor ? { scheduledFor } : {}),
     status: "queued",
   };
 }
@@ -68,7 +83,7 @@ export async function handleIotFeedingCommand(request: Request, env: unknown): P
   const url = new URL(request.url);
   const farmId = (url.searchParams.get("farmId") ?? "").trim();
   const pondId = (url.searchParams.get("pondId") || getDefaultPondId(env)).trim();
-  if (!farmId || !pondId) {
+  if (!/^[A-Za-z0-9_-]{1,80}$/.test(farmId) || !/^[A-Za-z0-9_-]{1,80}$/.test(pondId)) {
     return jsonResponse({ ok: false, message: "farmId and pondId are required." }, 400, {
       "cache-control": "no-store",
     });
@@ -126,10 +141,13 @@ export async function handleIotFeedingCommand(request: Request, env: unknown): P
     });
   }
 
-  const command = normalizeCommandBody(body);
+  const command = normalizeCommandBody(body, authz.user.email, pondId);
   if (!command) {
     return jsonResponse(
-      { ok: false, message: "targetPondId, requestedBy and a positive amountKg are required." },
+      {
+        ok: false,
+        message: "targetPondId must match the selected pond, and amountKg must be valid.",
+      },
       400,
       { "cache-control": "no-store" },
     );

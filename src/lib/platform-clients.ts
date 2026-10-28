@@ -6,7 +6,6 @@ import { getActiveFarmId, getActivePondId } from "@/lib/tenant";
 import { getAccessToken } from "@/services/auth.service";
 const env = import.meta.env as Record<string, string | undefined>;
 
-const firebaseBaseUrl = (env.VITE_FIREBASE_DATABASE_URL ?? env.FIREBASE_DATABASE_URL)?.trim();
 const supabaseUrl = (env.VITE_SUPABASE_URL ?? env.SUPABASE_URL)?.trim();
 const supabaseAnonKey = (env.VITE_SUPABASE_ANON_KEY ?? env.SUPABASE_ANON_KEY)?.trim();
 
@@ -118,10 +117,6 @@ async function supabaseRequest(path: string, init: RequestInit) {
   return response.json();
 }
 
-function explicitPondPath(farmId: string, pondId: string, ...parts: string[]) {
-  return ["farms", farmId, "ponds", pondId, ...parts].map(encodeURIComponent).join("/");
-}
-
 function activeWaterTenantPair() {
   const farmId = getActiveFarmId().trim();
   const pondId = getActivePondId().trim();
@@ -132,43 +127,21 @@ export async function getLatestWaterReading(): Promise<WaterReading | null> {
   const tenantPair = activeWaterTenantPair();
   if (!tenantPair) return null;
 
-  let shouldTryDirectFirebaseFallback = false;
+  const accessToken = (await getAccessToken())?.trim();
+  if (!accessToken) return null;
 
   const params = new URLSearchParams(tenantPair);
   try {
-    const accessToken = (await getAccessToken())?.trim();
-    if (!accessToken) return null;
     const response = await fetch(`/api/iot/latest?${params.toString()}`, {
       headers: { accept: "application/json", authorization: `Bearer ${accessToken}` },
+      cache: "no-store",
     });
-    const contentType = response.headers.get("content-type") ?? "";
-    if (response.ok && contentType.includes("application/json")) {
-      const reading = (await response.json()) as WaterReading | null;
-      if (reading) return reading;
-    }
-    shouldTryDirectFirebaseFallback =
-      response.status === 404 || !contentType.includes("application/json");
-  } catch {
-    shouldTryDirectFirebaseFallback = true;
-  }
-
-  if (!shouldTryDirectFirebaseFallback || !firebaseBaseUrl) return null;
-  try {
-    const response = await fetch(
-      `${firebaseBaseUrl}/${explicitPondPath(
-        tenantPair.farmId,
-        tenantPair.pondId,
-        "water",
-        "latest",
-      )}.json`,
-    );
     if (!response.ok) return null;
     const reading = (await response.json()) as WaterReading | null;
-    if (reading) return reading;
+    return reading && typeof reading === "object" ? reading : null;
   } catch {
     return null;
   }
-  return null;
 }
 
 export type DeviceStatus = FirebaseDeviceStatus;
@@ -193,29 +166,27 @@ export async function listWaterAlerts(limit = 20): Promise<WaterAlert[]> {
   const tenantPair = activeWaterTenantPair();
   if (!tenantPair) return [];
 
-  if (firebaseBaseUrl) {
+  const accessToken = (await getAccessToken())?.trim();
+  if (accessToken) {
     try {
-      const response = await fetch(
-        `${firebaseBaseUrl}/${explicitPondPath(
-          tenantPair.farmId,
-          tenantPair.pondId,
-          "alerts",
-        )}.json?orderBy="$key"&limitToLast=${limit}`,
-      );
-
+      const params = new URLSearchParams({
+        ...tenantPair,
+        limit: String(Math.max(1, Math.min(limit, 100))),
+      });
+      const response = await fetch(`/api/iot/alerts?${params.toString()}`, {
+        headers: { accept: "application/json", authorization: `Bearer ${accessToken}` },
+        cache: "no-store",
+      });
       if (response.ok) {
-        const raw = (await response.json()) as Record<
-          string,
-          Omit<WaterAlert, "id" | "source">
-        > | null;
-        if (raw && typeof raw === "object") {
-          return Object.entries(raw)
-            .map(([id, value]) => ({ id, ...value, source: "firebase" as const }))
-            .sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+        const payload = (await response.json()) as {
+          alerts?: Array<Omit<WaterAlert, "source">>;
+        };
+        if (Array.isArray(payload.alerts)) {
+          return payload.alerts.map((alert) => ({ ...alert, source: "firebase" as const }));
         }
       }
     } catch {
-      // Fall back to derived alerts below.
+      // Derived alerts remain available when the protected endpoint is unavailable.
     }
   }
 
@@ -274,38 +245,40 @@ export async function listWaterAlerts(limit = 20): Promise<WaterAlert[]> {
 export async function pushManualFeedingEvent(amountKg: number): Promise<void> {
   const farmId = getActiveFarmId();
   const pondId = getActivePondId();
-  const payload = {
-    timestamp: new Date().toISOString(),
-    pondId,
-    mode: "manual",
-    amountKg,
-    status: "completed",
-  };
+  const accessToken = (await getAccessToken())?.trim();
+  if (!accessToken) throw new Error("Sign in again before recording a feeding event.");
 
-  if (firebaseBaseUrl) {
-    await fetch(
-      `${firebaseBaseUrl}/${explicitPondPath(farmId, pondId, "feeding", "events")}.json`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(payload),
+  const response = await fetch(
+    `/api/iot/feeding-event?${new URLSearchParams({ farmId, pondId }).toString()}`,
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${accessToken}`,
       },
-    );
+      body: JSON.stringify({ amountKg }),
+    },
+  );
+  const result = (await response.json().catch(() => null)) as {
+    ok?: boolean;
+    message?: string;
+  } | null;
+  if (!response.ok || !result?.ok) {
+    throw new Error(result?.message ?? `Failed to record feeding event (${response.status}).`);
   }
 
+  const payload = {
+    timestamp: new Date().toISOString(),
+    pond_id: pondId,
+    mode: "manual",
+    amount_kg: amountKg,
+    status: "completed",
+    farm_id: farmId,
+  };
   await supabaseRequest("feeding_events", {
     method: "POST",
     headers: { Prefer: "return=minimal" },
-    body: JSON.stringify([
-      {
-        timestamp: payload.timestamp,
-        pond_id: payload.pondId,
-        mode: payload.mode,
-        amount_kg: payload.amountKg,
-        status: payload.status,
-        farm_id: farmId,
-      },
-    ]),
+    body: JSON.stringify([payload]),
   });
 }
 

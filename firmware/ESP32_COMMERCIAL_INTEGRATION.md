@@ -76,25 +76,36 @@ Without this mapping, `/water/live`, `/water/alerts`, `/settings/devices`, and h
 
 ## Feeding command contract (ESP32 consumer)
 
-For each command under `feeding/commands`:
+**Do not read or write the Realtime Database directly from the ESP32.** The production security target is to deny direct client/device access to Firebase and route device command operations through the Cloudflare Worker.
 
-```json
-{
-  "action": "dispense_feed",
-  "amountKg": 2.5,
-  "targetPondId": "DEVICE_ASSIGNED_CAGE_ID",
-  "requestedBy": "operator@farm",
-  "requestedAt": "2026-05-21T11:00:00.000Z",
-  "status": "queued|ack|done|failed"
-}
+Poll commands with:
+
+```text
+GET https://<your-domain>/api/iot/device-commands?deviceId=DEVICE_PRINTED_ID
+Authorization: Bearer <DEVICE_SPECIFIC_TOKEN>
 ```
+
+The device token must be a unique high-entropy token configured for that exact `deviceId` in the Worker secret `IOT_DEVICE_REGISTRY_JSON`. The registry binds the device to one fixed farm and pond; the device must not supply its own farm or pond identifiers to this endpoint.
+
+Acknowledge or finish a command with:
+
+```text
+POST https://<your-domain>/api/iot/device-commands?deviceId=DEVICE_PRINTED_ID
+Authorization: Bearer <DEVICE_SPECIFIC_TOKEN>
+Content-Type: application/json
+
+{"commandId":"FIREBASE_COMMAND_KEY","status":"ack"}
+```
+
+Use `status: "done"` after successful dispensing or `status: "failed"` with an optional short `error` string if dispensing fails. The backend validates command ownership and allowed status transitions. The response from the API, not a direct Firebase write, is the acknowledgement.
 
 Recommended ESP32 command lifecycle:
 
-1. read queued command
-2. write status `ack`
-3. perform dispense
-4. write status `done` or `failed` with an optional reason
+1. Poll the protected endpoint and select a queued command.
+2. POST status `ack`.
+3. Perform the dispensing operation.
+4. POST status `done` or `failed` (include an optional `error`).
+5. Retry with backoff on network failures; do not treat a failed API response as a successful status update.
 
 ## Device status heartbeat contract
 
@@ -145,4 +156,4 @@ Production deployments should configure the Cloudflare Worker secret `IOT_DEVICE
 
 The device must send the token registered for its own ID. The backend rejects mismatched IDs, tokens, farms, and ponds. Keep `IOT_INGEST_TOKEN` set during migration; when the device registry is absent, legacy shared-token mode remains available for compatibility and is less secure. After registering devices and updating firmware, keep the registry enabled.
 
-Realtime Database rules in `firebase/database.rules.json` deny direct client reads and writes. Cloudflare accesses Firebase using server-side credentials, which may bypass these rules; enforce authorization in the backend and never expose service-account credentials to the browser.
+Realtime Database rules in `firebase/database.rules.json` deny direct client reads and writes. The browser must use farm-authorized Worker APIs for water readings, alerts, device status, and feeding commands/events. Devices must submit telemetry through `/api/iot/ingest` and poll/update commands through `/api/iot/device-commands` using their own registry token. Cloudflare accesses Firebase using server-side credentials; enforce authorization in every Worker handler and never expose service-account credentials to the browser. Deploy deny-all rules only after the updated Worker is deployed and the protected API flows have been tested.

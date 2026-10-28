@@ -4,6 +4,11 @@ import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { handleAiChat } from "./lib/ai-chat";
 import { handleAiImageAnalysis } from "./lib/ai-image-analysis";
+import { handleIotDevices } from "./lib/iot-devices";
+import { handleIotFeedingCommand } from "./lib/iot-feeding-command";
+import { handleIotAlerts } from "./lib/iot-alerts";
+import { handleIotFeedingEvent } from "./lib/iot-feeding-event";
+import { handleIotDeviceCommands } from "./lib/iot-device-commands";
 import { getAuthorizedUser, requireFarmAccess } from "./lib/server-authz";
 
 type ServerEntry = {
@@ -1006,6 +1011,23 @@ export default {
 
     if (isIotLatestPath(url.pathname)) {
       return handleIotLatest(request, env);
+    }
+
+    // Run protected Firebase-backed APIs here so they receive Cloudflare Worker bindings.
+    if (url.pathname === "/api/iot/devices") {
+      return handleIotDevices(request, env);
+    }
+    if (url.pathname === "/api/iot/feeding-command") {
+      return handleIotFeedingCommand(request, env);
+    }
+    if (url.pathname === "/api/iot/alerts") {
+      return handleIotAlerts(request, env);
+    }
+    if (url.pathname === "/api/iot/feeding-event") {
+      return handleIotFeedingEvent(request, env);
+    }
+    if (url.pathname === "/api/iot/device-commands") {
+      return handleIotDeviceCommands(request, env);
     }
 
     if (isIotIngestPath(url.pathname)) {

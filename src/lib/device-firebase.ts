@@ -1,9 +1,6 @@
-import { pondPath } from "@/firebase/paths";
 import { getActiveFarmId, getActivePondId } from "@/lib/tenant";
 import { getAccessToken } from "@/services/auth.service";
 
-const env = import.meta.env as Record<string, string | undefined>;
-const firebaseBaseUrl = env.VITE_FIREBASE_DATABASE_URL ?? env.FIREBASE_DATABASE_URL;
 const DEVICE_OFFLINE_AFTER_MS = 5 * 60 * 1000;
 
 function isFreshHeartbeat(updatedAt: string): boolean {
@@ -21,10 +18,6 @@ function normalizeDeviceStatus(status: Partial<DeviceStatus> & { deviceId: strin
     freeHeap: Number(status.freeHeap ?? 0) || 0,
     updatedAt,
   };
-}
-
-function explicitPondPath(farmId: string, pondId: string, ...parts: string[]) {
-  return ["farms", farmId, "ponds", pondId, ...parts].map(encodeURIComponent).join("/");
 }
 
 async function authHeader(): Promise<Record<string, string>> {
@@ -56,41 +49,22 @@ export async function listDeviceStatuses(
   farmId = getActiveFarmId(),
   pondId = getActivePondId(),
 ): Promise<DeviceStatus[]> {
-  const params = new URLSearchParams({ farmId, pondId });
-  let shouldTryDirectFirebaseFallback = false;
+  const token = await getAccessToken();
+  if (!token || !farmId || !pondId) return [];
 
+  const params = new URLSearchParams({ farmId, pondId });
   try {
     const response = await fetch(`/api/iot/devices?${params.toString()}`, {
-      headers: { accept: "application/json", ...(await authHeader()) },
+      headers: { accept: "application/json", authorization: `Bearer ${token}` },
+      cache: "no-store",
     });
-    const contentType = response.headers.get("content-type") ?? "";
-    if (response.ok && contentType.includes("application/json")) {
-      const payload = (await response.json()) as { devices?: DeviceStatus[] };
-      return Array.isArray(payload.devices)
-        ? payload.devices.map((device) => normalizeDeviceStatus(device))
-        : [];
-    }
-    shouldTryDirectFirebaseFallback =
-      response.status === 404 || !contentType.includes("application/json");
-  } catch {
-    shouldTryDirectFirebaseFallback = true;
-  }
-
-  if (!shouldTryDirectFirebaseFallback || !firebaseBaseUrl) return [];
-
-  try {
-    const response = await fetch(
-      `${firebaseBaseUrl}/${explicitPondPath(farmId, pondId, "devices", "status")}.json`,
-    );
     if (!response.ok) return [];
-    const raw = (await response.json()) as Record<
-      string,
-      Partial<Omit<DeviceStatus, "deviceId">>
-    > | null;
-    if (!raw || typeof raw !== "object") return [];
-    return Object.entries(raw)
-      .map(([deviceId, value]) => normalizeDeviceStatus({ deviceId, ...value }))
-      .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
+    const contentType = response.headers.get("content-type") ?? "";
+    if (!contentType.includes("application/json")) return [];
+    const payload = (await response.json()) as { devices?: DeviceStatus[] };
+    return Array.isArray(payload.devices)
+      ? payload.devices.map((device) => normalizeDeviceStatus(device))
+      : [];
   } catch {
     return [];
   }
@@ -130,31 +104,32 @@ export async function queueFeedingCommand(
 export async function listFeedingCommands(limit = 20): Promise<FeedingCommand[]> {
   const farmId = getActiveFarmId();
   const pondId = getActivePondId();
-  const params = new URLSearchParams({ farmId, pondId, limit: String(limit) });
+  const token = await getAccessToken();
+  if (!farmId || !pondId || !token) return [];
+
+  const params = new URLSearchParams({
+    farmId,
+    pondId,
+    limit: String(Math.max(1, Math.min(limit, 100))),
+  });
 
   try {
     const response = await fetch(`/api/iot/feeding-command?${params.toString()}`, {
-      headers: { accept: "application/json", ...(await authHeader()) },
+      headers: {
+        accept: "application/json",
+        authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
     });
-    const contentType = response.headers.get("content-type") ?? "";
-    if (response.ok && contentType.includes("application/json")) {
-      const payload = (await response.json()) as { commands?: FeedingCommand[] };
-      return Array.isArray(payload.commands) ? payload.commands : [];
+    if (
+      !response.ok ||
+      !(response.headers.get("content-type") ?? "").includes("application/json")
+    ) {
+      return [];
     }
+    const payload = (await response.json()) as { commands?: FeedingCommand[] };
+    return Array.isArray(payload.commands) ? payload.commands : [];
   } catch {
-    // Fall through to direct Firebase only for local/static fallback environments.
+    return [];
   }
-
-  if (!firebaseBaseUrl) return [];
-  const response = await fetch(
-    `${firebaseBaseUrl}/${pondPath("feeding", "commands")}.json?orderBy="$key"&limitToLast=${limit}`,
-  );
-  if (!response.ok) return [];
-
-  const raw = (await response.json()) as Record<string, Omit<FeedingCommand, "id">> | null;
-  if (!raw || typeof raw !== "object") return [];
-
-  return Object.entries(raw)
-    .map(([id, value]) => ({ id, ...value }))
-    .sort((a, b) => (a.requestedAt < b.requestedAt ? 1 : -1));
 }
