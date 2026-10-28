@@ -4,14 +4,21 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Clock, CircleDashed } from "lucide-react";
 import { listFeedingEvents, type FeedingEventRow } from "@/lib/platform-clients";
 
-type Status = "completed" | "upcoming" | "pending";
+type Status = "completed" | "upcoming" | "pending" | "failed";
 
-function statusFromTimestamp(timestamp: string): Status {
-  const when = new Date(timestamp).getTime();
+function statusFromEvent(row: FeedingEventRow): Status {
+  const status = row.status.trim().toLowerCase();
+
+  // A past timestamp is not proof that feeding physically completed.
+  if (status === "completed" || status === "done") return "completed";
+  if (status === "failed") return "failed";
+  if (status === "queued" || status === "ack" || status === "pending") return "pending";
+
+  const when = new Date(row.timestamp).getTime();
+  if (!Number.isFinite(when)) return "pending";
   const now = Date.now();
-  if (when <= now) return "completed";
-  const within6h = when - now <= 6 * 60 * 60 * 1000;
-  return within6h ? "upcoming" : "pending";
+  if (when <= now) return "pending";
+  return when - now <= 6 * 60 * 60 * 1000 ? "upcoming" : "pending";
 }
 
 function StatusBadge({ status }: { status: Status }) {
@@ -19,6 +26,12 @@ function StatusBadge({ status }: { status: Status }) {
     return (
       <Badge className="gap-1 bg-success/15 text-success">
         <CheckCircle2 className="h-3 w-3" /> Completed
+      </Badge>
+    );
+  if (status === "failed")
+    return (
+      <Badge variant="destructive" className="gap-1">
+        Failed
       </Badge>
     );
   if (status === "upcoming")
@@ -61,7 +74,7 @@ export function FeedingSchedule() {
         }),
         label: `${row.mode} feed (${row.pond_id})`,
         kg: Number(row.amount_kg),
-        status: statusFromTimestamp(row.timestamp),
+        status: statusFromEvent(row),
       })),
     [rows],
   );
