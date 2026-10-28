@@ -143,7 +143,10 @@ export async function handleIotFeedingCommand(request: Request, env: unknown): P
   const command = normalizeCommandBody(body, authz.user.email);
   if (!command) {
     return jsonResponse(
-      { ok: false, message: "targetPondId must match the selected pond, and amountKg must be valid." },
+      {
+        ok: false,
+        message: "targetPondId must match the selected pond, and amountKg must be valid.",
+      },
       400,
       { "cache-control": "no-store" },
     );
