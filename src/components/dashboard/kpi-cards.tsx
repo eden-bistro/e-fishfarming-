@@ -89,8 +89,7 @@ export function KpiCards() {
         if (!water) return "No data";
         const good =
           water.dissolvedOxygen >= 5 &&
-          water.ph >= 6.5 &&
-          water.ph <= 8.5 &&
+          water.ph >= 6.5 && water.ph <= 8.5 &&
           water.ammonia <= 0.05;
         return good ? "Good" : "Attention";
       });
