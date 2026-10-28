@@ -28,6 +28,7 @@ function commandPath(farmId: string, pondId: string) {
 function normalizeCommandBody(
   body: Record<string, unknown>,
   authenticatedEmail: string,
+  selectedPondId: string,
 ): Omit<IotFeedingCommand, "id"> | null {
   const action = body.action === "dispense_feed" ? body.action : "dispense_feed";
   const amountKg = Number(body.amountKg);
@@ -39,7 +40,7 @@ function normalizeCommandBody(
     amountKg <= 0 ||
     amountKg > 1000 ||
     !/^[A-Za-z0-9_-]{1,80}$/.test(targetPondId) ||
-    targetPondId !== pondId ||
+    targetPondId !== selectedPondId ||
     !authenticatedEmail ||
     (body.scheduledFor !== undefined &&
       (!scheduledFor || !Number.isFinite(Date.parse(scheduledFor))))
@@ -140,7 +141,7 @@ export async function handleIotFeedingCommand(request: Request, env: unknown): P
     });
   }
 
-  const command = normalizeCommandBody(body, authz.user.email);
+  const command = normalizeCommandBody(body, authz.user.email, pondId);
   if (!command) {
     return jsonResponse(
       {
