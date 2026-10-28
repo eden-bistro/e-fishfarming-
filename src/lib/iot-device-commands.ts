@@ -7,8 +7,8 @@ import {
   readFirebaseJson,
   resolveFirebaseDatabase,
   writeFirebaseJson,
+  getEnvRecord,
 } from "@/lib/iot-firebase";
-import { getEnvRecord } from "@/lib/iot-firebase";
 
 type RegisteredDevice = {
   token: string;
@@ -54,6 +54,7 @@ function resolveRegisteredDevice(env: unknown, deviceId: string, token: string):
     typeof device.farmId !== "string" ||
     typeof device.pondId !== "string" ||
     device.enabled === false ||
+    (device.enabled !== undefined && typeof device.enabled !== "boolean") ||
     !/^[A-Za-z0-9_-]{1,80}$/.test(device.farmId) ||
     !/^[A-Za-z0-9_-]{1,80}$/.test(device.pondId) ||
     !safeTokenEquals(token, device.token)
@@ -114,7 +115,7 @@ export async function handleIotDeviceCommands(request: Request, env: unknown): P
     const commands = raw && typeof raw === "object"
       ? Object.entries(raw)
           .filter(([, command]) => command && command.status === "queued")
-          .map(([id, command]) => ({ id, ...command }))
+          .map(([id, command]) => ({ ...command, id }))
       : [];
     return jsonResponse({ ok: true, deviceId, commands }, 200, { "cache-control": "no-store" });
   }
