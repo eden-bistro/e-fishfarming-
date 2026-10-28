@@ -120,8 +120,8 @@ function Page() {
             <span className="text-teal-300">Smarter farming.</span>
           </h1>
           <p className="mt-6 max-w-lg text-lg leading-8 text-slate-200">
-            Monitor your farm, track water quality, and make confident decisions
-            for every stage of fish production.
+            Monitor your farm, track water quality, and make confident decisions for every stage of
+            fish production.
           </p>
           <div className="mt-10 flex flex-wrap gap-3 text-sm text-slate-100">
             <span className="rounded-full border border-white/20 bg-white/10 px-4 py-2 backdrop-blur">
@@ -148,15 +148,11 @@ function Page() {
               />
               <div>
                 <p className="text-xl font-bold tracking-tight">AquaSmart</p>
-                <p className="text-xs tracking-[0.18em] text-teal-200">
-                  SMART AQUACULTURE
-                </p>
+                <p className="text-xs tracking-[0.18em] text-teal-200">SMART AQUACULTURE</p>
               </div>
             </div>
             <div>
-              <CardTitle className="text-2xl font-semibold text-white">
-                Welcome back
-              </CardTitle>
+              <CardTitle className="text-2xl font-semibold text-white">Welcome back</CardTitle>
               <p className="mt-2 text-sm text-slate-300">
                 Sign in to continue to your farm dashboard.
               </p>
