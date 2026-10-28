@@ -1,4 +1,4 @@
-const CACHE_VERSION = "aquasmart-pwa-v5";
+const CACHE_VERSION = "aquasmart-pwa-v6";
 const APP_SHELL_URLS = ["/", "/manifest.webmanifest", "/icons/Fish%20logo.png?v=2"];
 
 self.addEventListener("install", (event) => {
@@ -29,14 +29,10 @@ self.addEventListener("fetch", (event) => {
   if (url.pathname.startsWith("/api/")) return;
 
   if (request.mode === "navigate") {
+    // Always request the latest app shell for page navigation. Do not cache
+    // route HTML, which can make an installed PWA show an outdated login page.
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_VERSION).then((cache) => cache.put(request, copy));
-          return response;
-        })
-        .catch(() => caches.match(request).then((cached) => cached || caches.match("/"))),
+      fetch(request).catch(() => caches.match("/").then((cached) => cached || Response.error())),
     );
     return;
   }
