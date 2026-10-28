@@ -130,8 +130,8 @@ function Page() {
                 {activePondId || "No pond selected"}
               </p>
               <p className="text-xs text-muted-foreground">
-                The command targets the active pond configured in AquaSmart. The pond selector must be changed in
-                farm/device settings.
+                The command targets the active pond configured in AquaSmart. The pond selector must
+                be changed in farm/device settings.
               </p>
             </div>
             <div className="space-y-2">
@@ -184,8 +184,8 @@ function Page() {
               {submitting ? "Queuing command…" : "Queue Feeding Command"}
             </Button>
             <p className="text-xs text-muted-foreground">
-              Queuing a command does not mean feed was dispensed. Inventory and production records are not updated
-              here; those should only be reconciled against confirmed execution.
+              Queuing a command does not mean feed was dispensed. Inventory and production records
+              are not updated here; those should only be reconciled against confirmed execution.
             </p>
           </CardContent>
         </Card>
