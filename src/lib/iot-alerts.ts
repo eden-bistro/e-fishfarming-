@@ -3,7 +3,6 @@ import {
   getDefaultPondId,
   jsonResponse,
   noContentResponse,
-  readFirebaseJson,
   resolveFirebaseDatabase,
 } from "@/lib/iot-firebase";
 import { getAuthorizedUser, requireFarmAccess } from "@/lib/server-authz";
