@@ -2,8 +2,8 @@ import { getSessionUser } from "@/lib/auth";
 import { getAccessToken } from "@/services/auth.service";
 
 const env = import.meta.env as Record<string, string | undefined>;
-const supabaseUrl = (env.VITE_SUPABASE_URL ?? env.SUPABASE_URL)?.trim();
-const supabaseAnonKey = (env.VITE_SUPABASE_ANON_KEY ?? env.SUPABASE_ANON_KEY)?.trim();
+const supabaseUrl = (env.VITE_SUPABASE_URL ?? env.SUPABASE_URL ?? "https://oalxkihmpqovopifxlbq.supabase.co").trim();
+const supabaseAnonKey = (env.VITE_SUPABASE_ANON_KEY ?? env.SUPABASE_ANON_KEY ?? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9hbHhraWhtcHFvdm9waWZ4bGJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNzgwODYsImV4cCI6MjA5Mzg1NDA4Nn0.2fVawDrCjx9oNPYV9rFWXltIQIiCqPE9qB3DsabpAQk").trim();
 
 export function backendEnabled() {
   return Boolean(supabaseUrl && supabaseAnonKey);
