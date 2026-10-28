@@ -79,29 +79,32 @@ export function KpiCards() {
   const load = useCallback(async () => {
     try {
       const [water, events, income, expenses] = await Promise.all([
-      getLatestOnlineWaterReading(),
-      listFeedingEvents(),
-      listIncome(),
-      listExpenses(),
-    ]);
+        getLatestOnlineWaterReading(),
+        listFeedingEvents(),
+        listIncome(),
+        listExpenses(),
+      ]);
 
-    setWaterStatus(() => {
-      if (!water) return "No data";
-      const good =
-        water.dissolvedOxygen >= 5 && water.ph >= 6.5 && water.ph <= 8.5 && water.ammonia <= 0.05;
-      return good ? "Good" : "Attention";
-    });
+      setWaterStatus(() => {
+        if (!water) return "No data";
+        const good =
+          water.dissolvedOxygen >= 5 &&
+          water.ph >= 6.5 &&
+          water.ph <= 8.5 &&
+          water.ammonia <= 0.05;
+        return good ? "Good" : "Attention";
+      });
 
-    const today = new Date().toISOString().slice(0, 10);
-    const todayEvents = events.filter((e) => e.timestamp.slice(0, 10) === today);
-    setTodayFeedKg(todayEvents.reduce((sum, e) => sum + Number(e.amount_kg || 0), 0));
+      const today = new Date().toISOString().slice(0, 10);
+      const todayEvents = events.filter((e) => e.timestamp.slice(0, 10) === today);
+      setTodayFeedKg(todayEvents.reduce((sum, e) => sum + Number(e.amount_kg || 0), 0));
 
-    const todayIncome = income
-      .filter((r) => r.date === today)
-      .reduce((sum, r) => sum + Number(r.total || 0), 0);
-    const todayExpenses = expenses
-      .filter((r) => r.date === today)
-      .reduce((sum, r) => sum + Number(r.amount || 0), 0);
+      const todayIncome = income
+        .filter((r) => r.date === today)
+        .reduce((sum, r) => sum + Number(r.total || 0), 0);
+      const todayExpenses = expenses
+        .filter((r) => r.date === today)
+        .reduce((sum, r) => sum + Number(r.amount || 0), 0);
       setTodayProfit(todayIncome - todayExpenses);
       setLoadError(null);
     } catch (error) {
