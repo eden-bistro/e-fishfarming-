@@ -117,7 +117,6 @@ async function supabaseRequest(path: string, init: RequestInit) {
   return response.json();
 }
 
-
 function activeWaterTenantPair() {
   const farmId = getActiveFarmId().trim();
   const pondId = getActivePondId().trim();
@@ -170,7 +169,10 @@ export async function listWaterAlerts(limit = 20): Promise<WaterAlert[]> {
   const accessToken = (await getAccessToken())?.trim();
   if (accessToken) {
     try {
-      const params = new URLSearchParams({ ...tenantPair, limit: String(Math.max(1, Math.min(limit, 100))) });
+      const params = new URLSearchParams({
+        ...tenantPair,
+        limit: String(Math.max(1, Math.min(limit, 100))),
+      });
       const response = await fetch(`/api/iot/alerts?${params.toString()}`, {
         headers: { accept: "application/json", authorization: `Bearer ${accessToken}` },
         cache: "no-store",
@@ -257,7 +259,10 @@ export async function pushManualFeedingEvent(amountKg: number): Promise<void> {
       body: JSON.stringify({ amountKg }),
     },
   );
-  const result = (await response.json().catch(() => null)) as { ok?: boolean; message?: string } | null;
+  const result = (await response.json().catch(() => null)) as {
+    ok?: boolean;
+    message?: string;
+  } | null;
   if (!response.ok || !result?.ok) {
     throw new Error(result?.message ?? `Failed to record feeding event (${response.status}).`);
   }
