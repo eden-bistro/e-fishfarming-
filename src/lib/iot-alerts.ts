@@ -72,13 +72,14 @@ export async function handleIotAlerts(request: Request, env: unknown): Promise<R
     string,
     Record<string, unknown>
   > | null;
-  const alerts = raw && typeof raw === "object"
-    ? Object.entries(raw)
-        .map(([id, value]) => ({ id, ...value }) as Record<string, unknown> & { id: string })
-        .sort((a, b) =>
-          String(b["created_at"] ?? "").localeCompare(String(a["created_at"] ?? "")),
-        )
-    : [];
+  const alerts =
+    raw && typeof raw === "object"
+      ? Object.entries(raw)
+          .sort(([, a], [, b]) =>
+            String(b["created_at"] ?? "").localeCompare(String(a["created_at"] ?? "")),
+          )
+          .map(([id, value]) => ({ id, ...value }))
+      : [];
 
   return jsonResponse({ ok: true, farmId, pondId, alerts }, 200, {
     "cache-control": "no-store",
