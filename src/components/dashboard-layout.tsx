@@ -59,7 +59,7 @@ export function DashboardLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="aquasmart-dashboard-background">
         <TopNavbar />
         <main className="mx-auto flex w-full max-w-screen-2xl flex-col gap-4 px-3 py-4 pb-24 sm:px-4 md:gap-6 md:px-6 md:py-6">
           <div className="flex items-center justify-between gap-2">
