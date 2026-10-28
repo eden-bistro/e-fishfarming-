@@ -76,9 +76,7 @@ export async function handleIotAlerts(request: Request, env: unknown): Promise<R
     raw && typeof raw === "object"
       ? Object.entries(raw)
           .map(([id, value]) => ({ ...value, id }))
-          .sort((a, b) =>
-            String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")),
-          )
+          .sort((a, b) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? ""))
       : [];
 
   return jsonResponse({ ok: true, farmId, pondId, alerts }, 200, {
