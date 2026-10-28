@@ -84,10 +84,10 @@ function Page() {
             <span className="rounded-full border border-white/25 bg-white/10 px-4 py-2 text-white shadow-sm backdrop-blur">
               Water quality
             </span>
-            <span className="rounded-full border border-sky-200 bg-white/75 px-4 py-2 text-slate-700 shadow-sm">
+            <span className="rounded-full border border-white/25 bg-white/10 px-4 py-2 text-white shadow-sm backdrop-blur">
               Feeding insights
             </span>
-            <span className="rounded-full border border-sky-200 bg-white/75 px-4 py-2 text-slate-700 shadow-sm">
+            <span className="rounded-full border border-white/25 bg-white/10 px-4 py-2 text-white shadow-sm backdrop-blur">
               Farm management
             </span>
           </div>
