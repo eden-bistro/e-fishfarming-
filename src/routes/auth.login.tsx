@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { type FormEvent, useState } from "react";
-import { loginUser } from "@/lib/auth";
+import { type FormEvent, useEffect, useState } from "react";
+import { getSessionUser, loginUser } from "@/lib/auth";
 
 export const Route = createFileRoute("/auth/login")({ component: Page });
 
@@ -14,6 +14,13 @@ function Page() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    // Keep signed-in users from landing back on the login screen after navigation or refresh.
+    if (getSessionUser()) {
+      void navigate({ to: "/", replace: true });
+    }
+  }, [navigate]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -27,7 +34,7 @@ function Page() {
         setError(result.message);
         return;
       }
-      await navigate({ to: "/" });
+      await navigate({ to: "/", replace: true });
     } catch {
       setError("We couldn't sign you in right now. Check your connection and try again.");
     } finally {
