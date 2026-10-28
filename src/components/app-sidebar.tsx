@@ -142,7 +142,7 @@ export function AppSidebar() {
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-2.5">
           <img
-            src="/icons/Fish%20logo.png"
+            src="/icons/Fish%20logo.png?v=2"
             alt="AquaSmart fish logo"
             width={36}
             height={36}
