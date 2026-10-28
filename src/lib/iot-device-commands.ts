@@ -163,7 +163,12 @@ export async function handleIotDeviceCommands(request: Request, env: unknown): P
     const commands =
       raw && typeof raw === "object"
         ? Object.entries(raw)
-            .filter(([, command]) => command && command.status === "queued")
+            .filter(([, command]) => {
+              if (!command || command.status !== "queued") return false;
+              if (typeof command.scheduledFor !== "string") return true;
+              const scheduledAt = Date.parse(command.scheduledFor);
+              return Number.isFinite(scheduledAt) && scheduledAt <= Date.now();
+            })
             .map(([id, command]) => ({ ...command, id }))
         : [];
     return jsonResponse({ ok: true, deviceId, commands }, 200, {
