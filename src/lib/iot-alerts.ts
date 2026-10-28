@@ -56,20 +56,29 @@ export async function handleIotAlerts(request: Request, env: unknown): Promise<R
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    return jsonResponse({
-      ok: false,
-      message: "Failed to read water alerts.",
-      status: response.status,
-      detail: detail.slice(0, 200),
-    }, response.status === 404 ? 404 : 502, { "cache-control": "no-store" });
+    return jsonResponse(
+      {
+        ok: false,
+        message: "Failed to read water alerts.",
+        status: response.status,
+        detail: detail.slice(0, 200),
+      },
+      response.status === 404 ? 404 : 502,
+      { "cache-control": "no-store" },
+    );
   }
 
-  const raw = (await response.json().catch(() => null)) as Record<string, Record<string, unknown>> | null;
-  const alerts = raw && typeof raw === "object"
-    ? Object.entries(raw)
-        .map(([id, value]) => ({ id, ...value }))
-        .sort((a, b) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")))
-    : [];
+  const raw = (await response.json().catch(() => null)) as
+    | Record<string, Record<string, unknown>>
+    | null;
+  const alerts =
+    raw && typeof raw === "object"
+      ? Object.entries(raw)
+          .map(([id, value]) => ({ id, ...value }))
+          .sort((a, b) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")))
+      : [];
 
-  return jsonResponse({ ok: true, farmId, pondId, alerts }, 200, { "cache-control": "no-store" });
+  return jsonResponse({ ok: true, farmId, pondId, alerts }, 200, {
+    "cache-control": "no-store",
+  });
 }
