@@ -1,4 +1,4 @@
-const CACHE_VERSION = "aquasmart-pwa-v7";
+const CACHE_VERSION = "aquasmart-pwa-v8";
 const APP_SHELL_URLS = ["/", "/manifest.webmanifest", "/icons/Fish%20logo.png?v=2"];
 
 self.addEventListener("install", (event) => {
