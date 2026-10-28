@@ -75,9 +75,7 @@ function roleFromUserPayload(userObj: Record<string, unknown>): SessionUser["rol
     .trim()
     .toLowerCase();
   const isConfiguredAdmin = email === "fishhydro1@gmail.com";
-  return isConfiguredAdmin || appMetadata.role === "admin"
-    ? "admin"
-    : "farm_user";
+  return isConfiguredAdmin || appMetadata.role === "admin" ? "admin" : "farm_user";
 }
 
 function setSession(
