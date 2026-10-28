@@ -26,7 +26,8 @@ function waterQualityStatus(reading: WaterReading | null) {
     return {
       canFeed: false,
       label: "No live water data",
-      message: "A verified online water reading is required before a feeding command can be queued.",
+      message:
+        "A verified online water reading is required before a feeding command can be queued.",
     };
   }
 
@@ -150,7 +151,9 @@ function Page() {
               disabled={!quality.canFeed || !activePondId || submitting}
               onClick={async () => {
                 if (!quality.canFeed || !activePondId) {
-                  toast.error("Cannot queue feeding: verify the active pond and live water quality first.");
+                  toast.error(
+                  "Cannot queue feeding: verify the active pond and live water quality first.",
+                );
                   return;
                 }
                 setSubmitting(true);
@@ -164,9 +167,13 @@ function Page() {
                   });
                   const latest = await listFeedingCommands(20);
                   setCommands(latest);
-                  toast.success("Feeding command queued. AquaSmart will show device status when the device responds; feed dispensing is not yet confirmed.");
+                  toast.success(
+                    "Feeding command queued. AquaSmart will show device status when the device responds; feed dispensing is not yet confirmed.",
+                  );
                 } catch (error) {
-                  toast.error(error instanceof Error ? error.message : "Could not queue the feeding command.");
+                  toast.error(
+                    error instanceof Error ? error.message : "Could not queue the feeding command.",
+                  );
                 } finally {
                   setSubmitting(false);
                 }
@@ -205,10 +212,15 @@ function Page() {
             {loadingCommands && commands.length === 0 ? (
               <p className="text-muted-foreground">Loading command history…</p>
             ) : commands.length === 0 ? (
-              <p className="text-muted-foreground">No feeding commands are available for this farm and pond.</p>
+              <p className="text-muted-foreground">
+                No feeding commands are available for this farm and pond.
+              </p>
             ) : (
               commands.map((command) => (
-                <div key={command.id} className="flex items-start gap-3 rounded-lg border p-3">
+                <div
+                  key={command.id}
+                  className="flex items-start gap-3 rounded-lg border p-3"
+                >
                   <Hand className="mt-0.5 h-4 w-4 text-brand" />
                   <div className="min-w-0 flex-1">
                     <p className="font-medium">
@@ -217,9 +229,7 @@ function Page() {
                     <p className="text-xs text-muted-foreground">
                       {commandStatusLabel(command.status)}
                     </p>
-                    <p className="break-all text-xs text-muted-foreground">
-                      ID: {command.id}
-                    </p>
+                    <p className="break-all text-xs text-muted-foreground">ID: {command.id}</p>
                   </div>
                 </div>
               ))
