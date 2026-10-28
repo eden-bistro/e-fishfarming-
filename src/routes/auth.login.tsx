@@ -83,10 +83,34 @@ function Page() {
           animation: aquasmart-fish-swim 32s linear infinite;
           filter: drop-shadow(0 3px 8px rgba(0, 0, 0, .2));
         }
-        .aquasmart-fish-one { top: 58%; animation-duration: 34s; }
-        .aquasmart-fish-two { top: 72%; width: 3.5rem; height: 1.6rem; animation-delay: -13s; animation-duration: 28s; opacity: .19; }
-        .aquasmart-fish-three { top: 84%; width: 4.2rem; height: 1.8rem; animation-delay: -21s; animation-duration: 38s; opacity: .22; }
-        .aquasmart-fish-four { top: 64%; width: 2.8rem; height: 1.25rem; animation-delay: -7s; animation-duration: 25s; opacity: .15; }
+        .aquasmart-fish-one {
+          top: 58%;
+          animation-duration: 34s;
+        }
+        .aquasmart-fish-two {
+          top: 72%;
+          width: 3.5rem;
+          height: 1.6rem;
+          animation-delay: -13s;
+          animation-duration: 28s;
+          opacity: .19;
+        }
+        .aquasmart-fish-three {
+          top: 84%;
+          width: 4.2rem;
+          height: 1.8rem;
+          animation-delay: -21s;
+          animation-duration: 38s;
+          opacity: .22;
+        }
+        .aquasmart-fish-four {
+          top: 64%;
+          width: 2.8rem;
+          height: 1.25rem;
+          animation-delay: -7s;
+          animation-duration: 25s;
+          opacity: .15;
+        }
         @media (prefers-reduced-motion: reduce) {
           .aquasmart-fish { animation: none; left: 12%; }
           .aquasmart-fish-two { left: 55%; }
