@@ -93,9 +93,7 @@ export function FinanceSection() {
       setExpenseRows(expenses);
       setLoadError(null);
     } catch (error) {
-      setLoadError(
-        error instanceof Error ? error.message : "Financial data could not be loaded.",
-      );
+      setLoadError(error instanceof Error ? error.message : "Financial data could not be loaded.");
     }
   }, []);
 
