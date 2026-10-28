@@ -98,7 +98,11 @@ function mergeHeaders(base: Record<string, string>, extra?: HeadersInit): Header
 }
 
 async function supabaseRequest(path: string, init: RequestInit) {
-  if (!supabaseUrl || !supabaseAnonKey) return null;
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error(
+      "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
+    );
+  }
   const accessToken = (await getAccessToken())?.trim();
   const authToken = accessToken || supabaseAnonKey;
   const response = await fetch(`${supabaseUrl}/rest/v1/${path}`, {
@@ -316,14 +320,13 @@ function serializeIncomeRow(row: IncomeRow): IncomeRow {
 }
 
 export async function listIncome(): Promise<IncomeRow[]> {
-  try {
-    const rows = await supabaseRequest("finance_income?select=*&order=date.desc", {
-      method: "GET",
-    });
-    return ((rows as Partial<IncomeRow>[] | null) ?? []).map(normalizeIncomeRow);
-  } catch {
-    return [];
+  const rows = await supabaseRequest("finance_income?select=*&order=date.desc", {
+    method: "GET",
+  });
+  if (!Array.isArray(rows)) {
+    throw new Error("Income records could not be loaded. Please sign in again and retry.");
   }
+  return (rows as Partial<IncomeRow>[]).map(normalizeIncomeRow);
 }
 export async function addIncome(row: IncomeRow): Promise<IncomeRow> {
   const rows = await supabaseRequest("finance_income?select=*", {
@@ -358,14 +361,13 @@ export async function deleteIncome(id: number): Promise<void> {
 }
 
 export async function listExpenses(): Promise<ExpenseRow[]> {
-  try {
-    const rows = await supabaseRequest("finance_expenses?select=*&order=date.desc", {
-      method: "GET",
-    });
-    return (rows as ExpenseRow[] | null) ?? [];
-  } catch {
-    return [];
+  const rows = await supabaseRequest("finance_expenses?select=*&order=date.desc", {
+    method: "GET",
+  });
+  if (!Array.isArray(rows)) {
+    throw new Error("Expense records could not be loaded. Please sign in again and retry.");
   }
+  return rows as ExpenseRow[];
 }
 export async function addExpense(row: ExpenseRow): Promise<ExpenseRow> {
   const rows = await supabaseRequest("finance_expenses?select=*", {

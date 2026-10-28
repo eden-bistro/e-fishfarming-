@@ -129,6 +129,8 @@ function Page() {
       toast.error(
         "Please provide date, buyer, income type, unit, quantity and price greater than zero.",
       );
+      savingRef.current = false;
+      setIsSaving(false);
       return;
     }
 

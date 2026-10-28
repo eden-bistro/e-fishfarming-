@@ -70,37 +70,43 @@ export function KpiCards() {
   const [waterStatus, setWaterStatus] = useState("No data");
   const [todayFeedKg, setTodayFeedKg] = useState(0);
   const [todayProfit, setTodayProfit] = useState(0);
+  const [loadError, setLoadError] = useState<string | null>(null);
   useEffect(() => {
     const t = setInterval(() => setCount((c) => (c <= 0 ? 14400 : c - 1)), 1000);
     return () => clearInterval(t);
   }, []);
 
   const load = useCallback(async () => {
-    const [water, events, income, expenses] = await Promise.all([
-      getLatestOnlineWaterReading(),
-      listFeedingEvents(),
-      listIncome(),
-      listExpenses(),
-    ]);
+    try {
+      const [water, events, income, expenses] = await Promise.all([
+        getLatestOnlineWaterReading(),
+        listFeedingEvents(),
+        listIncome(),
+        listExpenses(),
+      ]);
 
-    setWaterStatus(() => {
-      if (!water) return "No data";
-      const good =
-        water.dissolvedOxygen >= 5 && water.ph >= 6.5 && water.ph <= 8.5 && water.ammonia <= 0.05;
-      return good ? "Good" : "Attention";
-    });
+      setWaterStatus(() => {
+        if (!water) return "No data";
+        const good =
+          water.dissolvedOxygen >= 5 && water.ph >= 6.5 && water.ph <= 8.5 && water.ammonia <= 0.05;
+        return good ? "Good" : "Attention";
+      });
 
-    const today = new Date().toISOString().slice(0, 10);
-    const todayEvents = events.filter((e) => e.timestamp.slice(0, 10) === today);
-    setTodayFeedKg(todayEvents.reduce((sum, e) => sum + Number(e.amount_kg || 0), 0));
+      const today = new Date().toISOString().slice(0, 10);
+      const todayEvents = events.filter((e) => e.timestamp.slice(0, 10) === today);
+      setTodayFeedKg(todayEvents.reduce((sum, e) => sum + Number(e.amount_kg || 0), 0));
 
-    const todayIncome = income
-      .filter((r) => r.date === today)
-      .reduce((sum, r) => sum + Number(r.total || 0), 0);
-    const todayExpenses = expenses
-      .filter((r) => r.date === today)
-      .reduce((sum, r) => sum + Number(r.amount || 0), 0);
-    setTodayProfit(todayIncome - todayExpenses);
+      const todayIncome = income
+        .filter((r) => r.date === today)
+        .reduce((sum, r) => sum + Number(r.total || 0), 0);
+      const todayExpenses = expenses
+        .filter((r) => r.date === today)
+        .reduce((sum, r) => sum + Number(r.amount || 0), 0);
+      setTodayProfit(todayIncome - todayExpenses);
+      setLoadError(null);
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : "Dashboard data could not be loaded.");
+    }
   }, []);
 
   useEffect(() => {
@@ -121,48 +127,58 @@ export function KpiCards() {
   );
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <KpiCard
-        icon={<Droplets className="h-6 w-6" />}
-        iconBg="bg-info/15"
-        iconColor="text-info"
-        label="Water Quality"
-        value={<span className={waterColor}>{waterStatus}</span>}
-        sub="From assigned online sensor"
-        link={{ href: "/water/live", text: "View Details" }}
-      />
-      <KpiCard
-        icon={<Timer className="h-6 w-6" />}
-        iconBg="bg-brand/15"
-        iconColor="text-brand"
-        label="Next Feeding"
-        value={<span className="font-mono">{formatCountdown(count)}</span>}
-        sub="Today, 03:00 PM"
-        link={{ href: "/feeding/schedule", text: "View Schedule" }}
-      />
-      <KpiCard
-        icon={<UtensilsCrossed className="h-6 w-6" />}
-        iconBg="bg-success/15"
-        iconColor="text-success"
-        label="Today's Feed"
-        value={
-          <>
-            {todayFeedKg.toFixed(1)}{" "}
-            <span className="text-base font-medium text-muted-foreground">kg</span>
-          </>
-        }
-        sub="From logged feeding events"
-        link={{ href: "/feeding/history", text: "Feed History" }}
-      />
-      <KpiCard
-        icon={<Wallet className="h-6 w-6" />}
-        iconBg="bg-warning/15"
-        iconColor="text-warning"
-        label="Today's Profit"
-        value={<>KSh {todayProfit.toLocaleString()}</>}
-        sub="Today income minus expenses"
-        link={{ href: "/finance/pnl", text: "View Financials" }}
-      />
-    </div>
+    <>
+      {loadError && (
+        <p
+          role="alert"
+          className="mb-3 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+        >
+          Dashboard data is unavailable: {loadError}
+        </p>
+      )}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard
+          icon={<Droplets className="h-6 w-6" />}
+          iconBg="bg-info/15"
+          iconColor="text-info"
+          label="Water Quality"
+          value={<span className={waterColor}>{waterStatus}</span>}
+          sub="From assigned online sensor"
+          link={{ href: "/water/live", text: "View Details" }}
+        />
+        <KpiCard
+          icon={<Timer className="h-6 w-6" />}
+          iconBg="bg-brand/15"
+          iconColor="text-brand"
+          label="Next Feeding"
+          value={<span className="font-mono">{formatCountdown(count)}</span>}
+          sub="Today, 03:00 PM"
+          link={{ href: "/feeding/schedule", text: "View Schedule" }}
+        />
+        <KpiCard
+          icon={<UtensilsCrossed className="h-6 w-6" />}
+          iconBg="bg-success/15"
+          iconColor="text-success"
+          label="Today's Feed"
+          value={
+            <>
+              {todayFeedKg.toFixed(1)}{" "}
+              <span className="text-base font-medium text-muted-foreground">kg</span>
+            </>
+          }
+          sub="From logged feeding events"
+          link={{ href: "/feeding/history", text: "Feed History" }}
+        />
+        <KpiCard
+          icon={<Wallet className="h-6 w-6" />}
+          iconBg="bg-warning/15"
+          iconColor="text-warning"
+          label="Today's Profit"
+          value={<>KSh {todayProfit.toLocaleString()}</>}
+          sub="Today income minus expenses"
+          link={{ href: "/finance/pnl", text: "View Financials" }}
+        />
+      </div>
+    </>
   );
 }
