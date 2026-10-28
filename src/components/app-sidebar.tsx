@@ -114,7 +114,7 @@ function displayNameForUser(name?: string, email?: string) {
 export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
-  const { isMobile, setOpenMobile } = useSidebar();
+  const { isMobile, setOpen, setOpenMobile } = useSidebar();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     Production: path.startsWith("/production") || path.startsWith("/inventory"),
     "Cage Management": path.startsWith("/cages"),
@@ -124,8 +124,12 @@ export function AppSidebar() {
     Settings: path.startsWith("/settings"),
   });
 
-  const closeMobileSidebar = () => {
-    if (isMobile) setOpenMobile(false);
+  const closeSidebarAfterNavigation = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    } else {
+      setOpen(false);
+    }
   };
 
   const canSeeAdmin = isAdminUser();
@@ -143,13 +147,13 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-2 py-2.5">
+        <div className="flex items-center gap-2 px-2 py-2">
           <img
             src="/icons/Fish%20logo.png?v=2"
             alt="AquaSmart fish logo"
-            width={36}
-            height={36}
-            className="h-9 w-9 shrink-0 rounded-lg object-contain"
+            width={32}
+            height={32}
+            className="h-8 w-8 shrink-0 rounded-lg object-contain"
           />
           <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
             <span className="text-base font-semibold tracking-tight">AquaSmart</span>
@@ -170,9 +174,9 @@ export function AppSidebar() {
                     size="default"
                     isActive={path === item.url}
                     tooltip={item.title}
-                    className="h-10 gap-3 px-3"
+                    className="h-9 gap-2 px-2"
                   >
-                    <Link to={item.url as never} onClick={closeMobileSidebar}>
+                    <Link to={item.url as never} onClick={closeSidebarAfterNavigation}>
                       <item.icon className="h-4 w-4 icon-emphasis" />
                       <span className="truncate">{item.title}</span>
                     </Link>
@@ -183,7 +187,7 @@ export function AppSidebar() {
 
             const isOpen = Boolean(openSections[item.title]);
             return (
-              <div key={item.title} className="mb-1">
+              <div key={item.title} className="mb-0.5">
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     tooltip={item.title}
@@ -209,9 +213,9 @@ export function AppSidebar() {
                           asChild
                           isActive={path === child.url}
                           tooltip={child.title}
-                          className="h-9 px-2"
+                          className="h-8 px-2"
                         >
-                          <Link to={child.url as never} onClick={closeMobileSidebar}>
+                          <Link to={child.url as never} onClick={closeSidebarAfterNavigation}>
                             {child.url === "/feeding/schedule" ? (
                               <CalendarClock className="h-3.5 w-3.5 opacity-80 icon-emphasis" />
                             ) : child.url === "/feeding/manual" ? (
@@ -240,10 +244,10 @@ export function AppSidebar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left outline-none transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left outline-none transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring"
               aria-label="Open account menu"
             >
-              <Avatar className="h-8 w-8 shrink-0">
+              <Avatar className="h-7 w-7 shrink-0">
                 <AvatarFallback className="bg-sidebar-primary text-xs text-sidebar-primary-foreground">
                   {initials}
                 </AvatarFallback>
@@ -266,7 +270,7 @@ export function AppSidebar() {
             <DropdownMenuItem
               onClick={() => {
                 logoutUser();
-                closeMobileSidebar();
+                closeSidebarAfterNavigation();
                 navigate({ to: "/auth/login" });
               }}
             >
