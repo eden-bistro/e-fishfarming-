@@ -38,7 +38,8 @@ function normalizeCommandBody(
     !Number.isFinite(amountKg) ||
     amountKg <= 0 ||
     amountKg > 1000 ||
-    !targetPondId ||
+    !/^[A-Za-z0-9_-]{1,80}$/.test(targetPondId) ||
+    targetPondId !== pondId ||
     !authenticatedEmail ||
     (body.scheduledFor !== undefined &&
       (!scheduledFor || !Number.isFinite(Date.parse(scheduledFor))))
@@ -81,7 +82,7 @@ export async function handleIotFeedingCommand(request: Request, env: unknown): P
   const url = new URL(request.url);
   const farmId = (url.searchParams.get("farmId") ?? "").trim();
   const pondId = (url.searchParams.get("pondId") || getDefaultPondId(env)).trim();
-  if (!farmId || !pondId) {
+  if (!/^[A-Za-z0-9_-]{1,80}$/.test(farmId) || !/^[A-Za-z0-9_-]{1,80}$/.test(pondId)) {
     return jsonResponse({ ok: false, message: "farmId and pondId are required." }, 400, {
       "cache-control": "no-store",
     });
@@ -142,7 +143,7 @@ export async function handleIotFeedingCommand(request: Request, env: unknown): P
   const command = normalizeCommandBody(body, authz.user.email);
   if (!command) {
     return jsonResponse(
-      { ok: false, message: "targetPondId, requestedBy and a positive amountKg are required." },
+      { ok: false, message: "targetPondId must match the selected pond, and amountKg must be valid." },
       400,
       { "cache-control": "no-store" },
     );
