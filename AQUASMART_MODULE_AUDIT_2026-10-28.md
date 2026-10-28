@@ -1,167 +1,164 @@
 # AquaSmart Module Audit — 28 October 2026
 
 **Repository:** `eden-bistro/e-fishfarming-`  
-**Branch audited:** `main` (source inspected through GitHub file API on 28 October 2026)  
-**Purpose:** Identify implementation gaps before commercial review and future ESP32 integration.  
-**Important limitation:** This is a source-code review, not a live production penetration test or end-to-end runtime test. No physical ESP32/feeder is connected, and no production database was modified.
+**Reviewed branch:** current `main` source retrieved on 28 October 2026  
+**Purpose:** Identify implementation gaps and verification requirements before commercial review and ESP32 integration.
+
+## Scope and evidence limits
+
+This is a source-code audit. It is not a production penetration test, a live database verification, or a physical-device test. No production code, database schema, Firebase rules, Worker secrets, or production deployment was changed as part of this audit. The ESP32/feeder is not connected, so physical dispensing is **not verified**.
+
+The manual-feeding safety fix was merged in PR #205 (merge commit `eb7e2258256c08493833dfefaad82e0af98fbf35`). This report reflects that fix rather than the earlier pre-fix code.
 
 ## Executive summary
 
-AquaSmart has meaningful backend and security foundations: protected IoT routes validate Supabase sessions server-side; farm access is checked on IoT endpoints; water monitoring and dashboard feeding summaries call data-access functions; device commands have a documented lifecycle; device credentials can be bound to a fixed farm and pond.
+AquaSmart has useful foundations: Supabase-authenticated user sessions, protected Cloudflare Worker IoT endpoints, farm authorization checks on protected handlers, an API-backed latest-water-reading path, and a Firebase-backed command queue for feeding. Manual feeding now queues a command for the active pond, displays command status, and does not automatically deduct feed inventory or create a production event merely because a command was queued.
 
-However, several UI flows still do not represent a complete operational workflow. The highest-priority issue is manual feeding: the screen says **“Start Feeding Now”** and reports that feed was dispensed, but its handler records a manual feeding event rather than queueing a feeder command or waiting for device acknowledgement. The selected pond is also not passed to that event function. The “Recent Manual Feeds” panel contains fixed sample records. This must be corrected before the interface is presented as a working automated-feeding function.
-
-Cage management is currently local-browser storage only. Inventory and production services can fall back to local storage and do not consistently fail the UI action when a remote write fails. This can make data appear saved on one browser without being durable or shared across devices.
+The system is **not yet verified end-to-end**. Highest-priority gaps are command retry/idempotency and device simulation, default pond fallback, local-only cage records, inventory/production persistence that may mask remote-write failures, and insufficient runtime verification of tenant isolation, telemetry, finance, AI, and hatchery workflows.
 
 ## Findings by severity
 
-### P0 — Manual feeding reports a physical action that is not performed by the code
+### P0/P1 — Feeding command safety and lifecycle
+
+**Source-confirmed current behaviour**
+- `src/routes/feeding.manual.tsx` calls `queueFeedingCommand`, displays the active pond ID, and labels the result as queued rather than dispensed.
+- The manual screen no longer deducts inventory or creates a production event merely because a command was queued.
+- `src/components/dashboard/feeding-schedule.tsx` reads feeding events through `listFeedingEvents()`; it does not, by itself, prove that queued device commands have executed.
+- `src/routes/feeding.schedule.tsx` creates scheduled commands, while `src/lib/iot-device-commands.ts` only returns queued commands once their scheduled time is due.
+- The device endpoint requires `IOT_DEVICE_REGISTRY_JSON`; it returns HTTP 503 if the registry is not configured.
+- Command status transitions use a read-then-update sequence. A duplicate client request can create more than one command, and the current code does not establish exactly-once physical dispensing.
+
+**Risk**
+Retries, concurrent polling, device reboot, or lost acknowledgements could cause a command to be seen again. The UI can accurately show a queued command, but hardware execution and physical feed quantity remain unknown until a device reports completion and the result is tested.
+
+**Required tests/fixes**
+1. Define durable command IDs and a device-side processed-ID/idempotency rule.
+2. Test repeated requests, duplicate acknowledgements/completions, concurrent polling, device reboot, network timeout, and failed dispensing with a simulator.
+3. Confirm command target IDs match a registered farm/pond and reject unconfigured targets.
+4. Distinguish queued, acknowledged, device-reported done, failed, and stale/offline states in every relevant UI.
+5. Do not record completed feeding or reconcile inventory/production until there is an explicit, trusted execution result.
+
+### P1 — Pond defaults can silently select a target
 
 **Evidence**
-- `src/routes/feeding.manual.tsx`
-  - The button handler calls `pushManualFeedingEvent(amount[0])`, then deducts local inventory and adds a production event.
-  - It does not call `queueFeedingCommand(...)` and does not wait for device acknowledgement or completion.
-  - The success toast says “Dispensed … kg”, which overstates what the code verifies.
-  - The selected display value (`Pond A/B/C`) is not passed to `pushManualFeedingEvent`.
-  - “Recent Manual Feeds” is rendered from a literal array with example names, dates, ponds, and amounts.
-- `src/lib/platform-clients.ts`: `pushManualFeedingEvent` writes an event log to `/api/iot/feeding-event`; the handler `src/lib/iot-feeding-event.ts` writes an event record, not a command to actuate a feeder.
+- `src/lib/tenant.ts` falls back to `VITE_DEFAULT_POND_ID` or `cage_001` when no active pond is stored.
+- Feeding commands and other pond-scoped paths must not treat a display default as proof that the target exists or is assigned to the authenticated farm.
 
-**Risk:** False operational records and inventory deductions; users may believe fish were fed when no feeder command was sent. If a real feeder is connected later, confusing event logging with device control could lead to unsafe operation.
+**Risk**
+A command may be aimed at a default identifier that is not the intended or registered pond.
 
-**Required fix:** Separate “record a manual feeding that already happened” from “request a feeder to dispense”. For device control, select a real farm-owned pond/cage ID, queue a command through the protected command API, display queued/acknowledged/completed/failed states, and only record actual dispensed feed / deduct inventory after a confirmed successful device result. Replace sample history with persisted events. Keep the UI explicit that dispensing is unavailable until a device is registered and connected.
+**Required fix**
+Require an explicit, server-authorized pond/device binding for actuation. Keep defaults only for clearly labelled UI empty states; reject command creation when the real target is not configured.
 
-### P1 — Command lifecycle is not yet proven duplicate-safe
+### P1 — Cage management is browser-local, not shared farm data
 
 **Evidence**
-- `src/lib/iot-device-commands.ts`: device polling returns queued commands; acknowledgement and completion are validated through read-then-update requests.
-- `firmware/ESP32_COMMERCIAL_INTEGRATION.md`: the documented ESP32 contract polls commands and posts `ack`, then `done` or `failed`.
+- `src/services/modules/cages.service.ts` stores cage records in `localStorage`.
+- `src/routes/cages.index.tsx` uses those local synchronous CRUD functions.
 
-**Risk:** A read-then-update status transition is not an atomic claim by itself. A device/network retry or competing poller could observe a command more than once. Software must not assume a queued command is exactly-once.
+**Risk**
+Cages created in one browser are not durable shared records and may not exist for another user/device or in the backend used by IoT commands. Feeding scheduling also consults this local cage list when calculating available fish.
 
-**Required fix / test:** Define a durable command ID and device-side processed-ID/idempotency rule; ensure a command cannot trigger dispensing twice after retry/reboot; verify status transition behavior under duplicate acknowledgement, duplicate completion, timeout, and concurrent polling. Do not claim exactly-once dispensing without a tested hardware protocol.
+**Required fix**
+Move cage CRUD to an authenticated, tenant-scoped backend. Surface save failures and test persistence after reload, across browsers, and between different farm users before using cage data for automated operations.
 
-### P1 — Cage management is local-only, not shared persistent farm data
-
-**Evidence**
-- `src/services/modules/cages.service.ts`: `listCages`, `createCage`, `updateCage`, and `deleteCage` read/write `localStorage`.
-- `src/routes/cages.index.tsx` uses these synchronous local functions.
-
-**Risk:** Cage records exist only in that browser and will not reliably synchronize to another device or user session. This also means feeding commands may use cage/pond identifiers that do not exist in the backend/device registry.
-
-**Required fix:** Use the authenticated tenant-scoped backend for cage CRUD, surface remote errors, and explicitly label any offline/local-only mode. Add tests for cross-user isolation and reload/device persistence.
-
-### P1 — Inventory and production writes can appear successful when remote persistence is incomplete
+### P1 — Inventory and production persistence can mislead users
 
 **Evidence**
-- `src/services/modules/inventory.service.ts` and `src/services/modules/production.service.ts` update local storage first.
-- Remote write helpers in `src/services/modules/backend-store.ts` return boolean/null on failure; some service methods ignore those results and return the local record.
-- Inventory movement changes the locally cached quantity; remote movement and item writes are separate requests rather than one atomic transaction.
+- `src/services/modules/inventory.service.ts` writes to local storage before awaiting remote persistence.
+- `src/services/modules/production.service.ts` and shared helpers need equivalent failure-path verification.
+- Inventory movements and quantity changes are not shown to be one atomic server-side transaction; some remote helper results may be ignored.
 
-**Risk:** The browser may display a saved stock or production change even when Supabase rejected the write. A failure between a movement insert and quantity update can cause inventory inconsistency.
+**Risk**
+A UI may display a change that was not durably saved, or inventory movement history and stock quantity may disagree after a partial failure.
 
-**Required fix:** Make write outcomes explicit to the caller; do not show “saved” unless remote persistence succeeded (unless a clearly labeled offline queue is implemented). Update stock quantity and movement history atomically on the server, validate non-negative stock, and test failed/duplicate requests.
+**Required fix**
+Make remote write success/failure explicit. Do not show “saved” when the remote write failed unless a deliberately designed offline queue is visible to the user. Implement atomic stock-ledger updates on the server, validate non-negative stock, and test failures and duplicate submissions.
 
-### P1 — Admin assignment uses a hard-coded email allowlist
+### P1 — Authentication and tenant isolation need integration tests
 
-**Evidence**
-- `src/lib/server-authz.ts` grants the `admin` role to the verified account whose email equals `fishhydro1@gmail.com`, otherwise it reads server-provided `app_metadata.role`.
-- `src/services/auth.service.ts` mirrors this role display logic client-side.
+**Source-confirmed controls**
+- Protected IoT handlers use server-side Supabase session verification and farm-access checks.
+- Server authorization does not rely on user-editable `user_metadata.role` to grant admin.
+- The admin allowlist currently includes a hard-coded verified email in `src/lib/server-authz.ts`.
 
-**Assessment:** The server validates the bearer token with Supabase Auth and checks verified email before applying the allowlist, which is stronger than trusting editable user metadata. However, hard-coded identity-based role assignment is difficult to rotate and audit and should be an explicit deployment policy, not a hidden code assumption.
+**Unverified**
+Source review does not establish that every non-IoT route, finance table, and hatchery/inventory operation enforces equivalent tenant isolation, or that session expiry, refresh failure, logout, and role revocation all work correctly.
 
-**Required fix:** Prefer a server-controlled role claim or maintained admin allowlist in configuration; never authorize from user-editable `user_metadata` or a client-stored role. Add tests for ordinary users, modified client state, unverified users, and role revocation.
+**Required tests**
+Use two test farm users and verify cross-farm read/write denial, invalid and expired tokens, refresh failures, verified-email requirements, role changes, and client-side role tampering. Prefer a maintained server-side admin configuration over a hidden hard-coded email rule.
 
-### P1 — Default pond fallback can route reads to an unintended pond
-
-**Evidence**
-- `src/lib/tenant.ts` uses `VITE_DEFAULT_POND_ID` or `cage_001` when no active pond is selected.
-- `src/lib/iot-alerts.ts` and `src/lib/iot-feeding-command.ts` also use a default pond fallback for requests that omit `pondId`.
-
-**Risk:** A user without a configured selection can view alerts or commands for a default pond that may not be the intended pond. This is particularly risky for feeding commands.
-
-**Required fix:** Require an explicit, authorized pond/cage ID for command creation and pond-scoped operational actions. Default selection may be used for a clearly labeled empty-state UI, not as an implicit target for actuation.
-
-### P1 — Finance and other data modules require persistence and calculation verification
+### P2 — Water quality and alerts have API wiring, but no verified live telemetry
 
 **Evidence**
-- `src/lib/platform-clients.ts` sends finance requests to Supabase REST using the current access token when available and the anon key otherwise; RLS is therefore a critical security boundary.
-- Finance methods catch list errors and return empty arrays; mutations can fall back to the submitted local object when no row is returned.
-- `supabase/rls-policies.sql` contains repeated `farm_profiles` policy definitions in the source file and mixes legacy `farm_id` scoping with newer `tenant_id` scoping.
+- `src/components/dashboard/water-monitoring.tsx` polls `getLatestOnlineWaterReading()` and shows an explicit no-device-data message when no reading is available.
+- `src/lib/platform-clients.ts` requests the protected `/api/iot/latest` endpoint.
+- The protected latest-reading handler checks the authenticated user and farm access.
 
-**Risk:** Backend errors may be indistinguishable from a genuinely empty farm. The SQL source needs to be checked against the migrations actually applied to the connected project; changing the source file alone does not update production RLS. Financial totals also need reconciliation tests.
+**Unverified**
+No current ESP32 telemetry is available because the device is not connected. The deployed Worker version, device registry, Firebase service configuration, reading freshness, alert persistence, and the complete ingest-to-dashboard path have not been verified together.
 
-**Required fix / test:** Validate income/expense CRUD under two different users, verify RLS on the deployed schema, show load/save errors separately from empty states, and reconcile totals against known test transactions. Do not apply RLS/schema changes to the live project without reviewing the deployed schema and migration history.
+**Required tests**
+Verify anonymous requests are rejected, farm A cannot read farm B, malformed/out-of-range readings are rejected, stale devices appear offline, and a simulated reading reaches the dashboard/history and triggers expected alert boundaries. Treat thresholds as farm/species-specific configuration, not universal guarantees.
 
-### P2 — Water monitoring is connected to a protected endpoint, but real telemetry is not verified
+### P2 — Finance needs reconciliation and deployed RLS verification
 
-**Evidence**
-- `src/components/dashboard/water-monitoring.tsx` polls `getLatestOnlineWaterReading()` every 15 seconds.
-- `src/lib/platform-clients.ts` obtains the latest reading through `/api/iot/latest` and checks device status.
-- `src/lib/iot-latest.ts` requires a verified Supabase-authenticated user and farm authorization.
+Finance CRUD and Profit & Loss features exist, but source presence does not establish correct calculations or deployed authorization. Some data-access methods can turn request errors into empty arrays or return the submitted object when the server does not return a persisted row. The repository RLS SQL must be compared with the actual deployed schema and migration history before changes are applied.
 
-**Assessment:** The code path is API-backed, and an empty state exists. This is a positive change from the older audit. It is still unverified whether the deployed Worker has the matching latest code, whether the Firebase service credentials and device registry are configured, and whether an ESP32 has sent valid telemetry. The UI's safety thresholds should also be reviewed as farm/species-specific operational settings rather than universal guarantees.
+**Required tests**
+Reconcile income, expenses, and profit against known test transactions; test date filters and duplicate submissions; verify reads/writes with two different farm users; and display load/save errors separately from genuine empty states. Do not change live RLS or schema without reviewing the deployed state.
 
-**Required test:** Confirm unauthenticated requests return 401/403, authorized users only access their own farm, invalid/out-of-range payloads are rejected, stale devices are shown offline, and a real ingest becomes visible in the dashboard and history. No sensor data should be presented as live until it is sourced from a fresh device reading.
+### P2 — AI and hatchery workflows remain implemented but unverified
 
-### P2 — Feeding schedule UI is connected to command APIs, but is not proof of scheduled execution
+AI assistant/insights and hatchery, brooder, and fingerling modules are present in the repository. This pass did not establish full runtime correctness for every AI provider request, timeout/quota/configuration failure, hatchery batch transition, stock count, mortality, or tenant-isolation path.
 
-**Evidence**
-- `src/components/dashboard/feeding-schedule.tsx` calls `listFeedingEvents()`.
-- `src/routes/feeding.schedule.tsx` uses `queueFeedingCommand` and `listFeedingCommands`.
-- `src/lib/iot-device-commands.ts` returns queued commands only when their `scheduledFor` time is due.
-
-**Assessment:** Scheduling and command queue foundations exist. A scheduled record is not the same as a successfully dispensed feed. The UI and lifecycle must distinguish queued, acknowledged, done, failed, and expired/offline commands.
-
-**Required test:** Verify timezone conversion, due-time behavior, command ownership, invalid pond rejection, device offline behavior, and that completion only follows a device report. Test with a simulated device before connecting hardware.
-
-### P2 — Hatchery, AI, and finance operational behavior is not fully verified in this pass
-
-The repository contains modules and services for hatchery/inventory, AI insights/assistant, and finance, but this source review did not establish complete end-to-end correctness for every hatchery batch transition, AI provider call, or finance calculation. These should remain **implemented but unverified**, not labeled fully operational, until targeted tests pass.
+**Required tests**
+Exercise configured AI provider success and failure paths; test hatchery batch creation and transitions, counts, mortality, and persistence; and verify all records remain scoped to the authenticated farm.
 
 ## Module status matrix
 
-| Module | Source-code status | Verification status | Main next action |
+| Module | Source-code assessment | Verification status | Next action |
 |---|---|---|---|
-| Authentication | Supabase Auth integration and refresh-token handling present | Protected-route and revocation behavior not runtime-tested | Test invalid/expired token, logout, refresh failure, verified email, role changes |
-| Farm profile | Supabase-backed profile service with browser cache | Multi-user persistence not runtime-tested | Test read/write and tenant isolation |
-| Cage/farm operations | Cage CRUD currently localStorage-backed | Not durable/shared | Migrate to tenant-scoped backend |
-| Water quality | Protected Worker API path and live-data empty state | No live ESP32 end-to-end proof | Test auth, ingest, freshness, history, alerts |
-| Water alerts | Protected Worker API path plus derived alert fallback | Live Firebase alert flow unverified | Test threshold boundaries and persisted alerts |
-| Feeding schedule | Command queue API and schedule UI exist | Hardware execution unverified | Test due time, target IDs, status lifecycle and idempotency |
-| Manual feeding | Records a manual event; does not queue a dispense command | Misleading success text and sample history remain | Separate record-event vs command-to-device workflows |
-| Inventory | Local cache plus optional remote calls | Remote-write failures may be masked | Atomic stock ledger and visible persistence errors |
-| Production records | Local cache plus optional remote calls | Remote-write failures may be masked | Verify remote persistence and duplicate handling |
-| Finance | Supabase REST CRUD and farm scoping via RLS | Totals, error states, deployed RLS not verified | Reconciliation and two-tenant tests |
-| AI assistant/insights | Feature/module present | Provider success and failure handling not established | Exercise configured provider, timeout, quota, and no-key cases |
-| Hatchery/brooders/fingerlings | Feature/module present | Full lifecycle/persistence not established | Test batch transitions, counts, mortality, and tenant isolation |
-| Device registry | Protected per-device token/farm/pond binding implemented in code | Worker secret configuration and real device not verified | Confirm registry exists without exposing token; run simulated-device tests |
+| Authentication | Supabase session integration and server authorization controls exist | Runtime/session and cross-tenant tests incomplete | Test expiry, refresh, role revocation, and two-farm isolation |
+| Farm profile | Backend service with browser cache | Shared persistence not runtime-tested | Verify read/write and ownership |
+| Cage management | CRUD is localStorage-backed | Not durable/shared | Move to tenant-scoped backend |
+| Water quality | Protected latest-reading API path | No real ESP32 end-to-end proof | Simulated ingest, freshness, history, alerts |
+| Water alerts | Protected API/derived alert path exists | Threshold and persistence tests incomplete | Test boundaries and ownership |
+| Manual feeding | Queues command; does not claim physical dispensing | Source fix merged; device execution unverified | Simulator and device lifecycle tests |
+| Scheduled feeding | Due-time command queue path exists | Timezone/offline/idempotency not proven | Test due time and retries |
+| Inventory | Local cache plus remote calls | Remote failures/atomicity require work | Truthful errors and atomic stock ledger |
+| Production records | Service/module exists | Persistence and duplicate handling unverified | Test remote failure and reconciliation |
+| Finance/P&L | CRUD/reporting features exist | Calculations and deployed RLS unverified | Known-transaction reconciliation and tenant tests |
+| AI assistant/insights | Provider integration/features exist | Provider success/failure not fully verified | Test success, timeout, quota, and missing key |
+| Hatchery/brooders/fingerlings | Features exist | Full lifecycle/persistence unverified | Test batch transitions and counts |
+| Device registry | Server-side device/farm/pond binding supported | Runtime registry configuration not verified | Verify configuration without exposing tokens |
 
 ## Recommended remediation order
 
-1. **Correct manual feeding semantics** and remove sample history; never mark a command completed or deduct inventory until the operation's source and status are clear.
-2. **Make pond/cage identity authoritative** and remove implicit defaults from actuation paths.
-3. **Make inventory, production, and cage persistence truthful**: durable backend write, clear failure UI, and atomic stock movement.
-4. **Add command idempotency and simulated-device tests** before hardware connection.
-5. **Run auth and tenant-isolation tests** against the actual deployed Worker and Supabase RLS.
-6. **Verify water ingest/alerts with a simulated ESP32 payload**, then validate real sensors when hardware is available.
-7. **Test finance, AI, and hatchery workflows** with controlled fixtures and visible failure states.
-8. **Verify deployment lineage and required Worker secrets** before claiming the current `main` code is live.
+1. Add command idempotency and simulated-device tests before connecting hardware.
+2. Remove implicit default pond targets from all actuation paths.
+3. Migrate cage CRUD to a tenant-scoped backend.
+4. Make inventory and production persistence errors explicit and stock updates atomic.
+5. Run authentication and tenant-isolation tests against the actual Worker and deployed Supabase RLS.
+6. Test telemetry ingest, freshness, and alerts using a simulator.
+7. Reconcile finance calculations and test AI/hatchery failure paths.
+8. Confirm the production Worker revision and required bindings before claiming that current source is live.
 
-## Verification checklist before commercial claims
+## Commercial-readiness checklist
 
-- [ ] The deployed Worker version is confirmed to match the reviewed commit.
-- [ ] Anonymous calls to protected IoT endpoints are rejected.
-- [ ] A second farm user cannot read or modify the first user's records.
-- [ ] A simulated device can authenticate, ingest a reading, and show fresh telemetry.
-- [ ] A queued command targets the correct registered device and pond.
-- [ ] Duplicate polls/retries cannot dispense the same command twice.
-- [ ] Manual feeding history comes from persisted events, not literals.
-- [ ] Inventory/production/cage writes report backend failure rather than silently falling back.
-- [ ] Finance totals reconcile with known transactions and RLS is verified on the deployed database.
-- [ ] AI provider success, timeout, and configuration failures are handled clearly.
-- [ ] Hatchery batch operations persist and maintain valid counts.
+- [ ] Production Worker revision matches the reviewed commit.
+- [ ] Anonymous requests to protected IoT endpoints are rejected.
+- [ ] A second farm user cannot access the first user's records.
+- [ ] A simulated device can authenticate and submit a valid reading.
+- [ ] Invalid/stale telemetry is rejected or clearly marked.
+- [ ] A feeding command targets the correct registered device and pond.
+- [ ] Retries/reboots cannot dispense the same command twice in simulator tests.
+- [ ] Feeding completion reflects a trusted device result, not a queued command or timestamp.
+- [ ] Cage, inventory, and production writes report remote persistence failures.
+- [ ] Finance totals reconcile against known transactions and deployed RLS is verified.
+- [ ] AI provider failures and hatchery lifecycle errors are handled clearly.
 - [ ] Physical dispensing is not claimed until the real feeder is connected and tested.
 
-## Scope and safety notes
+## Safety notes
 
-This audit intentionally makes no production database, Firebase rules, Worker secrets, or deployment changes. The source review can identify code-level gaps, but deployed configuration and end-to-end behavior require separate verification. Keep the physical device disconnected until command routing, idempotency, and status handling have passed simulation tests.
+This report makes no claim that physical dispensing works. Keep the ESP32 disconnected until command routing, idempotency, status transitions, and simulator tests pass. Do not deploy Firebase rules, alter production RLS/schema, or change Worker secrets as part of this documentation update.
