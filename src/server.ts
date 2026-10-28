@@ -438,21 +438,8 @@ function firebaseDatabaseHeaders(auth: FirebaseWriteAuth): Record<string, string
   return {};
 }
 
-function faviconResponse(): Response {
-  return new Response(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#0f766e"/>
-  <path d="M14 34c10-12 26-12 36 0-10 12-26 12-36 0Z" fill="#ccfbf1"/>
-  <circle cx="43" cy="32" r="3" fill="#0f766e"/>
-  <path d="M18 46c8 3 20 3 28-1" fill="none" stroke="#67e8f9" stroke-width="4" stroke-linecap="round"/>
-</svg>`,
-    {
-      headers: {
-        "content-type": "image/svg+xml; charset=utf-8",
-        "cache-control": "public, max-age=86400",
-      },
-    },
-  );
+function faviconResponse(request: Request): Response {
+  return Response.redirect(new URL("/icons/Fish%20logo.png", request.url), 302);
 }
 
 function iotIngestInfoResponse(): Response {
@@ -990,7 +977,7 @@ export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     const url = new URL(request.url);
     if (url.pathname === "/favicon.ico") {
-      return faviconResponse();
+      return faviconResponse(request);
     }
     if (url.pathname === "/api/health/env") {
       return envHealthResponse(env);
