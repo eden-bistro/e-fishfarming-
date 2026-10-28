@@ -68,9 +68,10 @@ export async function handleIotAlerts(request: Request, env: unknown): Promise<R
     );
   }
 
-  const raw = (await response.json().catch(() => null)) as
-    | Record<string, Record<string, unknown>>
-    | null;
+  const raw = (await response.json().catch(() => null)) as Record<
+    string,
+    Record<string, unknown>
+  > | null;
   const alerts =
     raw && typeof raw === "object"
       ? Object.entries(raw)
