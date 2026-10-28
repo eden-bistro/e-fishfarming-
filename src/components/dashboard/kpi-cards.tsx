@@ -70,13 +70,15 @@ export function KpiCards() {
   const [waterStatus, setWaterStatus] = useState("No data");
   const [todayFeedKg, setTodayFeedKg] = useState(0);
   const [todayProfit, setTodayProfit] = useState(0);
+  const [loadError, setLoadError] = useState<string | null>(null);
   useEffect(() => {
     const t = setInterval(() => setCount((c) => (c <= 0 ? 14400 : c - 1)), 1000);
     return () => clearInterval(t);
   }, []);
 
   const load = useCallback(async () => {
-    const [water, events, income, expenses] = await Promise.all([
+    try {
+      const [water, events, income, expenses] = await Promise.all([
       getLatestOnlineWaterReading(),
       listFeedingEvents(),
       listIncome(),
@@ -100,7 +102,13 @@ export function KpiCards() {
     const todayExpenses = expenses
       .filter((r) => r.date === today)
       .reduce((sum, r) => sum + Number(r.amount || 0), 0);
-    setTodayProfit(todayIncome - todayExpenses);
+      setTodayProfit(todayIncome - todayExpenses);
+      setLoadError(null);
+    } catch (error) {
+      setLoadError(
+        error instanceof Error ? error.message : "Dashboard data could not be loaded.",
+      );
+    }
   }, []);
 
   useEffect(() => {
@@ -121,7 +129,16 @@ export function KpiCards() {
   );
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <>
+      {loadError && (
+        <p
+          role="alert"
+          className="mb-3 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+        >
+          Dashboard data is unavailable: {loadError}
+        </p>
+      )}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <KpiCard
         icon={<Droplets className="h-6 w-6" />}
         iconBg="bg-info/15"
@@ -163,6 +180,7 @@ export function KpiCards() {
         sub="Today income minus expenses"
         link={{ href: "/finance/pnl", text: "View Financials" }}
       />
-    </div>
+      </div>
+    </>
   );
 }
