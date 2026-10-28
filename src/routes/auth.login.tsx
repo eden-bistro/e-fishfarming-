@@ -123,7 +123,7 @@ function Page() {
         <section className="hidden text-white lg:block">
           <div className="mb-8 flex items-center gap-4">
             <img
-              src="/icons/aquasmart-icon.png"
+              src="/icons/Fish%20logo.png"
               alt="AquaSmart logo"
               width={64}
               height={64}
@@ -164,7 +164,7 @@ function Page() {
           <CardHeader className="space-y-4 pb-2">
             <div className="flex items-center gap-3 lg:hidden">
               <img
-                src="/icons/aquasmart-icon.png"
+                src="/icons/Fish%20logo.png"
                 alt="AquaSmart logo"
                 width={48}
                 height={48}
