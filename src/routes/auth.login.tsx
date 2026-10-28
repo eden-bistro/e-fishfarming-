@@ -32,9 +32,7 @@ function Page() {
       }
       await navigate({ to: "/" });
     } catch {
-      setError(
-        "We couldn't sign you in right now. Check your connection and try again.",
-      );
+      setError("We couldn't sign you in right now. Check your connection and try again.");
     } finally {
       setIsSubmitting(false);
     }
