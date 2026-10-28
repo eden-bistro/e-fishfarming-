@@ -75,9 +75,11 @@ export async function handleIotAlerts(request: Request, env: unknown): Promise<R
   const alerts =
     raw && typeof raw === "object"
       ? Object.entries(raw)
-          .sort(([, a], [, b]) =>
-            String(b["created_at"] ?? "").localeCompare(String(a["created_at"] ?? "")),
-          )
+          .sort(([, a], [, b]) => {
+            const aCreatedAt = String(a["created_at"] ?? "");
+            const bCreatedAt = String(b["created_at"] ?? "");
+            return bCreatedAt.localeCompare(aCreatedAt);
+          })
           .map(([id, value]) => ({ id, ...value }))
       : [];
 
