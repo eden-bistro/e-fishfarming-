@@ -1,12 +1,15 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
+  CalendarClock,
   ChevronDown,
   Cpu,
   Droplets,
   Fish,
+  History,
   LayoutDashboard,
   LineChart,
   LogOut,
+  Package,
   ShieldCheck,
   Settings,
   Wallet,
@@ -209,7 +212,17 @@ export function AppSidebar() {
                           className="h-9 px-2"
                         >
                           <Link to={child.url as never} onClick={closeMobileSidebar}>
-                            <LineChart className="h-3.5 w-3.5 opacity-80 icon-emphasis" />
+                            {child.url === "/feeding/schedule" ? (
+                              <CalendarClock className="h-3.5 w-3.5 opacity-80 icon-emphasis" />
+                            ) : child.url === "/feeding/manual" ? (
+                              <Fish className="h-3.5 w-3.5 opacity-80 icon-emphasis" />
+                            ) : child.url === "/feeding/history" ? (
+                              <History className="h-3.5 w-3.5 opacity-80 icon-emphasis" />
+                            ) : child.url === "/feeding/inventory" ? (
+                              <Package className="h-3.5 w-3.5 opacity-80 icon-emphasis" />
+                            ) : (
+                              <LineChart className="h-3.5 w-3.5 opacity-80 icon-emphasis" />
+                            )}
                             <span>{child.title}</span>
                           </Link>
                         </SidebarMenuButton>
