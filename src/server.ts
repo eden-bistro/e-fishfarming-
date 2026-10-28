@@ -439,7 +439,7 @@ function firebaseDatabaseHeaders(auth: FirebaseWriteAuth): Record<string, string
 }
 
 function faviconResponse(request: Request): Response {
-  return Response.redirect(new URL("/icons/Fish%20logo.png", request.url), 302);
+  return Response.redirect(new URL("/icons/Fish%20logo.png?v=2", request.url), 302);
 }
 
 function iotIngestInfoResponse(): Response {
