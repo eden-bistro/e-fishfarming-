@@ -37,9 +37,18 @@ function Page() {
 
   return (
     <main className="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-sky-50 via-white to-cyan-100 p-4 sm:p-8">
-      <div aria-hidden="true" className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top_left,rgba(14,165,233,0.13),transparent_45%),radial-gradient(ellipse_at_bottom_right,rgba(20,184,166,0.14),transparent_45%)]" />
-      <div aria-hidden="true" className="absolute -right-24 -top-24 z-[1] h-80 w-80 rounded-full bg-sky-200/40 blur-3xl" />
-      <div aria-hidden="true" className="absolute -bottom-28 -left-20 z-[1] h-96 w-96 rounded-full bg-teal-200/40 blur-3xl" />
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top_left,rgba(14,165,233,0.13),transparent_45%),radial-gradient(ellipse_at_bottom_right,rgba(20,184,166,0.14),transparent_45%)]"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute -right-24 -top-24 z-[1] h-80 w-80 rounded-full bg-sky-200/40 blur-3xl"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute -bottom-28 -left-20 z-[1] h-96 w-96 rounded-full bg-teal-200/40 blur-3xl"
+      />
 
       <div className="relative z-10 grid w-full max-w-5xl items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
         <section className="hidden text-slate-900 lg:block">
