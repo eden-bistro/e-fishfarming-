@@ -115,7 +115,7 @@ export function DownloadAppPrompt() {
     >
       <div className="flex gap-3">
         <img
-          src="/icons/Fish%20logo.png"
+          src="/icons/Fish%20logo.png?v=2"
           alt="AquaSmart fish logo"
           className="h-12 w-12 shrink-0 rounded-xl object-contain"
         />
