@@ -57,7 +57,9 @@ export function FeedingSchedule() {
       if (mounted) setRows(events.slice(0, 8));
     }
     void load();
-    const timer = setInterval(() => void load(), 15000);
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") void load();
+    }, 30_000);
     return () => {
       mounted = false;
       clearInterval(timer);
