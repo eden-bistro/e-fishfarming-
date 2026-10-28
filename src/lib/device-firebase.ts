@@ -20,7 +20,6 @@ function normalizeDeviceStatus(status: Partial<DeviceStatus> & { deviceId: strin
   };
 }
 
-
 async function authHeader(): Promise<Record<string, string>> {
   const token = await getAccessToken();
   return token ? { authorization: `Bearer ${token}` } : {};
@@ -122,7 +121,10 @@ export async function listFeedingCommands(limit = 20): Promise<FeedingCommand[]>
       },
       cache: "no-store",
     });
-    if (!response.ok || !(response.headers.get("content-type") ?? "").includes("application/json")) {
+    if (
+      !response.ok ||
+      !(response.headers.get("content-type") ?? "").includes("application/json")
+    ) {
       return [];
     }
     const payload = (await response.json()) as { commands?: FeedingCommand[] };
