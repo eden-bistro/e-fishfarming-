@@ -25,40 +25,14 @@ function Chart({
   k,
   color,
   unit,
+  data,
 }: {
   title: string;
   k: keyof Row;
   color: string;
   unit: string;
+  data: Row[];
 }) {
-  const [data, setData] = useState<Row[]>([]);
-
-  useEffect(() => {
-    let mounted = true;
-    async function tick() {
-      const latest = await getLatestOnlineWaterReading();
-      if (!mounted || !latest) return;
-      const row: Row = {
-        h: new Date(latest.timestamp).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        temp: latest.temperature,
-        ph: latest.ph,
-        do: latest.dissolvedOxygen,
-      };
-      setData((prev) => [...prev.slice(-23), row]);
-    }
-    void tick();
-    const timer = setInterval(() => {
-      if (document.visibilityState === "visible") void tick();
-    }, 30_000);
-    return () => {
-      mounted = false;
-      clearInterval(timer);
-    };
-  }, []);
-
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -105,12 +79,58 @@ function Chart({
 }
 
 function Page() {
+  const [data, setData] = useState<Row[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+    let loading = false;
+
+    async function tick() {
+      if (loading || document.visibilityState !== "visible") return;
+      loading = true;
+      try {
+        const latest = await getLatestOnlineWaterReading();
+        if (!mounted || !latest) return;
+        const row: Row = {
+          h: new Date(latest.timestamp).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          temp: latest.temperature,
+          ph: latest.ph,
+          do: latest.dissolvedOxygen,
+        };
+        setData((previous) => {
+          if (previous.length && previous[previous.length - 1].h === row.h) {
+            return [...previous.slice(0, -1), row];
+          }
+          return [...previous.slice(-23), row];
+        });
+      } finally {
+        loading = false;
+      }
+    }
+
+    void tick();
+    const timer = window.setInterval(() => void tick(), 30_000);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") void tick();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      mounted = false;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, []);
+
   return (
     <DashboardLayout title="Water History" subtitle="Realtime Firebase trend snapshots.">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <Chart title="Temperature" k="temp" color="var(--info)" unit="°C" />
-        <Chart title="pH Level" k="ph" color="var(--success)" unit="" />
-        <Chart title="Dissolved Oxygen" k="do" color="var(--brand)" unit="mg/L" />
+        <Chart title="Temperature" k="temp" color="var(--info)" unit="°C" data={data} />
+        <Chart title="pH Level" k="ph" color="var(--success)" unit="" data={data} />
+        <Chart title="Dissolved Oxygen" k="do" color="var(--brand)" unit="mg/L" data={data} />
       </div>
     </DashboardLayout>
   );
