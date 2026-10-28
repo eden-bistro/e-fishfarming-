@@ -124,8 +124,8 @@ export function DownloadAppPrompt() {
             <div>
               <p className="font-semibold tracking-tight">Install AquaSmart</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Add AquaSmart to your phone from this website for quick access to farm alerts,
-                water quality updates, and feeding tools. No app store download is needed.
+                Add AquaSmart to your phone from this website for quick access to farm alerts, water
+                quality updates, and feeding tools. No app store download is needed.
               </p>
             </div>
             <button
