@@ -11,7 +11,7 @@
   "categories": ["business", "productivity", "utilities"],
   "icons": [
     {
-      "src": "/icons/Fish%20logo.png",
+      "src": "/icons/Fish%20logo.png?v=2",
       "sizes": "any",
       "type": "image/png",
       "purpose": "any"
