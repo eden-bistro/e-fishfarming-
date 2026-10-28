@@ -89,9 +89,9 @@ export function KpiCards() {
         if (!water) return "No data";
         const good =
           water.dissolvedOxygen >= 5 &&
-          water.ph >= 6.5 &&
-          water.ph <= 8.5 &&
-          water.ammonia <= 0.05;
+        water.ph >= 6.5 &&
+        water.ph <= 8.5 &&
+        water.ammonia <= 0.05;
         return good ? "Good" : "Attention";
       });
 
@@ -108,9 +108,7 @@ export function KpiCards() {
       setTodayProfit(todayIncome - todayExpenses);
       setLoadError(null);
     } catch (error) {
-      setLoadError(
-        error instanceof Error ? error.message : "Dashboard data could not be loaded.",
-      );
+      setLoadError(error instanceof Error ? error.message : "Dashboard data could not be loaded.");
     }
   }, []);
 
@@ -142,47 +140,47 @@ export function KpiCards() {
         </p>
       )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <KpiCard
-        icon={<Droplets className="h-6 w-6" />}
-        iconBg="bg-info/15"
-        iconColor="text-info"
-        label="Water Quality"
-        value={<span className={waterColor}>{waterStatus}</span>}
-        sub="From assigned online sensor"
-        link={{ href: "/water/live", text: "View Details" }}
-      />
-      <KpiCard
-        icon={<Timer className="h-6 w-6" />}
-        iconBg="bg-brand/15"
-        iconColor="text-brand"
-        label="Next Feeding"
-        value={<span className="font-mono">{formatCountdown(count)}</span>}
-        sub="Today, 03:00 PM"
-        link={{ href: "/feeding/schedule", text: "View Schedule" }}
-      />
-      <KpiCard
-        icon={<UtensilsCrossed className="h-6 w-6" />}
-        iconBg="bg-success/15"
-        iconColor="text-success"
-        label="Today's Feed"
-        value={
-          <>
-            {todayFeedKg.toFixed(1)}{" "}
-            <span className="text-base font-medium text-muted-foreground">kg</span>
-          </>
-        }
-        sub="From logged feeding events"
-        link={{ href: "/feeding/history", text: "Feed History" }}
-      />
-      <KpiCard
-        icon={<Wallet className="h-6 w-6" />}
-        iconBg="bg-warning/15"
-        iconColor="text-warning"
-        label="Today's Profit"
-        value={<>KSh {todayProfit.toLocaleString()}</>}
-        sub="Today income minus expenses"
-        link={{ href: "/finance/pnl", text: "View Financials" }}
-      />
+        <KpiCard
+          icon={<Droplets className="h-6 w-6" />}
+          iconBg="bg-info/15"
+          iconColor="text-info"
+          label="Water Quality"
+          value={<span className={waterColor}>{waterStatus}</span>}
+          sub="From assigned online sensor"
+          link={{ href: "/water/live", text: "View Details" }}
+        />
+        <KpiCard
+          icon={<Timer className="h-6 w-6" />}
+          iconBg="bg-brand/15"
+          iconColor="text-brand"
+          label="Next Feeding"
+          value={<span className="font-mono">{formatCountdown(count)}</span>}
+          sub="Today, 03:00 PM"
+          link={{ href: "/feeding/schedule", text: "View Schedule" }}
+        />
+        <KpiCard
+          icon={<UtensilsCrossed className="h-6 w-6" />}
+          iconBg="bg-success/15"
+          iconColor="text-success"
+          label="Today's Feed"
+          value={
+            <>
+              {todayFeedKg.toFixed(1)}{" "}
+              <span className="text-base font-medium text-muted-foreground">kg</span>
+            </>
+          }
+          sub="From logged feeding events"
+          link={{ href: "/feeding/history", text: "Feed History" }}
+        />
+        <KpiCard
+          icon={<Wallet className="h-6 w-6" />}
+          iconBg="bg-warning/15"
+          iconColor="text-warning"
+          label="Today's Profit"
+          value={<>KSh {todayProfit.toLocaleString()}</>}
+          sub="Today income minus expenses"
+          link={{ href: "/finance/pnl", text: "View Financials" }}
+        />
       </div>
     </>
   );
