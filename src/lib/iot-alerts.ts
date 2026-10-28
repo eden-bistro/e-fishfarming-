@@ -1,6 +1,8 @@
 import {
   encodedFarmPondPath,
   getDefaultPondId,
+  firebaseDatabaseHeaders,
+  firebaseDatabaseUrl,
   jsonResponse,
   noContentResponse,
   resolveFirebaseDatabase,
@@ -43,13 +45,13 @@ export async function handleIotAlerts(request: Request, env: unknown): Promise<R
   if (!firebase.ok) return firebase.response;
 
   const path = `${encodedFarmPondPath(farmId, pondId)}/alerts`;
-  const readUrl = new URL(`${firebase.baseUrl}/${path}.json`);
+  const readUrl = new URL(firebaseDatabaseUrl(firebase.baseUrl, path, firebase.auth));
   readUrl.searchParams.set("orderBy", '"$key"');
   readUrl.searchParams.set("limitToLast", String(limit));
 
   const response = await fetch(readUrl, {
     method: "GET",
-    headers: firebase.auth.type === "oauth" ? { authorization: `Bearer ${firebase.auth.token}` } : {},
+    headers: firebaseDatabaseHeaders(firebase.auth),
   });
 
   if (!response.ok) {
