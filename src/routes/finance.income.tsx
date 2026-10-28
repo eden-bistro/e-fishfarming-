@@ -196,7 +196,7 @@ function Page() {
               step="0.01"
               placeholder="e.g. 120"
               aria-label="Quantity sold in kilograms"
-              value={form.quantity_kg}
+              value={form.quantity_kg || ""}
               onChange={(e) => {
                 const quantity = Number(e.target.value);
                 setForm((f) => ({ ...f, quantity, quantity_kg: quantity }));
@@ -211,7 +211,7 @@ function Page() {
               step="0.01"
               placeholder="e.g. 450"
               aria-label="Price per kilogram"
-              value={form.price_per_kg}
+              value={form.price_per_kg || ""}
               onChange={(e) => {
                 const unitPrice = Number(e.target.value);
                 setForm((f) => ({ ...f, unit_price: unitPrice, price_per_kg: unitPrice }));
