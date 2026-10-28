@@ -32,7 +32,7 @@ function Page() {
 
     const timer = window.setInterval(() => {
       void load();
-    }, 5000);
+    }, 30_000);
 
     return () => {
       mounted = false;
