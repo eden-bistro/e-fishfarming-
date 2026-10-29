@@ -54,7 +54,10 @@ function Page() {
         aria-hidden="true"
         className="absolute inset-0 z-[1] bg-gradient-to-br from-slate-950/65 via-blue-950/45 to-cyan-950/55"
       />
-      <div aria-hidden="true" className="absolute inset-0 z-[2] overflow-hidden pointer-events-none">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 z-[2] overflow-hidden pointer-events-none"
+      >
         <style>{`
           @keyframes aquasmart-fish-swim {
             0% { transform: translate3d(-18vw, 0, 0) scaleX(1); }
@@ -80,15 +83,27 @@ function Page() {
             .aquasmart-swimming-fish { animation: none; opacity: .4; }
           }
         `}</style>
-        <svg className="aquasmart-swimming-fish aquasmart-swimming-fish--one" viewBox="0 0 120 60" role="presentation">
+        <svg
+          className="aquasmart-swimming-fish aquasmart-swimming-fish--one"
+          viewBox="0 0 120 60"
+          role="presentation"
+        >
           <path d="M15 30C31 8 69 8 88 30C69 52 31 52 15 30ZM87 30L116 8L116 52Z" />
           <circle cx="31" cy="25" r="2.5" fill="rgba(3,25,52,.75)" />
         </svg>
-        <svg className="aquasmart-swimming-fish aquasmart-swimming-fish--two" viewBox="0 0 120 60" role="presentation">
+        <svg
+          className="aquasmart-swimming-fish aquasmart-swimming-fish--two"
+          viewBox="0 0 120 60"
+          role="presentation"
+        >
           <path d="M15 30C31 8 69 8 88 30C69 52 31 52 15 30ZM87 30L116 8L116 52Z" />
           <circle cx="31" cy="25" r="2.5" fill="rgba(3,25,52,.75)" />
         </svg>
-        <svg className="aquasmart-swimming-fish aquasmart-swimming-fish--three" viewBox="0 0 120 60" role="presentation">
+        <svg
+          className="aquasmart-swimming-fish aquasmart-swimming-fish--three"
+          viewBox="0 0 120 60"
+          role="presentation"
+        >
           <path d="M15 30C31 8 69 8 88 30C69 52 31 52 15 30ZM87 30L116 8L116 52Z" />
           <circle cx="31" cy="25" r="2.5" fill="rgba(3,25,52,.75)" />
         </svg>
