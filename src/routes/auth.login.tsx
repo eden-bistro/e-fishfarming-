@@ -43,21 +43,56 @@ function Page() {
   }
 
   return (
-    <main className="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-slate-950 via-blue-950 to-cyan-950 p-4 sm:p-8">
-      <div
+    <main className="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 p-4 sm:p-8">
+      <img
+        src="/icons/AquaSmart%20Lake%20Victoria%20Login.png"
+        alt=""
         aria-hidden="true"
-        className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top_left,rgba(14,165,233,0.35),transparent_48%),radial-gradient(ellipse_at_bottom_right,rgba(20,184,166,0.25),transparent_48%)]"
+        className="absolute inset-0 z-0 h-full w-full object-cover object-center"
       />
       <div
         aria-hidden="true"
-        className="absolute -right-24 -top-24 z-[1] h-80 w-80 rounded-full bg-sky-400/20 blur-3xl"
+        className="absolute inset-0 z-[1] bg-gradient-to-br from-slate-950/65 via-blue-950/45 to-cyan-950/55"
       />
-      <div
-        aria-hidden="true"
-        className="absolute -bottom-28 -left-20 z-[1] h-96 w-96 rounded-full bg-teal-400/20 blur-3xl"
-      />
-
-      <div aria-hidden="true" className="absolute inset-0 z-[2] bg-blue-950/70" />
+      <div aria-hidden="true" className="absolute inset-0 z-[2] overflow-hidden pointer-events-none">
+        <style>{`
+          @keyframes aquasmart-fish-swim {
+            0% { transform: translate3d(-18vw, 0, 0) scaleX(1); }
+            48% { transform: translate3d(48vw, -14px, 0) scaleX(1); }
+            50% { transform: translate3d(50vw, -14px, 0) scaleX(-1); }
+            98% { transform: translate3d(118vw, 8px, 0) scaleX(-1); }
+            100% { transform: translate3d(120vw, 8px, 0) scaleX(-1); }
+          }
+          .aquasmart-swimming-fish {
+            position: absolute;
+            left: 0;
+            width: clamp(34px, 5vw, 68px);
+            height: auto;
+            fill: rgba(210, 246, 255, 0.68);
+            filter: drop-shadow(0 2px 8px rgba(3, 25, 52, 0.25));
+            animation: aquasmart-fish-swim 32s linear infinite;
+            will-change: transform;
+          }
+          .aquasmart-swimming-fish--one { top: 28%; animation-duration: 34s; }
+          .aquasmart-swimming-fish--two { top: 63%; animation-duration: 43s; animation-delay: -19s; width: clamp(24px, 3.5vw, 46px); opacity: .72; }
+          .aquasmart-swimming-fish--three { top: 78%; animation-duration: 39s; animation-delay: -8s; width: clamp(28px, 4vw, 54px); opacity: .55; }
+          @media (prefers-reduced-motion: reduce) {
+            .aquasmart-swimming-fish { animation: none; opacity: .4; }
+          }
+        `}</style>
+        <svg className="aquasmart-swimming-fish aquasmart-swimming-fish--one" viewBox="0 0 120 60" role="presentation">
+          <path d="M15 30C31 8 69 8 88 30C69 52 31 52 15 30ZM87 30L116 8L116 52Z" />
+          <circle cx="31" cy="25" r="2.5" fill="rgba(3,25,52,.75)" />
+        </svg>
+        <svg className="aquasmart-swimming-fish aquasmart-swimming-fish--two" viewBox="0 0 120 60" role="presentation">
+          <path d="M15 30C31 8 69 8 88 30C69 52 31 52 15 30ZM87 30L116 8L116 52Z" />
+          <circle cx="31" cy="25" r="2.5" fill="rgba(3,25,52,.75)" />
+        </svg>
+        <svg className="aquasmart-swimming-fish aquasmart-swimming-fish--three" viewBox="0 0 120 60" role="presentation">
+          <path d="M15 30C31 8 69 8 88 30C69 52 31 52 15 30ZM87 30L116 8L116 52Z" />
+          <circle cx="31" cy="25" r="2.5" fill="rgba(3,25,52,.75)" />
+        </svg>
+      </div>
 
       <div className="relative z-10 grid w-full max-w-5xl items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
         <section className="hidden text-white lg:block">
