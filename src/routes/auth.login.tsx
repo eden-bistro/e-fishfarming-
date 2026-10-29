@@ -45,7 +45,7 @@ function Page() {
   return (
     <main className="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 p-4 sm:p-8">
       <img
-        src="/icons/AquaSmart%20Lake%20Victoria%20Login.png"
+        src="/icons/Background.jpg"
         alt=""
         aria-hidden="true"
         className="absolute inset-0 z-0 h-full w-full object-cover object-center"
