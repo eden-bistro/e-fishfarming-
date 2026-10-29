@@ -4,7 +4,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { TopNavbar } from "@/components/top-navbar";
 import { ChatWidget } from "@/components/ai/chat-widget";
 import { getSessionUser } from "@/lib/auth";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
@@ -26,51 +26,21 @@ export function DashboardLayout({
   const navigate = useNavigate();
 
   useEffect(() => {
-    setSession(getSessionUser());
+    const currentSession = getSessionUser();
+    setSession(currentSession);
     setHydrated(true);
-  }, []);
+
+    // Send unauthenticated visitors directly to the real login form.
+    // Do not show a separate "Login required" screen first.
+    if (!currentSession) {
+      void navigate({ to: "/auth/login", replace: true });
+    }
+  }, [navigate]);
 
   if (!hydrated) return null;
 
-  if (!session) {
-    return (
-      <main className="relative isolate flex min-h-svh items-center justify-center overflow-hidden bg-gradient-to-br from-slate-950 via-blue-950 to-cyan-950 px-4 py-8 sm:p-6">
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top_left,rgba(14,165,233,0.35),transparent_48%),radial-gradient(ellipse_at_bottom_right,rgba(20,184,166,0.25),transparent_48%)]"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute -right-24 -top-24 z-[1] h-80 w-80 rounded-full bg-sky-400/20 blur-3xl"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute -bottom-28 -left-20 z-[1] h-96 w-96 rounded-full bg-teal-400/20 blur-3xl"
-        />
-        <div aria-hidden="true" className="absolute inset-0 z-[2] bg-blue-950/70" />
-        <div className="relative z-10 w-full max-w-md rounded-2xl border border-sky-100/40 bg-white/95 p-6 text-center text-slate-900 shadow-2xl shadow-sky-900/20 backdrop-blur-xl">
-          <h1 className="text-2xl font-semibold">Login required</h1>
-          <p className="mt-2 text-sm text-slate-600">
-            You must register and sign in to access your dashboard.
-          </p>
-          <div className="mt-4 grid gap-2 sm:flex sm:justify-center">
-            <Link
-              to="/auth/register"
-              className="rounded-md border border-sky-200 bg-white px-4 py-2 text-sm text-slate-900 transition-colors hover:bg-sky-50"
-            >
-              Register
-            </Link>
-            <Link
-              to="/auth/login"
-              className="rounded-md bg-sky-700 px-4 py-2 text-sm text-white transition-colors hover:bg-sky-800"
-            >
-              Sign in
-            </Link>
-          </div>
-        </div>
-      </main>
-    );
-  }
+  // Keep protected content hidden while redirecting to the login form.
+  if (!session) return null;
 
   return (
     <SidebarProvider>
