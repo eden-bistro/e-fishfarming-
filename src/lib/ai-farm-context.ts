@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { type AuthorizedUser } from "@/lib/server-authz";
 import {
   encodedFarmPondPath,
@@ -9,7 +10,7 @@ import {
 } from "@/lib/iot-firebase";
 
 type ChatMessage = { role: "user" | "assistant"; text: string };
-type ContextSection = { status: "available" | "unavailable"; data?: unknown; reason?: string };
+type ContextSection = { status: "available" | "unavailable" | "partial"; data?: unknown; reason?: string };
 type FarmContext = Record<string, ContextSection>;
 
 type WaterReading = {
