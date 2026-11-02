@@ -159,9 +159,37 @@ export async function buildAiFarmContext(
     }
   }
 
-  // Firebase remains the source for the live sensor snapshot. The database history
-  // above is separately marked unavailable if its own RLS/table read fails.
+  // Firebase remains the source for live sensor readings, device health and alerts.
+  // These are GET-only reads scoped to the authenticated user's farm and default pond.
   context.liveTelemetry = await safely(() => firebaseWaterContext(user, env));
+  context.deviceStatus = await safely(async () => {
+    const firebase = await resolveFirebaseDatabase(env);
+    if (!firebase.ok) throw new Error("Firebase device status is unavailable.");
+    const path = `${encodedFarmPondPath(user.farmId, getDefaultPondId(env))}/devices/status`;
+    const response = await readFirebaseJson(firebase.baseUrl, path, firebase.auth);
+    if (!response.ok) throw new Error("Could not read device status.");
+    const raw = await response.json().catch(() => null);
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
+    return Object.entries(raw as Record<string, Record<string, unknown>>).map(([deviceId, value]) => ({
+      deviceId,
+      online: Boolean(value.online),
+      firmware: typeof value.firmware === "string" ? value.firmware : undefined,
+      updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : undefined,
+      rssi: numberOrUndefined(value.rssi),
+    }));
+  });
+  context.alerts = await safely(async () => {
+    const firebase = await resolveFirebaseDatabase(env);
+    if (!firebase.ok) throw new Error("Firebase alerts are unavailable.");
+    const path = `${encodedFarmPondPath(user.farmId, getDefaultPondId(env))}/alerts`;
+    const response = await readFirebaseJson(firebase.baseUrl, path, firebase.auth);
+    if (!response.ok) throw new Error("Could not read farm alerts.");
+    const raw = await response.json().catch(() => null);
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
+    return Object.entries(raw as Record<string, Record<string, unknown>>)
+      .map(([id, value]) => ({ id, ...value }))
+      .slice(-20);
+  });
 
   // Bound prompt size without silently implying that a truncated section is complete.
   let serialized = JSON.stringify(context);
