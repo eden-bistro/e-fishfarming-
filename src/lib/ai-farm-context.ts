@@ -30,8 +30,8 @@ const MAX_CONTEXT_CHARS = 18_000;
 function relevantQuestion(question: string, history: ChatMessage[]) {
   const normalized = question.toLowerCase();
   if (
-    normalized.split(/\\s+/).length <= 5 &&
-    /\\b(that|it|this|why|good|okay|safe|normal)\\b/.test(normalized)
+    normalized.split(/\s+/).length <= 5 &&
+    /\b(that|it|this|why|good|okay|safe|normal)\b/.test(normalized)
   ) {
     return `${history
       .slice(-2)
@@ -102,9 +102,9 @@ async function readUserTable(
   table: ReadTable,
 ): Promise<unknown[]> {
   const config = getEnvRecord(env);
-  const baseUrl = firstDefined([config.SUPABASE_URL, config.VITE_SUPABASE_URL])?.replace(/\\/+$/, "");
+  const baseUrl = firstDefined([config.SUPABASE_URL, config.VITE_SUPABASE_URL])?.replace(/\/+$/, "");
   const anonKey = firstDefined([config.SUPABASE_ANON_KEY, config.VITE_SUPABASE_ANON_KEY]);
-  const token = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "").trim();
+  const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
   if (!baseUrl || !anonKey || !token) throw new Error("User-scoped Supabase access is not configured.");
 
   const tenantValue = table.tenantColumn === "farm_id" ? user.farmId : user.id;
