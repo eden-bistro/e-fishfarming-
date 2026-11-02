@@ -27,20 +27,6 @@ type WaterReading = {
 const MAX_ROWS_PER_SECTION = 30;
 const MAX_CONTEXT_CHARS = 18_000;
 
-function relevantQuestion(question: string, history: ChatMessage[]) {
-  const normalized = question.toLowerCase();
-  if (
-    normalized.split(/\s+/).length <= 5 &&
-    /\b(that|it|this|why|good|okay|safe|normal)\b/.test(normalized)
-  ) {
-    return `${history
-      .slice(-2)
-      .map((message) => message.text)
-      .join(" ")} ${normalized}`.toLowerCase();
-  }
-  return normalized;
-}
-
 async function safely(section: () => Promise<unknown>): Promise<ContextSection> {
   try {
     return { status: "available", data: await section() };
@@ -167,6 +153,11 @@ export async function buildAiFarmContext(
     ] as const),
   );
   const context: FarmContext = Object.fromEntries(entries);
+  for (const section of Object.values(context)) {
+    if (section.status === "available" && Array.isArray(section.data)) {
+      section.reason = `Showing at most the ${MAX_ROWS_PER_SECTION} most recent records; this is not a complete historical export.`;
+    }
+  }
 
   // Firebase remains the source for the live sensor snapshot. The database history
   // above is separately marked unavailable if its own RLS/table read fails.
