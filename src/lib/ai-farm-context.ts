@@ -1,13 +1,16 @@
+/* eslint-disable prettier/prettier */
 import { type AuthorizedUser } from "@/lib/server-authz";
 import {
   encodedFarmPondPath,
+  firstDefined,
   getDefaultPondId,
+  getEnvRecord,
   readFirebaseJson,
   resolveFirebaseDatabase,
 } from "@/lib/iot-firebase";
 
 type ChatMessage = { role: "user" | "assistant"; text: string };
-type ContextSection = { status: "available" | "unavailable"; data?: unknown; reason?: string };
+type ContextSection = { status: "available" | "unavailable" | "partial"; data?: unknown; reason?: string };
 type FarmContext = Record<string, ContextSection>;
 
 type WaterReading = {
@@ -22,31 +25,14 @@ type WaterReading = {
   nitrite?: number;
 };
 
-function relevantQuestion(question: string, history: ChatMessage[]) {
-  const normalized = question.toLowerCase();
-  if (
-    normalized.split(/\s+/).length <= 5 &&
-    /\b(that|it|this|why|good|okay|safe|normal)\b/.test(normalized)
-  ) {
-    return `${history
-      .slice(-2)
-      .map((message) => message.text)
-      .join(" ")} ${normalized}`.toLowerCase();
-  }
-  return normalized;
-}
-
-function asksAboutTelemetry(question: string) {
-  return /\b(water|temperature|temp|ph|oxygen|dissolved oxygen|ammonia|nitrite|turbidity|sensor|telemetry|iot reading|pond condition|water quality|alert|farm status|farm doing|fish stressed|fish gasping|water reading|current reading|latest reading|reading history)\b/i.test(
-    question,
-  );
-}
+const MAX_ROWS_PER_SECTION = 30;
+const MAX_CONTEXT_CHARS = 18_000;
 
 async function safely(section: () => Promise<unknown>): Promise<ContextSection> {
   try {
     return { status: "available", data: await section() };
   } catch {
-    return { status: "unavailable", reason: "Current IoT telemetry could not be verified." };
+    return { status: "unavailable", reason: "This platform data source could not be verified." };
   }
 }
 
@@ -87,23 +73,143 @@ async function firebaseWaterContext(user: AuthorizedUser, env: unknown) {
 
   const latest = normalizeWaterReading(await latestResponse.json().catch(() => null), pondId);
   if (!latest) throw new Error("The latest IoT reading is empty or invalid.");
-
   return { source: "IoT sensor reading", activePondId: pondId, latest };
 }
 
-/**
- * The assistant is read-only and deliberately receives only sensor readings.
- * It does not load finance, inventory, production, feeding records, device setup,
- * credentials, configuration, or controls into its context.
- */
-export async function buildAiFarmContext(
-  _request: Request,
+type ReadTable = {
+  name: string;
+  select: string;
+  tenantColumn: "farm_id" | "tenant_id";
+};
+
+async function readUserTable(
+  request: Request,
   env: unknown,
   user: AuthorizedUser,
-  question: string,
-  history: ChatMessage[],
+  table: ReadTable,
+): Promise<unknown[]> {
+  const config = getEnvRecord(env);
+  const baseUrl = firstDefined([config.SUPABASE_URL, config.VITE_SUPABASE_URL])?.replace(/\/+$/, "");
+  const anonKey = firstDefined([config.SUPABASE_ANON_KEY, config.VITE_SUPABASE_ANON_KEY]);
+  const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
+  if (!baseUrl || !anonKey || !token) throw new Error("User-scoped Supabase access is not configured.");
+
+  const tenantValue = table.tenantColumn === "farm_id" ? user.farmId : user.id;
+  const url = new URL(`${baseUrl}/rest/v1/${table.name}`);
+  url.searchParams.set("select", table.select);
+  url.searchParams.set(table.tenantColumn, `eq.${tenantValue}`);
+  url.searchParams.set("limit", String(MAX_ROWS_PER_SECTION));
+  if (table.name === "finance_income" || table.name === "finance_expenses") {
+    url.searchParams.set("order", "date.desc");
+  } else {
+    url.searchParams.set("order", "created_at.desc");
+  }
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      apikey: anonKey,
+      authorization: `Bearer ${token}`,
+      accept: "application/json",
+    },
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    throw new Error(`Supabase read failed for ${table.name} (${response.status}).`);
+  }
+  const rows = await response.json().catch(() => null);
+  if (!Array.isArray(rows)) throw new Error(`Invalid response from ${table.name}.`);
+  return rows;
+}
+
+/**
+ * Read-only, user-scoped platform context. Every Supabase request carries the
+ * authenticated user's JWT and the public anon key so database RLS remains in force.
+ * No service-role credentials, browser-supplied tenant IDs, writes, device setup,
+ * device configuration, secrets, user-management data, or IoT commands are exposed.
+ */
+export async function buildAiFarmContext(
+  request: Request,
+  env: unknown,
+  user: AuthorizedUser,
+  _question: string,
+  _history: ChatMessage[],
 ): Promise<FarmContext> {
-  const query = relevantQuestion(question, history);
-  if (!asksAboutTelemetry(query)) return {};
-  return { telemetry: await safely(() => firebaseWaterContext(user, env)) };
+  const tables: Array<ReadTable & { key: string }> = [
+    { key: "farmProfile", name: "farm_profiles", tenantColumn: "tenant_id", select: "name,location,owner,currency,total_ponds,total_stock_kg,cage_names,updated_at" },
+    { key: "income", name: "finance_income", tenantColumn: "farm_id", select: "date,buyer,income_type,unit,quantity,unit_price,total" },
+    { key: "expenses", name: "finance_expenses", tenantColumn: "farm_id", select: "date,category,description,amount" },
+    { key: "feeding", name: "feeding_events", tenantColumn: "farm_id", select: "timestamp,pond_id,mode,amount_kg,status" },
+    { key: "production", name: "production_events", tenantColumn: "tenant_id", select: "cage_id,type,fish_count,weight_kg,feed_kg,created_at" },
+    { key: "inventory", name: "inventory_items", tenantColumn: "tenant_id", select: "name,category,unit,quantity,low_stock_threshold,created_at" },
+    { key: "inventoryMovements", name: "inventory_movements", tenantColumn: "tenant_id", select: "item_id,type,quantity,note,created_at" },
+    { key: "cages", name: "cages", tenantColumn: "tenant_id", select: "name,location,fish_population,biomass_kg,status,created_at" },
+    { key: "waterHistory", name: "water_readings", tenantColumn: "farm_id", select: "timestamp,pond_id,temperature,ph,dissolved_oxygen,turbidity,ammonia,nitrite" },
+  ];
+
+  const entries = await Promise.all(
+    tables.map(async (table) => [
+      table.key,
+      await safely(() => readUserTable(request, env, user, table)),
+    ] as const),
+  );
+  const context: FarmContext = Object.fromEntries(entries);
+  for (const section of Object.values(context)) {
+    if (section.status === "available" && Array.isArray(section.data)) {
+      section.reason = `Showing at most the ${MAX_ROWS_PER_SECTION} most recent records; this is not a complete historical export.`;
+    }
+  }
+
+  // Firebase remains the source for live sensor readings, device health and alerts.
+  // These are GET-only reads scoped to the authenticated user's farm and default pond.
+  context.liveTelemetry = await safely(() => firebaseWaterContext(user, env));
+  context.deviceStatus = await safely(async () => {
+    const firebase = await resolveFirebaseDatabase(env);
+    if (!firebase.ok) throw new Error("Firebase device status is unavailable.");
+    const path = `${encodedFarmPondPath(user.farmId, getDefaultPondId(env))}/devices/status`;
+    const response = await readFirebaseJson(firebase.baseUrl, path, firebase.auth);
+    if (!response.ok) throw new Error("Could not read device status.");
+    const raw = await response.json().catch(() => null);
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
+    return Object.entries(raw as Record<string, Record<string, unknown>>).map(([deviceId, value]) => ({
+      deviceId,
+      online: Boolean(value.online),
+      firmware: typeof value.firmware === "string" ? value.firmware : undefined,
+      updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : undefined,
+      rssi: numberOrUndefined(value.rssi),
+    }));
+  });
+  context.alerts = await safely(async () => {
+    const firebase = await resolveFirebaseDatabase(env);
+    if (!firebase.ok) throw new Error("Firebase alerts are unavailable.");
+    const path = `${encodedFarmPondPath(user.farmId, getDefaultPondId(env))}/alerts`;
+    const response = await readFirebaseJson(firebase.baseUrl, path, firebase.auth);
+    if (!response.ok) throw new Error("Could not read farm alerts.");
+    const raw = await response.json().catch(() => null);
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
+    return Object.entries(raw as Record<string, Record<string, unknown>>)
+      .map(([id, value]) => ({ id, ...value }))
+      .slice(-20);
+  });
+
+  // Bound prompt size without silently implying that a truncated section is complete.
+  let serialized = JSON.stringify(context);
+  if (serialized.length > MAX_CONTEXT_CHARS) {
+    for (const section of Object.values(context)) {
+      if (section.status === "available" && Array.isArray(section.data)) {
+        section.data = section.data.slice(0, 10);
+        section.reason = "Showing the 10 most recent available records to fit the AI context limit.";
+      }
+    }
+    serialized = JSON.stringify(context);
+    if (serialized.length > MAX_CONTEXT_CHARS) {
+      return {
+        platformData: {
+          status: "partial",
+          reason: "Platform context exceeded the safe prompt size. Ask about one module at a time.",
+        },
+      };
+    }
+  }
+  return context;
 }
