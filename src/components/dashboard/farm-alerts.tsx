@@ -21,7 +21,7 @@ export function FarmAlerts() {
   useEffect(() => {
     let active = true;
     async function load() {
-      const [waterAlerts] = await Promise.all([listWaterAlerts()]);
+      const [waterAlerts] = await Promise.all([listWaterAlerts().catch(() => [])]);
       const enterpriseAlerts = listEnterpriseAlerts();
       const combined: DisplayAlert[] = [
         ...enterpriseAlerts.map((alert) => ({
