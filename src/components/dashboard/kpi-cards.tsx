@@ -33,7 +33,9 @@ function KpiCard({
     <Card className="overflow-hidden transition-shadow hover:shadow-md">
       <CardContent className="p-5">
         <div className="flex items-start gap-4">
-          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${iconBg} ${iconColor}`}>
+          <div 
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${iconBg} ${iconColor}`}
+          >
             {icon}
           </div>
           <div className="min-w-0 flex-1">
@@ -151,7 +153,9 @@ export function KpiCards() {
         link={{ href: "/feeding/history", text: "Feed History" }}
       />
       <KpiCard
-        icon={<img src="/icons/Fish logo.png" alt="" className="h-7 w-7 rounded-md object-contain" />}
+        icon={
+          <img src="/icons/Fish logo.png" alt="" className="h-7 w-7 rounded-md object-contain" />
+        }
         iconBg="bg-brand/15"
         iconColor="text-brand"
         label="Active Stock"
