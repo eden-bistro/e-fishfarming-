@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle2, Fish, Info, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Info, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/settings/farm")({
   head: () => ({ meta: [{ title: "Farm Settings — AquaSmart" }] }),
@@ -93,7 +93,7 @@ function Page() {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Fish className="h-4 w-4 icon-emphasis" /> Farm Profile
+              <img src="/icons/fish.jpg" alt="" aria-hidden="true" className="h-4 w-4 object-contain" /> Farm Profile
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
