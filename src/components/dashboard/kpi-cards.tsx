@@ -3,6 +3,7 @@ import {
   getLatestOnlineWaterReading,
   listFeedingEvents,
   PLATFORM_DATA_CHANGED_EVENT,
+  listWaterAlerts,
 } from "@/lib/platform-clients";
 import { UtensilsCrossed, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -62,10 +63,11 @@ export function KpiCards() {
   const [waterHasReading, setWaterHasReading] = useState(false);
 
   const load = useCallback(async () => {
-    const [water, events, production] = await Promise.all([
+    const [water, events, production, waterAlerts] = await Promise.all([
       getLatestOnlineWaterReading(),
       listFeedingEvents(),
       listProductionEventsRemote(),
+      listWaterAlerts(),
     ]);
 
     setWaterHasReading(Boolean(water));
@@ -91,7 +93,7 @@ export function KpiCards() {
         ? Math.max(intelligence.totalStocked - intelligence.totalMortality, 0)
         : null,
     );
-    setOpenAlerts(listEnterpriseAlerts().length);
+    setOpenAlerts(listEnterpriseAlerts().length + waterAlerts.length);
   }, []);
 
   useEffect(() => {
