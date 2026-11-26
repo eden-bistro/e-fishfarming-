@@ -94,7 +94,7 @@ export function KpiCards() {
       .filter((event) => event.type === "harvest")
       .reduce((sum, event) => sum + Number(event.fishCount ?? 0), 0);
     setActiveStock(
-      production.length > 0
+      intelligence.totalStocked > 0
         ? Math.max(intelligence.totalStocked - intelligence.totalMortality - harvestedFish, 0)
         : null,
     );
