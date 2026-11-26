@@ -12,17 +12,14 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { listEnterpriseAlerts } from "@/services/modules/alerts.service";
 import { listWaterAlerts, type WaterAlert } from "@/lib/platform-clients";
-import { listProductionEventsRemote, type ProductionEvent } from "@/services/modules/production.service";
+import {
+  listProductionEventsRemote,
+  type ProductionEvent,
+} from "@/services/modules/production.service";
 import { buildProductionIntelligence } from "@/services/modules/production-intelligence.service";
 
 export const Route = createFileRoute("/ai/insights")({
@@ -193,8 +190,7 @@ function RouteComponent() {
   const criticalAlerts = uniqueAlerts.filter((alert) => alert.severity === "critical").length;
   const warningAlerts = uniqueAlerts.filter((alert) => alert.severity === "warning").length;
   const hasStockingData = intelligence.totalStocked > 0;
-  const hasFeedAndHarvestData =
-    intelligence.totalFeedKg > 0 && intelligence.totalHarvestKg > 0;
+  const hasFeedAndHarvestData = intelligence.totalFeedKg > 0 && intelligence.totalHarvestKg > 0;
 
   return (
     <DashboardLayout
@@ -211,7 +207,9 @@ function RouteComponent() {
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
                 AquaSmart Intelligence
               </p>
-              <h2 className="mt-1 text-lg font-semibold">Understand the signals behind farm performance</h2>
+              <h2 className="mt-1 text-lg font-semibold">
+                Understand the signals behind farm performance
+              </h2>
               <p className="mt-1 max-w-2xl text-sm text-cyan-50/85">
                 Review production indicators and prioritized operating actions. Recommendations are
                 derived from the records currently available in the platform.
@@ -227,7 +225,11 @@ function RouteComponent() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Survival Rate"
-          value={hasStockingData ? `${percentFormatter.format(intelligence.survivalRate)}%` : "Insufficient data"}
+          value={
+            hasStockingData
+              ? `${percentFormatter.format(intelligence.survivalRate)}%`
+              : "Insufficient data"
+          }
           description={
             hasStockingData
               ? `${numberFormatter.format(intelligence.totalStocked)} stocked · ${numberFormatter.format(intelligence.totalMortality)} mortality`
@@ -243,7 +245,11 @@ function RouteComponent() {
         />
         <MetricCard
           label="Feed Conversion"
-          value={hasFeedAndHarvestData ? percentFormatter.format(intelligence.overallFcr) : "Insufficient data"}
+          value={
+            hasFeedAndHarvestData
+              ? percentFormatter.format(intelligence.overallFcr)
+              : "Insufficient data"
+          }
           description={
             hasFeedAndHarvestData
               ? `${formatKg(intelligence.totalFeedKg)} feed · ${formatKg(intelligence.totalHarvestKg)} harvest`
@@ -293,7 +299,9 @@ function RouteComponent() {
               <TriangleAlert className="h-5 w-5 text-brand" />
               Alert Summary
             </CardTitle>
-            <CardDescription>Exceptions included in the current decision-support view.</CardDescription>
+            <CardDescription>
+              Exceptions included in the current decision-support view.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
@@ -351,23 +359,34 @@ function RouteComponent() {
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-3">
-          <Link to="/production" className="rounded-xl border p-3 transition-colors hover:bg-muted/50">
+          <Link
+            to="/production"
+            className="rounded-xl border p-3 transition-colors hover:bg-muted/50"
+          >
             <p className="text-sm font-medium">Production records</p>
             <p className="mt-1 text-xs text-muted-foreground">Stocking, mortality and harvest</p>
             <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-brand">
               Open records <ArrowRight className="h-3 w-3" />
             </span>
           </Link>
-          <Link to="/feeding/history" className="rounded-xl border p-3 transition-colors hover:bg-muted/50">
+          <Link
+            to="/feeding/history"
+            className="rounded-xl border p-3 transition-colors hover:bg-muted/50"
+          >
             <p className="text-sm font-medium">Feeding history</p>
             <p className="mt-1 text-xs text-muted-foreground">Recorded feed quantities and dates</p>
             <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-brand">
               Open history <ArrowRight className="h-3 w-3" />
             </span>
           </Link>
-          <Link to="/inventory" className="rounded-xl border p-3 transition-colors hover:bg-muted/50">
+          <Link
+            to="/inventory"
+            className="rounded-xl border p-3 transition-colors hover:bg-muted/50"
+          >
             <p className="text-sm font-medium">Feed inventory</p>
-            <p className="mt-1 text-xs text-muted-foreground">Stock levels and reorder thresholds</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Stock levels and reorder thresholds
+            </p>
             <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-brand">
               Open inventory <ArrowRight className="h-3 w-3" />
             </span>
