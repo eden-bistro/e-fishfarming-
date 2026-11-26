@@ -109,7 +109,7 @@ function displayNameForUser(name?: string, email?: string) {
 export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
-  const { isMobile, setOpen, setOpenMobile } = useSidebar();
+  const { isMobile, open, setOpen, setOpenMobile } = useSidebar();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     Production: path.startsWith("/production") || path.startsWith("/inventory"),
     "Cage Management": path.startsWith("/cages"),
@@ -198,9 +198,21 @@ export function AppSidebar() {
                     size="default"
                     className="h-10 gap-3 px-3"
                     aria-expanded={isOpen}
-                    onClick={() =>
-                      setOpenSections((prev) => ({ ...prev, [item.title]: !prev[item.title] }))
-                    }
+                    onClick={() => {
+                      if (!isMobile && !open) {
+                        setOpen(true);
+                        setOpenSections((prev) => ({ ...prev, [item.title]: true }));
+                        return;
+                      }
+
+                      setOpenSections((prev) => {
+                        const next = Object.fromEntries(
+                          Object.keys(prev).map((section) => [section, false]),
+                        ) as Record<string, boolean>;
+                        next[item.title] = !prev[item.title];
+                        return next;
+                      });
+                    }}
                   >
                     <img
                       src={item.iconImage}
