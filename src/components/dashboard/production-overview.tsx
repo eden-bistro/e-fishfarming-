@@ -27,6 +27,8 @@ export function ProductionOverview() {
 
   const summary = buildProductionIntelligence(events);
   const hasRecords = events.length > 0;
+  const hasStockingRecords = events.some((event) => event.type === "stocking");
+  const hasHarvestRecords = events.some((event) => event.type === "harvest");
   const harvestedFish = events
     .filter((event) => event.type === "harvest")
     .reduce((sum, event) => sum + Number(event.fishCount ?? 0), 0);
@@ -45,7 +47,7 @@ export function ProductionOverview() {
               <Fish className="h-4 w-4 text-brand" /> Active stock
             </div>
             <p className="mt-2 text-xl font-semibold">
-              {hasRecords ? activeStock.toLocaleString() : "—"}
+              {hasStockingRecords ? activeStock.toLocaleString() : "—"}
             </p>
             <p className="text-xs text-muted-foreground">
               Stocked less mortality and harvested fish
@@ -56,7 +58,7 @@ export function ProductionOverview() {
               <Sprout className="h-4 w-4 text-success" /> Stocked
             </div>
             <p className="mt-2 text-xl font-semibold">
-              {hasRecords ? summary.totalStocked.toLocaleString() : "—"}
+              {hasStockingRecords ? summary.totalStocked.toLocaleString() : "—"}
             </p>
             <p className="text-xs text-muted-foreground">Cumulative stocking records</p>
           </div>
@@ -65,7 +67,7 @@ export function ProductionOverview() {
               <Scale className="h-4 w-4 text-info" /> Harvest weight
             </div>
             <p className="mt-2 text-xl font-semibold">
-              {hasRecords ? `${summary.totalHarvestKg.toLocaleString()} kg` : "—"}
+              {hasHarvestRecords ? `${summary.totalHarvestKg.toLocaleString()} kg` : "—"}
             </p>
             <p className="text-xs text-muted-foreground">Recorded harvest events</p>
           </div>
