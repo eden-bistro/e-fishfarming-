@@ -60,7 +60,9 @@ export function FarmAlerts() {
       <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
         <div>
           <CardTitle className="text-base">Farm Alerts</CardTitle>
-          <CardDescription className="mt-1">Prioritized exceptions requiring attention</CardDescription>
+          <CardDescription className="mt-1">
+            Prioritized exceptions requiring attention
+          </CardDescription>
         </div>
         <Badge variant={alerts.length > 0 ? "secondary" : "outline"}>
           {alerts.length} {alerts.length === 1 ? "recent item" : "recent items"}
