@@ -88,9 +88,12 @@ export function KpiCards() {
     setTodayFeedKg(todayEvents.reduce((sum, event) => sum + Number(event.amount_kg || 0), 0));
 
     const intelligence = buildProductionIntelligence(production);
+    const harvestedFish = production
+      .filter((event) => event.type === "harvest")
+      .reduce((sum, event) => sum + Number(event.fishCount ?? 0), 0);
     setActiveStock(
       production.length > 0
-        ? Math.max(intelligence.totalStocked - intelligence.totalMortality, 0)
+        ? Math.max(intelligence.totalStocked - intelligence.totalMortality - harvestedFish, 0)
         : null,
     );
     setOpenAlerts(listEnterpriseAlerts().length + waterAlerts.length);
@@ -153,7 +156,7 @@ export function KpiCards() {
         iconColor="text-brand"
         label="Active Stock"
         value={activeStock === null ? "Insufficient data" : activeStock.toLocaleString()}
-        sub="Stocked fish minus recorded mortality"
+        sub="Stocked minus recorded mortality and harvested fish"
         link={{ href: "/production", text: "Production Records" }}
       />
       <KpiCard
