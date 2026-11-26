@@ -64,10 +64,10 @@ export function KpiCards() {
 
   const load = useCallback(async () => {
     const [water, events, production, waterAlerts] = await Promise.all([
-      getLatestOnlineWaterReading(),
-      listFeedingEvents(),
-      listProductionEventsRemote(),
-      listWaterAlerts(),
+      getLatestOnlineWaterReading().catch(() => null),
+      listFeedingEvents().catch(() => []),
+      listProductionEventsRemote().catch(() => []),
+      listWaterAlerts().catch(() => []),
     ]);
 
     setWaterHasReading(Boolean(water));
@@ -162,7 +162,7 @@ export function KpiCards() {
         iconColor="text-warning"
         label="Open Alerts"
         value={openAlerts}
-        sub="Inventory and production exceptions"
+        sub="Water, inventory and production exceptions"
         link={{ href: "/water/alerts", text: "Review Alerts" }}
       />
     </div>
