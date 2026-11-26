@@ -68,7 +68,7 @@ export function WaterMonitoring() {
     if (!reading) return false;
     return (
       reading.temperature >= 22 &&
-      reading.temperature <= 32 &&
+      reading.temperature <= 31 &&
       reading.ph >= 6.5 &&
       reading.ph <= 8.5 &&
       reading.dissolvedOxygen >= 5 &&
