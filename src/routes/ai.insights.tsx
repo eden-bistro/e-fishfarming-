@@ -22,6 +22,7 @@ import {
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { listEnterpriseAlerts } from "@/services/modules/alerts.service";
 import { listWaterAlerts, type WaterAlert } from "@/lib/platform-clients";
+import { listProductionEventsRemote, type ProductionEvent } from "@/services/modules/production.service";
 import { buildProductionIntelligence } from "@/services/modules/production-intelligence.service";
 
 export const Route = createFileRoute("/ai/insights")({
@@ -85,8 +86,10 @@ function MetricCard({
   );
 }
 
-function buildRecommendations(alerts: DisplayAlert[]): Recommendation[] {
-  const intelligence = buildProductionIntelligence();
+function buildRecommendations(
+  alerts: DisplayAlert[],
+  intelligence: ReturnType<typeof buildProductionIntelligence>,
+): Recommendation[] {
   const criticalAlerts = alerts.filter((alert) => alert.severity === "critical");
   const warningAlerts = alerts.filter((alert) => alert.severity === "warning");
   const recommendations: Recommendation[] = [];
@@ -140,18 +143,25 @@ function buildRecommendations(alerts: DisplayAlert[]): Recommendation[] {
 }
 
 function RouteComponent() {
-  const intelligence = buildProductionIntelligence();
   const [waterAlerts, setWaterAlerts] = useState<WaterAlert[]>([]);
+  const [productionEvents, setProductionEvents] = useState<ProductionEvent[]>([]);
+  const intelligence = buildProductionIntelligence(productionEvents);
 
   useEffect(() => {
     let active = true;
-    async function loadWaterAlerts() {
-      const rows = await listWaterAlerts().catch(() => []);
-      if (active) setWaterAlerts(rows);
+    async function loadInsightsData() {
+      const [waterRows, productionRows] = await Promise.all([
+        listWaterAlerts().catch(() => []),
+        listProductionEventsRemote().catch(() => []),
+      ]);
+      if (active) {
+        setWaterAlerts(waterRows);
+        setProductionEvents(productionRows);
+      }
     }
-    void loadWaterAlerts();
+    void loadInsightsData();
     const timer = window.setInterval(() => {
-      if (document.visibilityState === "visible") void loadWaterAlerts();
+      if (document.visibilityState === "visible") void loadInsightsData();
     }, 30_000);
     return () => {
       active = false;
@@ -179,7 +189,7 @@ function RouteComponent() {
   ];
   const uniqueAlerts = [...new Map(alerts.map((alert) => [alert.id, alert])).values()];
   uniqueAlerts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  const recommendations = buildRecommendations(uniqueAlerts);
+  const recommendations = buildRecommendations(uniqueAlerts, intelligence);
   const criticalAlerts = uniqueAlerts.filter((alert) => alert.severity === "critical").length;
   const warningAlerts = uniqueAlerts.filter((alert) => alert.severity === "warning").length;
   const hasStockingData = intelligence.totalStocked > 0;
