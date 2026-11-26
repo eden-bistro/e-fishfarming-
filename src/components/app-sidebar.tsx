@@ -4,9 +4,7 @@ import {
   ChevronDown,
   Cpu,
   Droplets,
-  Fish,
   History,
-  LayoutDashboard,
   LineChart,
   LogOut,
   Package,
@@ -40,11 +38,11 @@ const navItems = [
   {
     title: "Dashboard",
     url: "/",
-    icon: LayoutDashboard,
+    iconImage: "/icons/dashboard.png",
   },
   {
     title: "Production",
-    icon: Fish,
+    iconImage: "/icons/fish.jpg",
     children: [
       { title: "Production", url: "/production" },
       { title: "Inventory", url: "/inventory" },
@@ -52,7 +50,7 @@ const navItems = [
   },
   {
     title: "Cage Management",
-    icon: Cpu,
+    iconImage: "/icons/cage.jpg",
     children: [{ title: "Cage Management", url: "/cages" }],
   },
   { title: "AI Insights", url: "/ai/insights", icon: Cpu },
@@ -64,7 +62,7 @@ const navItems = [
   },
   {
     title: "Feeding System",
-    icon: Fish,
+    iconImage: "/icons/fish.jpg",
     children: [
       { title: "Feeding Schedule", url: "/feeding/schedule" },
       { title: "Manual Feeding", url: "/feeding/manual" },
@@ -177,7 +175,11 @@ export function AppSidebar() {
                     className="h-9 gap-2 px-2"
                   >
                     <Link to={item.url as never} onClick={closeSidebarAfterNavigation}>
-                      <item.icon className="h-4 w-4 icon-emphasis" />
+                      {"iconImage" in item ? (
+                        <img src={item.iconImage} alt="" aria-hidden="true" className="h-5 w-5 shrink-0 object-contain" />
+                      ) : (
+                        <item.icon className="h-4 w-4 icon-emphasis" />
+                      )}
                       <span className="truncate">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
@@ -219,9 +221,13 @@ export function AppSidebar() {
                             {child.url === "/feeding/schedule" ? (
                               <CalendarClock className="h-3.5 w-3.5 opacity-80 icon-emphasis" />
                             ) : child.url === "/feeding/manual" ? (
-                              <Fish className="h-3.5 w-3.5 opacity-80 icon-emphasis" />
+                              <img src="/icons/fish.jpg" alt="" aria-hidden="true" className="h-4 w-4 shrink-0 object-contain" />
                             ) : child.url === "/feeding/history" ? (
                               <History className="h-3.5 w-3.5 opacity-80 icon-emphasis" />
+                            ) : child.url === "/settings/devices" ? (
+                              <img src="/icons/IoT.png" alt="" aria-hidden="true" className="h-4 w-4 shrink-0 object-contain" />
+                            ) : child.url === "/finance/pnl" ? (
+                              <img src="/icons/profit.png" alt="" aria-hidden="true" className="h-4 w-4 shrink-0 object-contain" />
                             ) : child.url === "/feeding/inventory" ? (
                               <Package className="h-3.5 w-3.5 opacity-80 icon-emphasis" />
                             ) : (
