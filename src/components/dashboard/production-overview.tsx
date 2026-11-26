@@ -45,9 +45,7 @@ export function ProductionOverview() {
               <Fish className="h-4 w-4 text-brand" /> Active stock
             </div>
             <p className="mt-2 text-xl font-semibold">
-              {hasRecords
-                ? activeStock.toLocaleString()
-                : "—"}
+              {hasRecords ? activeStock.toLocaleString() : "—"}
             </p>
             <p className="text-xs text-muted-foreground">
               Stocked less mortality and harvested fish
