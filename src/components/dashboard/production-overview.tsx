@@ -15,6 +15,8 @@ export function ProductionOverview() {
     let active = true;
     void listProductionEventsRemote().then((rows) => {
       if (active) setEvents(rows);
+    }).catch(() => {
+      if (active) setEvents([]);
     });
     return () => {
       active = false;
