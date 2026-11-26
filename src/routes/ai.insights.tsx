@@ -176,7 +176,7 @@ function RouteComponent() {
       createdAt: alert.createdAt,
     })),
     ...waterAlerts.map((alert) => ({
-      id: alert.id,
+      id: `water:${alert.pond_id}:${alert.type}`,
       message: alert.message,
       severity: alert.severity,
       source: "water quality",
@@ -300,17 +300,17 @@ function RouteComponent() {
               Alert Summary
             </CardTitle>
             <CardDescription>
-              Exceptions included in the current decision-support view.
+              Recent exceptions included in the current decision-support view.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-xl border p-3">
-                <p className="text-xs text-muted-foreground">Critical</p>
+                <p className="text-xs text-muted-foreground">Critical signals</p>
                 <p className="mt-1 text-2xl font-semibold">{criticalAlerts}</p>
               </div>
               <div className="rounded-xl border p-3">
-                <p className="text-xs text-muted-foreground">Warnings</p>
+                <p className="text-xs text-muted-foreground">Warning signals</p>
                 <p className="mt-1 text-2xl font-semibold">{warningAlerts}</p>
               </div>
             </div>
@@ -318,7 +318,7 @@ function RouteComponent() {
             {uniqueAlerts.length === 0 ? (
               <div className="flex items-start gap-3 rounded-xl border border-dashed p-3 text-sm text-muted-foreground">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-                No inventory or production alerts are currently recorded.
+                No recent water-quality, inventory or production alerts are recorded.
               </div>
             ) : (
               <div className="space-y-2">
