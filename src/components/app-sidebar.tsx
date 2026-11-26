@@ -182,7 +182,16 @@ export function AppSidebar() {
                           className="h-5 w-5 shrink-0 object-contain"
                         />
                       ) : (
-                        <item.icon className="h-4 w-4 icon-emphasis" />
+                        {"iconImage" in item ? (
+                      <img
+                        src={item.iconImage}
+                        alt=""
+                        aria-hidden="true"
+                        className="h-5 w-5 shrink-0 object-contain"
+                      />
+                    ) : (
+                      <item.icon className="h-4 w-4 icon-emphasis" />
+                    )}
                       )}
                       <span className="truncate">{item.title}</span>
                     </Link>
