@@ -202,16 +202,12 @@ export function AppSidebar() {
                       setOpenSections((prev) => ({ ...prev, [item.title]: !prev[item.title] }))
                     }
                   >
-                    {"iconImage" in item ? (
-                      <img
-                        src={item.iconImage}
-                        alt=""
-                        aria-hidden="true"
-                        className="h-5 w-5 shrink-0 rounded-md object-contain"
-                      />
-                    ) : (
-                      <item.icon className="h-4 w-4 icon-emphasis" />
-                    )}
+                    <img
+                      src={item.iconImage}
+                      alt=""
+                      aria-hidden="true"
+                      className="h-5 w-5 shrink-0 rounded-md object-contain"
+                    />
                     <span className="truncate">{item.title}</span>
                     <ChevronDown
                       className={`ml-auto h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
