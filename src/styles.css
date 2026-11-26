@@ -69,7 +69,7 @@
 :root {
   --radius: 0.625rem;
   /* Hydro Victoria blue and aquaculture green semantic palette. */
-  --background: oklch(0.985 0.006 210);
+  --background: oklch(1 0 0);
   --foreground: oklch(0.257 0.045 228);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.257 0.045 228);
@@ -85,21 +85,21 @@
   --accent-foreground: oklch(0.3 0.068 163);
   --destructive: oklch(0.52 0.192 29);
   --destructive-foreground: oklch(0.99 0.002 210);
-  --border: oklch(0.884 0.025 210);
-  --input: oklch(0.884 0.025 210);
+  --border: oklch(0.91 0.012 220);
+  --input: oklch(0.91 0.012 220);
   --ring: oklch(0.542 0.11 224);
   --chart-1: oklch(0.626 0.122 223);
   --chart-2: oklch(0.525 0.112 164);
   --chart-3: oklch(0.421 0.091 224);
   --chart-4: oklch(0.674 0.141 70);
   --chart-5: oklch(0.52 0.192 29);
-  --sidebar: oklch(0.3 0.057 229);
-  --sidebar-foreground: oklch(0.95 0.014 210);
-  --sidebar-primary: oklch(0.626 0.122 223);
-  --sidebar-primary-foreground: oklch(0.99 0.002 210);
-  --sidebar-accent: oklch(0.365 0.071 226);
-  --sidebar-accent-foreground: oklch(0.97 0.012 210);
-  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.31 0.04 228);
+  --sidebar-primary: oklch(0.48 0.105 229);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.955 0.025 220);
+  --sidebar-accent-foreground: oklch(0.31 0.07 228);
+  --sidebar-border: oklch(0.91 0.012 220);
   --sidebar-ring: oklch(0.626 0.122 223);
   --brand: oklch(0.626 0.122 223);
   --brand-foreground: oklch(0.99 0.002 210);
@@ -162,11 +162,8 @@
 
 @layer components {
   .aquasmart-dashboard-background {
-    background-color: var(--color-background);
-    background-image:
-      radial-gradient(ellipse at 8% 0%, oklch(0.94 0.035 220 / 0.55), transparent 38%),
-      radial-gradient(ellipse at 95% 100%, oklch(0.95 0.045 175 / 0.42), transparent 36%);
-    background-attachment: fixed;
+    background-color: #ffffff;
+    background-image: none;
   }
 
   .icon-pill {
