@@ -94,12 +94,12 @@ function Page() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <img
-                  src="/icons/fish.jpg"
-                  alt=""
-                  aria-hidden="true"
-                  className="h-4 w-4 object-contain"
-                />{" "}
-                Farm Profile
+                src="/icons/fish.jpg"
+                alt=""
+                aria-hidden="true"
+                className="h-4 w-4 object-contain"
+              />{" "}
+              Farm Profile
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
