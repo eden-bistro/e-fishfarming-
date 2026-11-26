@@ -197,7 +197,7 @@ export function AppSidebar() {
                         aria-hidden="true"
                         className="h-6 w-6 shrink-0 rounded-md object-contain"
                       />
-                      <span className="sr-only">{item.title}</span>
+                      <span className="truncate group-data-[collapsible=icon]:sr-only">{item.title}</span>
                     </SidebarMenuButton>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent side="right" align="start" className="min-w-48">
