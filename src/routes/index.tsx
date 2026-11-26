@@ -59,7 +59,9 @@ function Dashboard() {
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
                 AquaSmart Intelligence
               </p>
-              <h2 className="mt-1 text-lg font-semibold">Turn farm records into better decisions</h2>
+              <h2 className="mt-1 text-lg font-semibold">
+                Turn farm records into better decisions
+              </h2>
               <p className="mt-1 text-sm text-cyan-50/85">
                 Review production indicators, feed efficiency, survival records and prioritized
                 operating recommendations in AI Insights.
