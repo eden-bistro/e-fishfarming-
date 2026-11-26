@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, ArrowRight, CheckCircle2 } from "lucide-react";
 import { getLatestOnlineWaterReading, type WaterReading } from "@/lib/platform-clients";
@@ -119,7 +127,11 @@ export function WaterMonitoring() {
                         </linearGradient>
                       </defs>
                       <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
-                      <XAxis dataKey="time" tick={{ fontSize: 10 }} stroke="var(--muted-foreground)" />
+                      <XAxis
+                        dataKey="time"
+                        tick={{ fontSize: 10 }}
+                        stroke="var(--muted-foreground)"
+                      />
                       <YAxis
                         domain={["auto", "auto"]}
                         tick={{ fontSize: 10 }}
@@ -149,7 +161,8 @@ export function WaterMonitoring() {
             <div className="mt-4 flex items-center border-t pt-3 text-xs">
               {safe ? (
                 <span className="inline-flex items-center gap-1.5 text-success">
-                  <CheckCircle2 className="h-4 w-4" /> All monitored parameters within configured limits
+                  <CheckCircle2 className="h-4 w-4" />
+                  All monitored parameters within configured limits
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 text-warning">
