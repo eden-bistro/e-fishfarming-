@@ -3,13 +3,11 @@ import {
   CalendarClock,
   ChevronDown,
   Cpu,
-  Droplets,
   History,
   LineChart,
   LogOut,
   Package,
   ShieldCheck,
-  Settings,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -22,7 +20,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,7 +69,7 @@ const navItems = [
   },
   {
     title: "Water Quality",
-    icon: Droplets,
+    iconImage: "/icons/Water.png",
     children: [
       { title: "Live Monitoring", url: "/water/live" },
       { title: "Water History", url: "/water/history" },
@@ -90,7 +88,7 @@ const navItems = [
   },
   {
     title: "Settings",
-    icon: Settings,
+    iconImage: "/icons/settings.png",
     children: [
       { title: "Farm Settings", url: "/settings/farm" },
       { title: "Users & Roles", url: "/settings/users-and-roles" },
@@ -282,6 +280,7 @@ export function AppSidebar() {
               aria-label="Open account menu"
             >
               <Avatar className="h-7 w-7 shrink-0">
+                <AvatarImage src="/icons/user.jpg" alt="" />
                 <AvatarFallback className="bg-sidebar-primary text-xs text-sidebar-primary-foreground">
                   {initials}
                 </AvatarFallback>
