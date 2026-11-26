@@ -13,11 +13,13 @@ export function ProductionOverview() {
 
   useEffect(() => {
     let active = true;
-    void listProductionEventsRemote().then((rows) => {
-      if (active) setEvents(rows);
-    }).catch(() => {
-      if (active) setEvents([]);
-    });
+    void listProductionEventsRemote()
+      .then((rows) => {
+        if (active) setEvents(rows);
+      })
+      .catch(() => {
+        if (active) setEvents([]);
+      });
     return () => {
       active = false;
     };
@@ -28,10 +30,7 @@ export function ProductionOverview() {
   const harvestedFish = events
     .filter((event) => event.type === "harvest")
     .reduce((sum, event) => sum + Number(event.fishCount ?? 0), 0);
-  const activeStock = Math.max(
-    summary.totalStocked - summary.totalMortality - harvestedFish,
-    0,
-  );
+  const activeStock = Math.max(summary.totalStocked - summary.totalMortality - harvestedFish, 0);
 
   return (
     <Card>
@@ -50,7 +49,9 @@ export function ProductionOverview() {
                 ? activeStock.toLocaleString()
                 : "—"}
             </p>
-            <p className="text-xs text-muted-foreground">Stocked less mortality and harvested fish</p>
+            <p className="text-xs text-muted-foreground">
+              Stocked less mortality and harvested fish
+            </p>
           </div>
           <div className="rounded-xl border bg-card p-3">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
