@@ -97,7 +97,7 @@ function Page() {
                 src="/icons/fish.jpg"
                 alt=""
                 aria-hidden="true"
-                className="h-4 w-4 object-contain"
+                className="h-4 w-4 rounded-md object-contain"
               />{" "}
               Farm Profile
             </CardTitle>
