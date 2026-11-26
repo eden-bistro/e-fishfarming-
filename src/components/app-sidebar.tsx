@@ -179,7 +179,7 @@ export function AppSidebar() {
                           src={item.iconImage}
                           alt=""
                           aria-hidden="true"
-                          className="h-5 w-5 shrink-0 object-contain"
+                          className="h-5 w-5 shrink-0 rounded-md object-contain"
                         />
                       ) : (
                         <item.icon className="h-4 w-4 icon-emphasis" />
@@ -209,7 +209,7 @@ export function AppSidebar() {
                         src={item.iconImage}
                         alt=""
                         aria-hidden="true"
-                        className="h-5 w-5 shrink-0 object-contain"
+                        className="h-5 w-5 shrink-0 rounded-md object-contain"
                       />
                     ) : (
                       <item.icon className="h-4 w-4 icon-emphasis" />
@@ -238,7 +238,7 @@ export function AppSidebar() {
                                 src="/icons/fish.jpg"
                                 alt=""
                                 aria-hidden="true"
-                                className="h-4 w-4 shrink-0 object-contain"
+                                className="h-4 w-4 shrink-0 rounded-md object-contain"
                               />
                             ) : child.url === "/feeding/history" ? (
                               <History className="h-3.5 w-3.5 opacity-80 icon-emphasis" />
@@ -247,14 +247,14 @@ export function AppSidebar() {
                                 src="/icons/IoT.png"
                                 alt=""
                                 aria-hidden="true"
-                                className="h-4 w-4 shrink-0 object-contain"
+                                className="h-4 w-4 shrink-0 rounded-md object-contain"
                               />
                             ) : child.url === "/finance/pnl" ? (
                               <img
                                 src="/icons/profit.png"
                                 alt=""
                                 aria-hidden="true"
-                                className="h-4 w-4 shrink-0 object-contain"
+                                className="h-4 w-4 shrink-0 rounded-md object-contain"
                               />
                             ) : child.url === "/feeding/inventory" ? (
                               <Package className="h-3.5 w-3.5 opacity-80 icon-emphasis" />
