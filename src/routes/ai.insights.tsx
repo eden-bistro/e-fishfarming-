@@ -146,7 +146,7 @@ function RouteComponent() {
   useEffect(() => {
     let active = true;
     async function loadWaterAlerts() {
-      const rows = await listWaterAlerts();
+      const rows = await listWaterAlerts().catch(() => []);
       if (active) setWaterAlerts(rows);
     }
     void loadWaterAlerts();
