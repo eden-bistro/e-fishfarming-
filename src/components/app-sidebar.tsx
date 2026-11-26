@@ -10,7 +10,6 @@ import {
   Package,
   ShieldCheck,
   Settings,
-  Wallet,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -81,7 +80,7 @@ const navItems = [
   },
   {
     title: "Financial",
-    icon: Wallet,
+    iconImage: "/icons/Financial.png",
     children: [
       { title: "Income", url: "/finance/income" },
       { title: "Expenses", url: "/finance/expenses" },
