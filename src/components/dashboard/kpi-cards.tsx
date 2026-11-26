@@ -142,7 +142,9 @@ export function KpiCards() {
         iconColor="text-success"
         label="Today's Feed"
         value={
-          todayFeedKg === null ? "Loading…" : (
+          todayFeedKg === null ? (
+            "Loading…"
+          ) : (
             <>
               {todayFeedKg.toFixed(1)}{" "}
               <span className="text-base font-medium text-muted-foreground">kg</span>
