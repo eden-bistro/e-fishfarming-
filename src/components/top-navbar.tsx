@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const PAGE_TITLES: Array<[string, string]> = [
   ["/settings/devices", "Devices"],
@@ -155,6 +155,7 @@ export function TopNavbar() {
               aria-label="Open account menu"
             >
               <Avatar className="h-9 w-9 md:h-8 md:w-8">
+                <AvatarImage src="/icons/user.jpg" alt="" />
                 <AvatarFallback className="bg-brand text-xs text-brand-foreground">
                   {accountName
                     .split(" ")
