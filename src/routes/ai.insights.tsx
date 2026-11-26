@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRight,
@@ -20,6 +21,7 @@ import {
 } from "@/components/ui/card";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { listEnterpriseAlerts } from "@/services/modules/alerts.service";
+import { listWaterAlerts, type WaterAlert } from "@/lib/platform-clients";
 import { buildProductionIntelligence } from "@/services/modules/production-intelligence.service";
 
 export const Route = createFileRoute("/ai/insights")({
@@ -42,6 +44,15 @@ const priorityVariant = {
 
 const numberFormatter = new Intl.NumberFormat();
 const percentFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
+
+type DisplayAlert = {
+  id: string;
+  message: string;
+  severity: "critical" | "warning" | "info";
+  source: string;
+  scope?: string;
+  createdAt: string;
+};
 
 function formatKg(value: number) {
   return `${numberFormatter.format(Math.round(value))} kg`;
@@ -74,9 +85,8 @@ function MetricCard({
   );
 }
 
-function buildRecommendations(): Recommendation[] {
+function buildRecommendations(alerts: DisplayAlert[]): Recommendation[] {
   const intelligence = buildProductionIntelligence();
-  const alerts = listEnterpriseAlerts();
   const criticalAlerts = alerts.filter((alert) => alert.severity === "critical");
   const warningAlerts = alerts.filter((alert) => alert.severity === "warning");
   const recommendations: Recommendation[] = [];
@@ -131,10 +141,47 @@ function buildRecommendations(): Recommendation[] {
 
 function RouteComponent() {
   const intelligence = buildProductionIntelligence();
-  const alerts = listEnterpriseAlerts();
-  const recommendations = buildRecommendations();
-  const criticalAlerts = alerts.filter((alert) => alert.severity === "critical").length;
-  const warningAlerts = alerts.filter((alert) => alert.severity === "warning").length;
+  const [waterAlerts, setWaterAlerts] = useState<WaterAlert[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    async function loadWaterAlerts() {
+      const rows = await listWaterAlerts();
+      if (active) setWaterAlerts(rows);
+    }
+    void loadWaterAlerts();
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void loadWaterAlerts();
+    }, 30_000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  const alerts: DisplayAlert[] = [
+    ...listEnterpriseAlerts().map((alert) => ({
+      id: alert.id,
+      message: alert.message,
+      severity: alert.severity,
+      source: alert.source,
+      scope: alert.scope,
+      createdAt: alert.createdAt,
+    })),
+    ...waterAlerts.map((alert) => ({
+      id: alert.id,
+      message: alert.message,
+      severity: alert.severity,
+      source: "water quality",
+      scope: alert.pond_id,
+      createdAt: alert.created_at,
+    })),
+  ];
+  const uniqueAlerts = [...new Map(alerts.map((alert) => [alert.id, alert])).values()];
+  uniqueAlerts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const recommendations = buildRecommendations(uniqueAlerts);
+  const criticalAlerts = uniqueAlerts.filter((alert) => alert.severity === "critical").length;
+  const warningAlerts = uniqueAlerts.filter((alert) => alert.severity === "warning").length;
   const hasStockingData = intelligence.totalStocked > 0;
   const hasFeedAndHarvestData =
     intelligence.totalFeedKg > 0 && intelligence.totalHarvestKg > 0;
@@ -250,14 +297,14 @@ function RouteComponent() {
               </div>
             </div>
 
-            {alerts.length === 0 ? (
+            {uniqueAlerts.length === 0 ? (
               <div className="flex items-start gap-3 rounded-xl border border-dashed p-3 text-sm text-muted-foreground">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
                 No inventory or production alerts are currently recorded.
               </div>
             ) : (
               <div className="space-y-2">
-                {alerts.slice(0, 5).map((alert) => (
+                {uniqueAlerts.slice(0, 5).map((alert) => (
                   <div key={alert.id} className="rounded-xl border p-3">
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-sm font-medium">{alert.message}</p>
