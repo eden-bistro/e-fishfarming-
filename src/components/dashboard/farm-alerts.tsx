@@ -33,7 +33,7 @@ export function FarmAlerts() {
           createdAt: alert.createdAt,
         })),
         ...waterAlerts.map((alert) => ({
-          id: alert.id,
+          id: `water:${alert.pond_id}:${alert.type}`,
           message: alert.message,
           severity: alert.severity,
           source: "water quality",
@@ -59,7 +59,7 @@ export function FarmAlerts() {
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
         <div>
-          <CardTitle className="text-base">Farm Alerts</CardTitle>
+          <CardTitle className="text-base">Recent Farm Alerts</CardTitle>
           <CardDescription className="mt-1">
             Prioritized exceptions requiring attention
           </CardDescription>
