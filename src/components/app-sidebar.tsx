@@ -175,7 +175,12 @@ export function AppSidebar() {
                   >
                     <Link to={item.url as never} onClick={closeSidebarAfterNavigation}>
                       {"iconImage" in item ? (
-                        <img src={item.iconImage} alt="" aria-hidden="true" className="h-5 w-5 shrink-0 object-contain" />
+                        <img
+                          src={item.iconImage}
+                          alt=""
+                          aria-hidden="true"
+                          className="h-5 w-5 shrink-0 object-contain"
+                        />
                       ) : (
                         <item.icon className="h-4 w-4 icon-emphasis" />
                       )}
@@ -220,13 +225,28 @@ export function AppSidebar() {
                             {child.url === "/feeding/schedule" ? (
                               <CalendarClock className="h-3.5 w-3.5 opacity-80 icon-emphasis" />
                             ) : child.url === "/feeding/manual" ? (
-                              <img src="/icons/fish.jpg" alt="" aria-hidden="true" className="h-4 w-4 shrink-0 object-contain" />
+                              <img
+                                src="/icons/fish.jpg"
+                                alt=""
+                                aria-hidden="true"
+                                className="h-4 w-4 shrink-0 object-contain"
+                              />
                             ) : child.url === "/feeding/history" ? (
                               <History className="h-3.5 w-3.5 opacity-80 icon-emphasis" />
                             ) : child.url === "/settings/devices" ? (
-                              <img src="/icons/IoT.png" alt="" aria-hidden="true" className="h-4 w-4 shrink-0 object-contain" />
+                              <img
+                                src="/icons/IoT.png"
+                                alt=""
+                                aria-hidden="true"
+                                className="h-4 w-4 shrink-0 object-contain"
+                              />
                             ) : child.url === "/finance/pnl" ? (
-                              <img src="/icons/profit.png" alt="" aria-hidden="true" className="h-4 w-4 shrink-0 object-contain" />
+                              <img
+                                src="/icons/profit.png"
+                                alt=""
+                                aria-hidden="true"
+                                className="h-4 w-4 shrink-0 object-contain"
+                              />
                             ) : child.url === "/feeding/inventory" ? (
                               <Package className="h-3.5 w-3.5 opacity-80 icon-emphasis" />
                             ) : (
