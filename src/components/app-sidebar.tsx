@@ -9,7 +9,6 @@ import {
   Package,
   ShieldCheck,
 } from "lucide-react";
-import { useState } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -109,16 +108,7 @@ function displayNameForUser(name?: string, email?: string) {
 export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
-  const { isMobile, open, setOpen, setOpenMobile } = useSidebar();
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    Production: path.startsWith("/production") || path.startsWith("/inventory"),
-    "Cage Management": path.startsWith("/cages"),
-    "Feeding System": path.startsWith("/feeding"),
-    "Water Quality": path.startsWith("/water"),
-    Financial: path.startsWith("/finance"),
-    Settings: path.startsWith("/settings"),
-  });
-
+  const { isMobile, setOpen, setOpenMobile } = useSidebar();
   const closeSidebarAfterNavigation = () => {
     if (isMobile) {
       setOpenMobile(false);
@@ -169,7 +159,7 @@ export function AppSidebar() {
                     size="default"
                     isActive={path === item.url}
                     tooltip={item.title}
-                    className="h-9 gap-2 px-2"
+                    className="h-10 gap-2 px-2"
                   >
                     <Link to={item.url as never} onClick={closeSidebarAfterNavigation}>
                       {"iconImage" in item ? (
@@ -177,10 +167,10 @@ export function AppSidebar() {
                           src={item.iconImage}
                           alt=""
                           aria-hidden="true"
-                          className="h-5 w-5 shrink-0 rounded-md object-contain"
+                          className="h-6 w-6 shrink-0 rounded-md object-contain"
                         />
                       ) : (
-                        <item.icon className="h-4 w-4 icon-emphasis" />
+                        <item.icon className="h-5 w-5 icon-emphasis" />
                       )}
                       <span className="truncate">{item.title}</span>
                     </Link>
@@ -189,92 +179,74 @@ export function AppSidebar() {
               );
             }
 
-            const isOpen = Boolean(openSections[item.title]);
+            const hasActiveChild = item.children.some((child) => path === child.url);
             return (
-              <div key={item.title} className="mb-0.5">
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    tooltip={item.title}
-                    size="default"
-                    className="h-10 gap-3 px-3"
-                    aria-expanded={isOpen}
-                    onClick={() => {
-                      if (!isMobile && !open) {
-                        setOpen(true);
-                        setOpenSections((prev) => ({ ...prev, [item.title]: true }));
-                        return;
-                      }
-
-                      setOpenSections((prev) => {
-                        const next = Object.fromEntries(
-                          Object.keys(prev).map((section) => [section, false]),
-                        ) as Record<string, boolean>;
-                        next[item.title] = !prev[item.title];
-                        return next;
-                      });
-                    }}
-                  >
-                    <img
-                      src={item.iconImage}
-                      alt=""
-                      aria-hidden="true"
-                      className="h-5 w-5 shrink-0 rounded-md object-contain"
-                    />
-                    <span className="truncate">{item.title}</span>
-                    <ChevronDown
-                      className={`ml-auto h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
-                    />
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                {isOpen && (
-                  <div className="ml-10 mt-1 space-y-1 group-data-[collapsible=icon]:hidden">
+              <SidebarMenuItem key={item.title}>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <SidebarMenuButton
+                      tooltip={item.title}
+                      size="default"
+                      isActive={hasActiveChild}
+                      className="h-10 justify-center px-2"
+                      aria-label={`${item.title} menu`}
+                    >
+                      <img
+                        src={item.iconImage}
+                        alt=""
+                        aria-hidden="true"
+                        className="h-6 w-6 shrink-0 rounded-md object-contain"
+                      />
+                      <span className="truncate group-data-[collapsible=icon]:sr-only">
+                        {item.title}
+                      </span>
+                    </SidebarMenuButton>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="right" align="start" className="min-w-48">
                     {item.children.map((child) => (
-                      <SidebarMenuItem key={child.url}>
-                        <SidebarMenuButton
-                          asChild
-                          isActive={path === child.url}
-                          tooltip={child.title}
-                          className="h-8 px-2"
+                      <DropdownMenuItem key={child.url} asChild>
+                        <Link
+                          to={child.url as never}
+                          onClick={closeSidebarAfterNavigation}
+                          className="flex w-full items-center gap-2"
                         >
-                          <Link to={child.url as never} onClick={closeSidebarAfterNavigation}>
-                            {child.url === "/feeding/schedule" ? (
-                              <CalendarClock className="h-3.5 w-3.5 opacity-80 icon-emphasis" />
-                            ) : child.url === "/feeding/manual" ? (
-                              <img
-                                src="/icons/fish.jpg"
-                                alt=""
-                                aria-hidden="true"
-                                className="h-4 w-4 shrink-0 rounded-md object-contain"
-                              />
-                            ) : child.url === "/feeding/history" ? (
-                              <History className="h-3.5 w-3.5 opacity-80 icon-emphasis" />
-                            ) : child.url === "/settings/devices" ? (
-                              <img
-                                src="/icons/IoT.png"
-                                alt=""
-                                aria-hidden="true"
-                                className="h-4 w-4 shrink-0 rounded-md object-contain"
-                              />
-                            ) : child.url === "/finance/pnl" ? (
-                              <img
-                                src="/icons/profit.png"
-                                alt=""
-                                aria-hidden="true"
-                                className="h-4 w-4 shrink-0 rounded-md object-contain"
-                              />
-                            ) : child.url === "/feeding/inventory" ? (
-                              <Package className="h-3.5 w-3.5 opacity-80 icon-emphasis" />
-                            ) : (
-                              <LineChart className="h-3.5 w-3.5 opacity-80 icon-emphasis" />
-                            )}
-                            <span>{child.title}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
+                          {child.url === "/feeding/schedule" ? (
+                            <CalendarClock className="h-5 w-5 icon-emphasis" />
+                          ) : child.url === "/feeding/manual" ? (
+                            <img
+                              src="/icons/fish.jpg"
+                              alt=""
+                              aria-hidden="true"
+                              className="h-5 w-5 shrink-0 rounded-md object-contain"
+                            />
+                          ) : child.url === "/feeding/history" ? (
+                            <History className="h-5 w-5 icon-emphasis" />
+                          ) : child.url === "/settings/devices" ? (
+                            <img
+                              src="/icons/IoT.png"
+                              alt=""
+                              aria-hidden="true"
+                              className="h-5 w-5 shrink-0 rounded-md object-contain"
+                            />
+                          ) : child.url === "/finance/pnl" ? (
+                            <img
+                              src="/icons/profit.png"
+                              alt=""
+                              aria-hidden="true"
+                              className="h-5 w-5 shrink-0 rounded-md object-contain"
+                            />
+                          ) : child.url === "/feeding/inventory" ? (
+                            <Package className="h-5 w-5 icon-emphasis" />
+                          ) : (
+                            <LineChart className="h-5 w-5 icon-emphasis" />
+                          )}
+                          <span>{child.title}</span>
+                        </Link>
+                      </DropdownMenuItem>
                     ))}
-                  </div>
-                )}
-              </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </SidebarMenuItem>
             );
           })}
         </SidebarMenu>
