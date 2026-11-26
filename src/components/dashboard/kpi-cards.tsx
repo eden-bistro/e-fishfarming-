@@ -61,7 +61,7 @@ export function KpiCards() {
   const [waterStatus, setWaterStatus] = useState("Checking…");
   const [todayFeedKg, setTodayFeedKg] = useState<number | null>(null);
   const [activeStock, setActiveStock] = useState<number | null>(null);
-  const [openAlerts, setOpenAlerts] = useState(0);
+  const [recentAlerts, setRecentAlerts] = useState(0);
   const [waterHasReading, setWaterHasReading] = useState(false);
 
   const load = useCallback(async () => {
@@ -77,7 +77,7 @@ export function KpiCards() {
       if (!water) return "No live data";
       const good =
         water.temperature >= 22 &&
-        water.temperature <= 32 &&
+        water.temperature <= 31 &&
         water.dissolvedOxygen >= 5 &&
         water.ph >= 6.5 &&
         water.ph <= 8.5 &&
@@ -98,7 +98,10 @@ export function KpiCards() {
         ? Math.max(intelligence.totalStocked - intelligence.totalMortality - harvestedFish, 0)
         : null,
     );
-    setOpenAlerts(listEnterpriseAlerts().length + waterAlerts.length);
+    const uniqueWaterAlerts = new Map(
+      waterAlerts.map((alert) => [`${alert.pond_id}:${alert.type}`, alert]),
+    );
+    setRecentAlerts(listEnterpriseAlerts().length + uniqueWaterAlerts.size);
   }, []);
 
   useEffect(() => {
@@ -169,9 +172,9 @@ export function KpiCards() {
         icon={<AlertTriangle className="h-6 w-6" />}
         iconBg="bg-warning/15"
         iconColor="text-warning"
-        label="Open Alerts"
-        value={openAlerts}
-        sub="Water, inventory and production exceptions"
+        label="Recent Alerts"
+        value={recentAlerts}
+        sub="Latest water, inventory and production signals"
         link={{ href: "/water/alerts", text: "Review Alerts" }}
       />
     </div>
