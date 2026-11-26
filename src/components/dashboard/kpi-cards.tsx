@@ -33,7 +33,7 @@ function KpiCard({
     <Card className="overflow-hidden transition-shadow hover:shadow-md">
       <CardContent className="p-5">
         <div className="flex items-start gap-4">
-          <div 
+          <div
             className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${iconBg} ${iconColor}`}
           >
             {icon}
