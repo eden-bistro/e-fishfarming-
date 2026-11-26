@@ -108,7 +108,7 @@ function displayNameForUser(name?: string, email?: string) {
 export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
-  const { isMobile, open, setOpen, setOpenMobile } = useSidebar();
+  const { isMobile, setOpen, setOpenMobile } = useSidebar();
   const closeSidebarAfterNavigation = () => {
     if (isMobile) {
       setOpenMobile(false);
@@ -191,24 +191,48 @@ export function AppSidebar() {
                       className="h-9 justify-center px-2"
                       aria-label={`${item.title} menu`}
                     >
-                      <img src={item.iconImage} alt="" aria-hidden="true" className="h-5 w-5 shrink-0 rounded-md object-contain" />
+                      <img
+                        src={item.iconImage}
+                        alt=""
+                        aria-hidden="true"
+                        className="h-5 w-5 shrink-0 rounded-md object-contain"
+                      />
                       <span className="sr-only">{item.title}</span>
                     </SidebarMenuButton>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent side="right" align="start" className="min-w-48">
                     {item.children.map((child) => (
                       <DropdownMenuItem key={child.url} asChild>
-                        <Link to={child.url as never} onClick={closeSidebarAfterNavigation} className="flex w-full items-center gap-2">
+                        <Link
+                          to={child.url as never}
+                          onClick={closeSidebarAfterNavigation}
+                          className="flex w-full items-center gap-2"
+                        >
                           {child.url === "/feeding/schedule" ? (
                             <CalendarClock className="h-4 w-4 icon-emphasis" />
                           ) : child.url === "/feeding/manual" ? (
-                            <img src="/icons/fish.jpg" alt="" aria-hidden="true" className="h-4 w-4 shrink-0 rounded-md object-contain" />
+                            <img
+                              src="/icons/fish.jpg"
+                              alt=""
+                              aria-hidden="true"
+                              className="h-4 w-4 shrink-0 rounded-md object-contain"
+                            />
                           ) : child.url === "/feeding/history" ? (
                             <History className="h-4 w-4 icon-emphasis" />
                           ) : child.url === "/settings/devices" ? (
-                            <img src="/icons/IoT.png" alt="" aria-hidden="true" className="h-4 w-4 shrink-0 rounded-md object-contain" />
+                            <img
+                              src="/icons/IoT.png"
+                              alt=""
+                              aria-hidden="true"
+                              className="h-4 w-4 shrink-0 rounded-md object-contain"
+                            />
                           ) : child.url === "/finance/pnl" ? (
-                            <img src="/icons/profit.png" alt="" aria-hidden="true" className="h-4 w-4 shrink-0 rounded-md object-contain" />
+                            <img
+                              src="/icons/profit.png"
+                              alt=""
+                              aria-hidden="true"
+                              className="h-4 w-4 shrink-0 rounded-md object-contain"
+                            />
                           ) : child.url === "/feeding/inventory" ? (
                             <Package className="h-4 w-4 icon-emphasis" />
                           ) : (
