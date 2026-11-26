@@ -162,7 +162,7 @@ export function WaterMonitoring() {
               {safe ? (
                 <span className="inline-flex items-center gap-1.5 text-success">
                   <CheckCircle2 className="h-4 w-4" />
-                  All monitored parameters within configured limits
+                  Key water parameters within configured limits
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 text-warning">
