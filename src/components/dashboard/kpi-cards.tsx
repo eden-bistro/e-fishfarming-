@@ -6,7 +6,7 @@ import {
   listIncome,
   PLATFORM_DATA_CHANGED_EVENT,
 } from "@/lib/platform-clients";
-import { Droplets, UtensilsCrossed, Wallet, Timer, ArrowRight } from "lucide-react";
+import { UtensilsCrossed, Wallet, Timer, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "@tanstack/react-router";
 
@@ -138,7 +138,7 @@ export function KpiCards() {
       )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
-          icon={<Droplets className="h-6 w-6" />}
+          icon={<img src="/icons/Water.png" alt="" className="h-6 w-6 rounded-md object-contain" />}
           iconBg="bg-info/15"
           iconColor="text-info"
           label="Water Quality"
