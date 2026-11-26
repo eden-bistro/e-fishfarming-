@@ -26,7 +26,6 @@ export function ProductionOverview() {
   }, []);
 
   const summary = buildProductionIntelligence(events);
-  const hasRecords = events.length > 0;
   const hasStockingRecords = events.some((event) => event.type === "stocking");
   const hasHarvestRecords = events.some((event) => event.type === "harvest");
   const harvestedFish = events
