@@ -43,7 +43,7 @@ export function DashboardLayout({
   if (!session) return null;
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false}>
       <AppSidebar />
       <SidebarInset className="aquasmart-dashboard-background">
         <TopNavbar />
