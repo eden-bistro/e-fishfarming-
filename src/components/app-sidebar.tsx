@@ -159,7 +159,7 @@ export function AppSidebar() {
                     size="default"
                     isActive={path === item.url}
                     tooltip={item.title}
-                    className="h-9 gap-2 px-2"
+                    className="h-10 gap-2 px-2"
                   >
                     <Link to={item.url as never} onClick={closeSidebarAfterNavigation}>
                       {"iconImage" in item ? (
@@ -167,10 +167,10 @@ export function AppSidebar() {
                           src={item.iconImage}
                           alt=""
                           aria-hidden="true"
-                          className="h-5 w-5 shrink-0 rounded-md object-contain"
+                          className="h-6 w-6 shrink-0 rounded-md object-contain"
                         />
                       ) : (
-                        <item.icon className="h-4 w-4 icon-emphasis" />
+                        <item.icon className="h-5 w-5 icon-emphasis" />
                       )}
                       <span className="truncate">{item.title}</span>
                     </Link>
@@ -188,14 +188,14 @@ export function AppSidebar() {
                       tooltip={item.title}
                       size="default"
                       isActive={hasActiveChild}
-                      className="h-9 justify-center px-2"
+                      className="h-10 justify-center px-2"
                       aria-label={`${item.title} menu`}
                     >
                       <img
                         src={item.iconImage}
                         alt=""
                         aria-hidden="true"
-                        className="h-5 w-5 shrink-0 rounded-md object-contain"
+                        className="h-6 w-6 shrink-0 rounded-md object-contain"
                       />
                       <span className="sr-only">{item.title}</span>
                     </SidebarMenuButton>
@@ -209,34 +209,34 @@ export function AppSidebar() {
                           className="flex w-full items-center gap-2"
                         >
                           {child.url === "/feeding/schedule" ? (
-                            <CalendarClock className="h-4 w-4 icon-emphasis" />
+                            <CalendarClock className="h-5 w-5 icon-emphasis" />
                           ) : child.url === "/feeding/manual" ? (
                             <img
                               src="/icons/fish.jpg"
                               alt=""
                               aria-hidden="true"
-                              className="h-4 w-4 shrink-0 rounded-md object-contain"
+                              className="h-5 w-5 shrink-0 rounded-md object-contain"
                             />
                           ) : child.url === "/feeding/history" ? (
-                            <History className="h-4 w-4 icon-emphasis" />
+                            <History className="h-5 w-5 icon-emphasis" />
                           ) : child.url === "/settings/devices" ? (
                             <img
                               src="/icons/IoT.png"
                               alt=""
                               aria-hidden="true"
-                              className="h-4 w-4 shrink-0 rounded-md object-contain"
+                              className="h-5 w-5 shrink-0 rounded-md object-contain"
                             />
                           ) : child.url === "/finance/pnl" ? (
                             <img
                               src="/icons/profit.png"
                               alt=""
                               aria-hidden="true"
-                              className="h-4 w-4 shrink-0 rounded-md object-contain"
+                              className="h-5 w-5 shrink-0 rounded-md object-contain"
                             />
                           ) : child.url === "/feeding/inventory" ? (
-                            <Package className="h-4 w-4 icon-emphasis" />
+                            <Package className="h-5 w-5 icon-emphasis" />
                           ) : (
-                            <LineChart className="h-4 w-4 icon-emphasis" />
+                            <LineChart className="h-5 w-5 icon-emphasis" />
                           )}
                           <span>{child.title}</span>
                         </Link>
