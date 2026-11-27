@@ -47,8 +47,7 @@ export function WaterMonitoring() {
       <CardContent>
         {!reading || assessment.status === "unavailable" ? (
           <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-            No online device is currently streaming water data. Check power and Wi-Fi, then ask an
-            admin to verify device assignment.
+            {assessment.message} Check device power and connectivity, then ask an admin to verify device assignment.
           </div>
         ) : (
           <>
