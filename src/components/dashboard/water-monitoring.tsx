@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { getLatestOnlineWaterReading, type WaterReading } from "@/lib/platform-clients";
+import { assessWaterQuality } from "@/lib/water-quality";
 
 function SensorCard({ label, value, unit }: { label: string; value: string; unit?: string }) {
   return (
@@ -36,16 +37,7 @@ export function WaterMonitoring() {
     };
   }, []);
 
-  const safe = useMemo(() => {
-    if (!reading) return false;
-    return (
-      reading.temperature <= 31 &&
-      reading.ph >= 6.5 &&
-      reading.ph <= 8.5 &&
-      reading.dissolvedOxygen >= 5 &&
-      reading.ammonia <= 0.05
-    );
-  }, [reading]);
+  const assessment = useMemo(() => assessWaterQuality(reading), [reading]);
 
   return (
     <Card>
@@ -73,13 +65,13 @@ export function WaterMonitoring() {
               <SensorCard label="Turbidity" value={reading.turbidity.toFixed(1)} unit="NTU" />
             </div>
             <div className="mt-4 flex items-center border-t pt-3 text-xs">
-              {safe ? (
+              {assessment.status === "safe" ? (
                 <span className="inline-flex items-center gap-1.5 text-success">
-                  <CheckCircle2 className="h-4 w-4" /> All parameters within safe limits
+                  <CheckCircle2 className="h-4 w-4" /> {assessment.label}
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 text-warning">
-                  <AlertTriangle className="h-4 w-4" /> Some parameters require attention
+                  <AlertTriangle className="h-4 w-4" /> {assessment.message}
                 </span>
               )}
             </div>
