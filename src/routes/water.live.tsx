@@ -7,6 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getLatestOnlineWaterReading, type WaterReading } from "@/lib/platform-clients";
+import { assessWaterQuality } from "@/lib/water-quality";
 
 export const Route = createFileRoute("/water/live")({
   head: () => ({ meta: [{ title: "Live Water Monitoring — AquaSmart" }] }),
@@ -40,14 +41,17 @@ function Page() {
     };
   }, []);
 
+  const assessment = useMemo(() => assessWaterQuality(reading), [reading]);
+  const verifiedReading = reading && assessment.status !== "unavailable" ? reading : null;
+
   const metrics = useMemo(
     () => [
-      ["Temperature", `${reading?.temperature ?? "--"} °C`],
-      ["pH", `${reading?.ph ?? "--"}`],
-      ["Dissolved Oxygen", `${reading?.dissolvedOxygen ?? "--"} mg/L`],
-      ["Ammonia", `${reading?.ammonia ?? "--"} mg/L`],
+      ["Temperature", `${verifiedReading?.temperature ?? "--"} °C`],
+      ["pH", `${verifiedReading?.ph ?? "--"}`],
+      ["Dissolved Oxygen", `${verifiedReading?.dissolvedOxygen ?? "--"} mg/L`],
+      ["Ammonia", `${verifiedReading?.ammonia ?? "--"} mg/L`],
     ],
-    [reading],
+    [verifiedReading],
   );
 
   return (
@@ -56,11 +60,11 @@ function Page() {
       subtitle="Live water quality is shown only when an assigned IoT Device is online."
     >
       <Alert
-        className={reading ? "border-success/40 bg-success/10" : "border-warning/40 bg-warning/10"}
+        className={assessment.status === "safe" ? "border-success/40 bg-success/10" : "border-warning/40 bg-warning/10"}
       >
-        {reading ? <Wifi className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+        {verifiedReading ? <Wifi className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
         <AlertTitle>
-          {reading ? "Online IoT Device stream" : "No online water IoT Device"}
+          {verifiedReading ? assessment.label : assessment.label}
         </AlertTitle>
         <AlertDescription>
           {reading
@@ -71,7 +75,7 @@ function Page() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {metrics.map(([label, value]) => (
-          <Card key={label} className={!reading ? "opacity-75" : undefined}>
+          <Card key={label} className={!verifiedReading ? "opacity-75" : undefined}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle className="text-base">{label}</CardTitle>
               <Badge variant={reading ? "default" : "secondary"}>
