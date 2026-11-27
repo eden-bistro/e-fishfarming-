@@ -63,13 +63,11 @@ function Page() {
         className={assessment.status === "safe" ? "border-success/40 bg-success/10" : "border-warning/40 bg-warning/10"}
       >
         {verifiedReading ? <Wifi className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
-        <AlertTitle>
-          {verifiedReading ? assessment.label : assessment.label}
-        </AlertTitle>
+        <AlertTitle>{assessment.label}</AlertTitle>
         <AlertDescription>
-          {reading
-            ? `Latest live reading${reading.deviceId ? ` from ${reading.deviceId}` : ""}${checkedAt ? ` checked at ${checkedAt}` : ""}.`
-            : "Live water values are hidden until an IoT Device for this cage/pond is online. Ask an admin to verify IoT Device assignment."}
+          {verifiedReading
+            ? `${assessment.message} Latest reading${verifiedReading.deviceId ? ` from ${verifiedReading.deviceId}` : ""}${checkedAt ? ` checked at ${checkedAt}` : ""}.`
+            : assessment.message}
         </AlertDescription>
       </Alert>
 
