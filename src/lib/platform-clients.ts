@@ -179,6 +179,7 @@ export async function listWaterAlerts(limit = 20): Promise<WaterAlert[]> {
   const tenantPair = activeWaterTenantPair();
   if (!tenantPair) return [];
 
+  let storedAlerts: WaterAlert[] = [];
   const accessToken = (await getAccessToken())?.trim();
   if (accessToken) {
     try {
@@ -195,19 +196,19 @@ export async function listWaterAlerts(limit = 20): Promise<WaterAlert[]> {
           alerts?: Array<Omit<WaterAlert, "source">>;
         };
         if (Array.isArray(payload.alerts)) {
-          return payload.alerts.map((alert) => ({ ...alert, source: "firebase" as const }));
+          storedAlerts = payload.alerts.map((alert) => ({ ...alert, source: "firebase" as const }));
         }
       }
     } catch {
-      // Derived alerts remain available when the protected endpoint is unavailable.
+      // Continue with locally derived alerts when the protected endpoint is unavailable.
     }
   }
 
   const latest = await getLatestOnlineWaterReading();
-  if (!latest) return [];
+  if (!latest) return storedAlerts;
 
   const assessment = assessWaterQuality(latest);
-  return assessment.issues.map((issue) => {
+  const derivedAlerts = assessment.issues.map((issue) => {
     const type: WaterAlert["type"] =
       issue.metric === "dissolved oxygen"
         ? "low_do"
@@ -226,6 +227,11 @@ export async function listWaterAlerts(limit = 20): Promise<WaterAlert[]> {
       source: "derived" as const,
     };
   });
+  const combined = [...storedAlerts, ...derivedAlerts];
+  return combined.filter(
+    (alert, index, rows) =>
+      rows.findIndex((candidate) => candidate.type === alert.type && candidate.pond_id === alert.pond_id) === index,
+  );
 }
 
 export async function pushManualFeedingEvent(amountKg: number): Promise<void> {
