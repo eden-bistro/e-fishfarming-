@@ -132,13 +132,13 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-2 py-2">
+        <div className="flex items-center gap-2 px-2 py-2 group-data-[collapsible=icon]:px-1">
           <img
             src="/icons/Fish%20logo.png?v=2"
             alt="AquaSmart fish logo"
-            width={32}
-            height={32}
-            className="h-8 w-8 shrink-0 rounded-lg object-contain"
+            width={40}
+            height={40}
+            className="h-10 w-10 shrink-0 rounded-lg object-contain"
           />
           <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
             <span className="text-base font-semibold tracking-tight">AquaSmart</span>
