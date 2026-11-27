@@ -4,6 +4,7 @@ import {
 } from "@/lib/device-firebase";
 import { getActiveFarmId, getActivePondId } from "@/lib/tenant";
 import { getAccessToken } from "@/services/auth.service";
+import { assessWaterQuality } from "@/lib/water-quality";
 const env = import.meta.env as Record<string, string | undefined>;
 
 const supabaseUrl = (
@@ -205,53 +206,26 @@ export async function listWaterAlerts(limit = 20): Promise<WaterAlert[]> {
   const latest = await getLatestOnlineWaterReading();
   if (!latest) return [];
 
-  const derived: WaterAlert[] = [];
-  if (latest.dissolvedOxygen < 5) {
-    derived.push({
-      id: `derived-do-${latest.timestamp}`,
-      type: "low_do",
-      severity: latest.dissolvedOxygen < 4 ? "critical" : "warning",
-      message: `Low dissolved oxygen detected (${latest.dissolvedOxygen} mg/L).`,
+  const assessment = assessWaterQuality(latest);
+  return assessment.issues.map((issue) => {
+    const type: WaterAlert["type"] =
+      issue.metric === "dissolved oxygen"
+        ? "low_do"
+        : issue.metric === "ammonia"
+          ? "high_ammonia"
+          : issue.metric === "temperature"
+            ? "high_temperature"
+            : "ph_out_of_range";
+    return {
+      id: `derived-${type}-${latest.timestamp}`,
+      type,
+      severity: issue.severity,
+      message: issue.message,
       pond_id: latest.pondId,
       created_at: latest.timestamp,
-      source: "derived",
-    });
-  }
-  if (latest.ammonia > 0.05) {
-    derived.push({
-      id: `derived-amm-${latest.timestamp}`,
-      type: "high_ammonia",
-      severity: latest.ammonia > 0.1 ? "critical" : "warning",
-      message: `Ammonia above threshold (${latest.ammonia} mg/L).`,
-      pond_id: latest.pondId,
-      created_at: latest.timestamp,
-      source: "derived",
-    });
-  }
-  if (latest.temperature > 31) {
-    derived.push({
-      id: `derived-temp-${latest.timestamp}`,
-      type: "high_temperature",
-      severity: latest.temperature > 33 ? "critical" : "warning",
-      message: `Water temperature is high (${latest.temperature} °C).`,
-      pond_id: latest.pondId,
-      created_at: latest.timestamp,
-      source: "derived",
-    });
-  }
-  if (latest.ph < 6.5 || latest.ph > 8.5) {
-    derived.push({
-      id: `derived-ph-${latest.timestamp}`,
-      type: "ph_out_of_range",
-      severity: "warning",
-      message: `pH out of safe range (${latest.ph}).`,
-      pond_id: latest.pondId,
-      created_at: latest.timestamp,
-      source: "derived",
-    });
-  }
-
-  return derived;
+      source: "derived" as const,
+    };
+  });
 }
 
 export async function pushManualFeedingEvent(amountKg: number): Promise<void> {
