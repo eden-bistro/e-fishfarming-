@@ -76,8 +76,8 @@ function Page() {
           <Card key={label} className={!verifiedReading ? "opacity-75" : undefined}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle className="text-base">{label}</CardTitle>
-              <Badge variant={reading ? "default" : "secondary"}>
-                {reading ? "Live" : "Waiting"}
+              <Badge variant={verifiedReading ? "default" : "secondary"}>
+                {verifiedReading ? assessment.status : "Unavailable"}
               </Badge>
             </CardHeader>
             <CardContent>
