@@ -9,6 +9,7 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { getLatestOnlineWaterReading, type WaterReading } from "@/lib/platform-clients";
 import { getActivePondId } from "@/lib/tenant";
+import { assessWaterQuality } from "@/lib/water-quality";
 import { getSessionUser } from "@/lib/auth";
 import {
   listFeedingCommands,
@@ -22,28 +23,7 @@ export const Route = createFileRoute("/feeding/manual")({
 });
 
 function waterQualityStatus(reading: WaterReading | null) {
-  if (!reading) {
-    return {
-      canFeed: false,
-      label: "No live water data",
-      message:
-        "A verified online water reading is required before a feeding command can be queued.",
-    };
-  }
-
-  const canFeed =
-    reading.dissolvedOxygen >= 5 &&
-    reading.ph >= 6.5 &&
-    reading.ph <= 8.5 &&
-    reading.ammonia <= 0.05;
-
-  return {
-    canFeed,
-    label: canFeed ? "Water quality within feeding limits" : "Water quality requires attention",
-    message: canFeed
-      ? "The latest online reading meets the current dissolved oxygen, pH, and ammonia checks."
-      : "The feeding command is blocked until dissolved oxygen, pH, and ammonia return to the configured ranges.",
-  };
+  return assessWaterQuality(reading);
 }
 
 function commandStatusLabel(status: FeedingCommand["status"]) {
