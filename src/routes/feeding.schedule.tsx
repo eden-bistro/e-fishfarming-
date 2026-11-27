@@ -11,6 +11,7 @@ import {
   type FeedingCommand,
 } from "@/lib/device-firebase";
 import { getLatestOnlineWaterReading } from "@/lib/platform-clients";
+import { assessWaterQuality } from "@/lib/water-quality";
 import { listCages, type Cage } from "@/services/modules/cages.service";
 import {
   listProductionEventsRemote,
@@ -71,27 +72,7 @@ function formatCommandTime(command: FeedingCommand) {
 }
 
 function waterQualityStatus(reading: Awaited<ReturnType<typeof getLatestOnlineWaterReading>>) {
-  if (!reading) {
-    return {
-      canFeed: false,
-      label: "No live water data",
-      message: "Connect an online water sensor before scheduling feeding.",
-    };
-  }
-
-  const canFeed =
-    reading.dissolvedOxygen >= 5 &&
-    reading.ph >= 6.5 &&
-    reading.ph <= 8.5 &&
-    reading.ammonia <= 0.05;
-
-  return {
-    canFeed,
-    label: canFeed ? "Safe to feed" : "Water quality not safe",
-    message: canFeed
-      ? "Dissolved oxygen, pH, and ammonia are in the feeding-safe range."
-      : "Feeding is blocked until dissolved oxygen, pH, and ammonia return to safe levels.",
-  };
+  return assessWaterQuality(reading);
 }
 
 function Page() {
