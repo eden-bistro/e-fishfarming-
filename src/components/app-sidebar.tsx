@@ -1,12 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import {
-  CalendarClock,
-  Cpu,
-  History,
-  LineChart,
-  Package,
-  ShieldCheck,
-} from "lucide-react";
+import { CalendarClock, Cpu, History, LineChart, Package, ShieldCheck } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -225,7 +218,6 @@ export function AppSidebar() {
           })}
         </SidebarMenu>
       </SidebarContent>
-
     </Sidebar>
   );
 }
