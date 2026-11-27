@@ -45,7 +45,7 @@ export function WaterMonitoring() {
         <CardTitle className="text-base">Water Quality — Live Monitoring</CardTitle>
       </CardHeader>
       <CardContent>
-        {!reading ? (
+        {!reading || assessment.status === "unavailable" ? (
           <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
             No online device is currently streaming water data. Check power and Wi-Fi, then ask an
             admin to verify device assignment.
